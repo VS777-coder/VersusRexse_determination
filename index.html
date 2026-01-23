@@ -3,121 +3,163 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Versus Revise Analyzer</title>
+    <title>Versus Revise Analyzer Pro</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@4/dist/tesseract.min.js"></script>
     <style>
         body { background-color: #0f172a; color: #f8fafc; font-family: sans-serif; }
         .glass { background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.1); }
+        .drop-zone { border: 2px dashed #334155; transition: all 0.3s; }
+        .drop-zone.dragover { border-color: #38bdf8; background: rgba(56, 189, 248, 0.1); }
         .bar-bg { background: #334155; height: 12px; border-radius: 6px; overflow: hidden; }
-        .bar-fill { background: linear-gradient(90deg, #38bdf8, #818cf8); height: 100%; transition: width 0.8s cubic-bezier(0.34, 1.56, 0.64, 1); width: 0%; }
+        .bar-fill { background: linear-gradient(90deg, #38bdf8, #818cf8); height: 100%; transition: width 1s cubic-bezier(0.16, 1, 0.3, 1); width: 0%; }
+        .loading { animation: pulse 2s infinite; }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
     </style>
 </head>
 <body class="flex flex-col items-center p-4 min-h-screen">
 
-    <header class="w-full max-w-md mb-8 text-center">
-        <h1 class="text-2xl font-bold tracking-tight text-sky-400">VERSUS REVISE</h1>
-        <p class="text-xs text-slate-400 font-mono">BAYESIAN ESTIMATION ENGINE v1.0</p>
+    <header class="w-full max-w-md mb-6 text-center">
+        <h1 class="text-2xl font-bold tracking-tight text-sky-400 uppercase">Versus Revise</h1>
+        <p class="text-[10px] text-slate-500 font-mono italic">Bayesian OCR Analysis v2.5</p>
     </header>
 
-    <main class="w-full max-w-md glass rounded-3xl p-6 shadow-2xl">
-        <div class="mb-8 text-center">
-            <label for="file-upload" class="cursor-pointer flex flex-col items-center justify-center p-8 border-2 border-dashed border-slate-600 rounded-2xl hover:border-sky-500 transition-all bg-slate-800/30">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 text-slate-400 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+    <main class="w-full max-w-md space-y-4">
+        <div id="drop-zone" class="drop-zone glass rounded-3xl p-8 text-center cursor-pointer">
+            <div id="drop-content" class="space-y-2">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 text-slate-400 mx-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                 </svg>
-                <span id="file-name" class="text-sm font-medium">ユニメモ画像を添付</span>
-                <input id="file-upload" type="file" class="hidden" accept="image/*">
-            </label>
+                <p class="text-sm font-bold">ユニメモ画像をドロップ</p>
+                <p id="file-name" class="text-[10px] text-slate-500 italic">No image selected</p>
+            </div>
+            <input type="file" id="file-input" class="hidden" accept="image/*">
         </div>
 
-        <div id="results-container" class="space-y-6">
-            <div id="row-1">
-                <div class="flex justify-between text-sm font-bold mb-2">
-                    <span>設定 1</span><span id="val-1" class="text-sky-400">-- %</span>
-                </div>
-                <div class="bar-bg"><div id="bar-1" class="bar-fill"></div></div>
-            </div>
-            <div id="row-2">
-                <div class="flex justify-between text-sm font-bold mb-2">
-                    <span>設定 2</span><span id="val-2" class="text-sky-400">-- %</span>
-                </div>
-                <div class="bar-bg"><div id="bar-2" class="bar-fill"></div></div>
-            </div>
-            <div id="row-5">
-                <div class="flex justify-between text-sm font-bold mb-2">
-                    <span>設定 5</span><span id="val-5" class="text-sky-400">-- %</span>
-                </div>
-                <div class="bar-bg"><div id="bar-5" class="bar-fill"></div></div>
-            </div>
-            <div id="row-6">
-                <div class="flex justify-between text-sm font-bold mb-2">
-                    <span>設定 6</span><span id="val-6" class="text-sky-400">-- %</span>
-                </div>
-                <div class="bar-bg"><div id="bar-6" class="bar-fill"></div></div>
-            </div>
+        <div id="status-log" class="hidden text-[10px] font-mono glass p-4 rounded-xl space-y-1 border-l-2 border-sky-500">
+            <div id="log-ocr" class="text-slate-400">OCR: Waiting...</div>
+            <div id="log-calc" class="text-slate-400">Engine: Waiting...</div>
         </div>
 
-        <button onclick="runAnalysis()" class="w-full mt-8 py-4 bg-sky-600 hover:bg-sky-500 rounded-xl font-bold transition-all active:scale-95 shadow-lg shadow-sky-900/40">
-            判別実行
-        </button>
+        <div class="glass rounded-3xl p-6 shadow-2xl space-y-6">
+            <div class="flex justify-between items-end border-b border-slate-700 pb-2">
+                <span class="text-xs text-slate-400 font-bold uppercase">Settings Probability</span>
+                <span id="final-status" class="text-[10px] text-sky-500 font-mono">STANDBY</span>
+            </div>
+            
+            <div id="results-container" class="space-y-6">
+                <div class="row">
+                    <div class="flex justify-between text-sm font-bold mb-2"><span>設定 1</span><span id="pct-1" class="text-sky-400">-- %</span></div>
+                    <div class="bar-bg"><div id="bar-1" class="bar-fill"></div></div>
+                </div>
+                <div class="row">
+                    <div class="flex justify-between text-sm font-bold mb-2"><span>設定 2</span><span id="pct-2" class="text-sky-400">-- %</span></div>
+                    <div class="bar-bg"><div id="bar-2" class="bar-fill"></div></div>
+                </div>
+                <div class="row">
+                    <div class="flex justify-between text-sm font-bold mb-2"><span>設定 5</span><span id="pct-5" class="text-sky-400">-- %</span></div>
+                    <div class="bar-bg"><div id="bar-5" class="bar-fill"></div></div>
+                </div>
+                <div class="row">
+                    <div class="flex justify-between text-sm font-bold mb-2"><span>設定 6</span><span id="pct-6" class="text-sky-400">-- %</span></div>
+                    <div class="bar-bg"><div id="bar-6" class="bar-fill"></div></div>
+                </div>
+            </div>
+        </div>
     </main>
 
     <script>
-        // マスターデータ
         const MASTER = {
-            bonus: { 1: {t:194.7, b:350.4, r:438}, 2: {t:184.2, b:334.3, r:411.7}, 5: {t:173.3, b:318.1, r:378.8}, 6: {t:161.8, b:297.8, r:354.2} },
-            normal: { 1: {bt:7.2, ba:10.9, bb:20.9, sa:74.5, ca:119.2, cb:56.2}, 2: {bt:7.1, ba:10.7, bb:21.2, sa:70.6, ca:118.9, cb:57.7}, 5: {bt:6.9, ba:10.5, bb:20.3, sa:72.5, ca:118.9, cb:53.1}, 6: {bt:6.8, ba:10.2, bb:20.6, sa:68.8, ca:118.9, cb:54.4} },
-            rt: { 1: {vc:5.0, vg:10.1}, 2: {vc:4.9, vg:9.4}, 5: {vc:4.6, vg:8.7}, 6: {vc:4.5, vg:8.1} },
-            bb: { 1: {bl:1.10, cbs:11.1, cbh:256, mc:16384}, 2: {bl:1.14, cbs:8.9, cbh:128, mc:16384}, 5: {bl:1.10, cbs:11.1, cbh:256, mc:16384}, 6: {bl:1.14, cbs:8.9, cbh:128, mc:897.8} },
-            rb: { 1: {h:1000000}, 2: {h:1000000}, 5: {h:376.6}, 6: {h:376.6} }
+            bonus: { 1:{bb:350.4, rb:438}, 2:{bb:334.3, rb:411.7}, 5:{bb:318.1, rb:378.8}, 6:{bb:297.8, rb:354.2} },
+            normal: { 1:{ba:10.9, sa:74.5, ca:119.2, cb:56.2}, 2:{ba:10.7, sa:70.6, ca:118.9, cb:57.7}, 5:{ba:10.5, sa:72.5, ca:118.9, cb:53.1}, 6:{ba:10.2, sa:68.8, ca:118.9, cb:54.4} },
+            rt: { 1:{vc:5.0, vg:10.1}, 2:{vc:4.9, vg:9.4}, 5:{vc:4.6, vg:8.7}, 6:{vc:4.5, vg:8.1} },
+            bbIn: { 1:{bl:1.1, cbs:11.1, cbh:256, mc:16384}, 2:{bl:1.14, cbs:8.9, cbh:128, mc:16384}, 5:{bl:1.1, cbs:11.1, cbh:256, mc:16384}, 6:{bl:1.14, cbs:8.9, cbh:128, mc:897.8} },
+            rbIn: { 1:{h:100000}, 2:{h:100000}, 5:{h:376.6}, 6:{h:376.6} }
         };
 
-        function runAnalysis() {
-            // モック用のダミー入力（本来はOCRで抽出する数値）
-            const dummyInput = {
-                bonus: {t:170.2, b:300.5, r:390},
-                normal: {bt:6.9, ba:10.4, bb:20.8, sa:70.2, ca:119.0, cb:54.0},
-                rt: {vc:4.6, vg:8.5},
-                bb: {bl:1.14, cbs:9.0, cbh:130.5, mc:16384},
-                rb: {h:1000000} // ハズレなし
+        const dropZone = document.getElementById('drop-zone');
+        const fileInput = document.getElementById('file-input');
+
+        dropZone.onclick = () => fileInput.click();
+        fileInput.onchange = e => process(e.target.files[0]);
+
+        async function process(file) {
+            if (!file) return;
+            document.getElementById('file-name').innerText = file.name;
+            document.getElementById('status-log').classList.remove('hidden');
+            document.getElementById('log-ocr').className = 'text-sky-400 loading';
+            document.getElementById('log-ocr').innerText = 'OCR: Scanning...';
+
+            const worker = await Tesseract.createWorker('jpn');
+            const { data: { text } } = await worker.recognize(file);
+            await worker.terminate();
+
+            document.getElementById('log-ocr').className = 'text-green-400';
+            document.getElementById('log-ocr').innerText = 'OCR: Complete';
+            
+            runBayes(extract(text));
+        }
+
+        function extract(text) {
+            const cleanText = text.replace(/[lI]/g, '1').replace(/\s/g, '');
+            const find = (re) => {
+                const m = cleanText.match(re);
+                return m ? parseFloat(m[1].replace(/,/g, '')) : null;
             };
+
+            return {
+                bonus: { bb: find(/総BB.*?1\/([\d,.]+)/), rb: find(/RB.*?1\/([\d,.]+)/) },
+                normal: { ba: find(/ベルA.*?1\/([\d,.]+)/), sa: find(/スイカA.*?1\/([\d,.]+)/), ca: find(/チェリーA.*?1\/([\d,.]+)/), cb: find(/チェリーB.*?1\/([\d,.]+)/) },
+                rt: { vc: find(/VSチャンス中はずれ.*?1\/([\d,.]+)/), vg: find(/VSGAME中はずれ.*?1\/([\d,.]+)/) },
+                bbIn: { 
+                    bl: find(/BB中詳細.*?ベル.*?1\/([\d,.]+)/), 
+                    cbs: find(/チェリー＋ベル揃い.*?1\/([\d,.]+)/), 
+                    cbh: find(/チェリー＋ベルはずれ.*?1\/([\d,.]+)/), 
+                    mc: find(/中段チェリー.*?1\/([\d,.]+)/) || 16384 
+                },
+                rbIn: { h: find(/RB中詳細.*?はずれ.*?1\/([\d,.]+)/) || 100000 }
+            };
+        }
+
+        function runBayes(data) {
+            document.getElementById('log-calc').className = 'text-sky-400 loading';
+            document.getElementById('log-calc').innerText = 'Engine: Calculating...';
 
             let probs = { 1: 0.25, 2: 0.25, 5: 0.25, 6: 0.25 };
             const settings = [1, 2, 5, 6];
 
             Object.keys(MASTER).forEach(cat => {
                 Object.keys(MASTER[cat][1]).forEach(key => {
-                    let obs = dummyInput[cat][key];
+                    const obs = data[cat][key];
+                    if (!obs) return;
                     settings.forEach(s => {
-                        let m = MASTER[cat][s][key];
-                        // 尤度計算：差の絶対値に基づく簡易ベイズ
-                        let likelihood = Math.exp(-Math.pow((1/obs - 1/m), 2) / 0.0005);
-                        probs[s] *= likelihood;
+                        const target = MASTER[cat][s][key];
+                        probs[s] *= Math.exp(-Math.abs((1/obs) - (1/target)) * 800);
                     });
                 });
                 normalize(probs);
             });
 
-            updateUI(probs);
+            setTimeout(() => {
+                updateUI(probs);
+                document.getElementById('log-calc').className = 'text-green-400';
+                document.getElementById('log-calc').innerText = 'Engine: Ready';
+                document.getElementById('final-status').innerText = 'COMPLETE';
+            }, 500);
         }
 
         function normalize(p) {
-            let sum = Object.values(p).reduce((a, b) => a + b, 0);
-            Object.keys(p).forEach(k => p[k] /= sum);
+            const s = Object.values(p).reduce((a, b) => a + b, 0);
+            Object.keys(p).forEach(k => p[k] /= s);
         }
 
         function updateUI(p) {
             [1, 2, 5, 6].forEach(s => {
-                const percent = Math.round(p[s] * 100);
-                document.getElementById(`val-${s}`).innerText = `${percent} %`;
-                document.getElementById(`bar-${s}`).style.width = `${percent}%`;
+                const v = Math.round(p[s] * 100);
+                document.getElementById(`pct-${s}`).innerText = `${v} %`;
+                document.getElementById(`bar-${s}`).style.width = `${v}%`;
             });
         }
-
-        document.getElementById('file-upload').onchange = e => {
-            document.getElementById('file-name').innerText = e.target.files[0].name;
-            runAnalysis();
-        };
     </script>
 </body>
 </html>
