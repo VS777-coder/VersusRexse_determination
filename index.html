@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Versus Revise - Cloud Analyzer</title>
+    <title>Versus Revise - Pro Analyzer</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         body { background-color: #0f172a; color: #f8fafc; font-family: sans-serif; }
@@ -11,38 +11,36 @@
         .drop-zone { border: 2px dashed #334155; transition: 0.3s; }
         .drop-zone.dragover { border-color: #38bdf8; background: rgba(56, 189, 248, 0.1); }
         .bar-bg { background: #334155; height: 12px; border-radius: 6px; overflow: hidden; }
-        .bar-fill { background: linear-gradient(90deg, #38bdf8, #818cf8); height: 100%; transition: width 0.8s cubic-bezier(0.16, 1, 0.3, 1); width: 0%; }
-        .loading-shimmer { background: linear-gradient(90deg, #1e293b 25%, #334155 50%, #1e293b 75%); background-size: 200% 100%; animation: shimmer 1.5s infinite; }
-        @keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+        .bar-fill { background: linear-gradient(90deg, #38bdf8, #818cf8); height: 100%; transition: width 0.8s ease-out; width: 0%; }
     </style>
 </head>
 <body class="flex flex-col items-center p-4 min-h-screen">
 
     <header class="w-full max-w-md mb-6 text-center">
         <h1 class="text-2xl font-bold text-sky-400 tracking-widest uppercase">Versus Revise</h1>
-        <p class="text-[10px] text-slate-500 font-mono">HIGH-SPEED CLOUD ENGINE v3.0</p>
+        <p class="text-[10px] text-slate-500 font-mono">STABLE BAYESIAN ENGINE v3.1</p>
     </header>
 
     <main class="w-full max-w-md space-y-4">
         <div id="drop-zone" class="drop-zone glass rounded-3xl p-8 text-center cursor-pointer">
-            <div id="drop-content" class="space-y-2">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 text-slate-400 mx-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <div id="drop-content" class="space-y-2 text-slate-400">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 mx-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                 </svg>
                 <p class="text-sm font-bold">ユニメモ画像を添付</p>
-                <p id="file-name" class="text-[10px] text-slate-500 font-mono italic">Ready to analyze</p>
+                <p id="file-name" class="text-[10px] font-mono italic">Ready</p>
             </div>
             <input type="file" id="file-input" class="hidden" accept="image/*">
         </div>
 
         <div id="status-card" class="hidden glass p-4 rounded-2xl border-l-4 border-sky-500">
-            <div id="status-text" class="text-xs font-mono text-sky-400">Waiting for image...</div>
+            <div id="status-text" class="text-xs font-mono text-sky-400 text-center">Ready...</div>
         </div>
 
         <div class="glass rounded-3xl p-6 shadow-2xl space-y-6">
             <div class="flex justify-between items-end border-b border-slate-700 pb-2">
                 <span class="text-xs text-slate-400 font-bold uppercase tracking-tighter">Setting Estimation</span>
-                <span id="final-label" class="text-[10px] text-sky-500 font-mono uppercase tracking-widest">Standby</span>
+                <span id="final-label" class="text-[10px] text-sky-500 font-mono uppercase tracking-widest">Wait</span>
             </div>
             
             <div id="results-container" class="space-y-6">
@@ -79,7 +77,6 @@
 
         const fileInput = document.getElementById('file-input');
         const dropZone = document.getElementById('drop-zone');
-        const statusCard = document.getElementById('status-card');
         const statusText = document.getElementById('status-text');
 
         dropZone.onclick = () => fileInput.click();
@@ -88,8 +85,8 @@
         async function handleFile(file) {
             if (!file) return;
             document.getElementById('file-name').innerText = file.name;
-            statusCard.classList.remove('hidden');
-            statusText.innerText = 'Uploading to Cloud OCR...';
+            document.getElementById('status-card').classList.remove('hidden');
+            statusText.innerText = 'Cloud OCR Processing...';
 
             try {
                 const base64 = await toBase64(file);
@@ -97,23 +94,15 @@
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
-                        requests: [{
-                            image: { content: base64.split(',')[1] },
-                            features: [{ type: 'TEXT_DETECTION' }]
-                        }]
+                        requests: [{ image: { content: base64.split(',')[1] }, features: [{ type: 'TEXT_DETECTION' }] }]
                     })
                 });
-
                 const json = await response.json();
                 const rawText = json.responses[0]?.fullTextAnnotation?.text || "";
-                
-                if (!rawText) throw new Error('Could not read image text.');
-
-                statusText.innerText = 'Analysis Success. Calculating...';
+                if (!rawText) throw new Error('Empty result from Google.');
                 runBayes(extract(rawText));
             } catch (err) {
                 statusText.innerText = 'Error: ' + err.message;
-                statusText.className = 'text-xs font-mono text-red-400';
             }
         }
 
@@ -123,7 +112,6 @@
                 const m = cleanText.match(re);
                 return m ? parseFloat(m[1].replace(/,/g, '')) : null;
             };
-
             return {
                 bonus: { bb: find(/総BB.*?1\/([\d,.]+)/), rb: find(/RB.*?1\/([\d,.]+)/) },
                 normal: { ba: find(/ベルA.*?1\/([\d,.]+)/), sa: find(/スイカA.*?1\/([\d,.]+)/), ca: find(/チェリーA.*?1\/([\d,.]+)/), cb: find(/チェリーB.*?1\/([\d,.]+)/) },
@@ -134,7 +122,7 @@
         }
 
         function runBayes(data) {
-            let probs = { 1: 0.25, 2: 0.25, 5: 0.25, 6: 0.25 };
+            let logScores = { 1: Math.log(0.25), 2: Math.log(0.25), 5: Math.log(0.25), 6: Math.log(0.25) };
             const settings = [1, 2, 5, 6];
 
             Object.keys(MASTER).forEach(cat => {
@@ -143,20 +131,24 @@
                     if (!obs) return;
                     settings.forEach(s => {
                         const target = MASTER[cat][s][key];
-                        probs[s] *= Math.exp(-Math.pow((1/obs) - (1/target), 2) / 0.0001);
+                        const error = Math.abs((1/obs) - (1/target)) / (1/target);
+                        logScores[s] -= Math.pow(error, 2) * 50; 
                     });
                 });
-                normalize(probs);
             });
 
-            updateUI(probs);
-            document.getElementById('final-label').innerText = 'Complete';
-            statusText.innerText = 'Estimation Finished.';
-        }
+            let maxLog = Math.max(...Object.values(logScores));
+            let probs = {};
+            let sum = 0;
+            settings.forEach(s => {
+                probs[s] = Math.exp(logScores[s] - maxLog);
+                sum += probs[s];
+            });
 
-        function normalize(p) {
-            const s = Object.values(p).reduce((a, b) => a + b, 0);
-            Object.keys(p).forEach(k => p[k] /= s);
+            settings.forEach(s => probs[s] /= sum);
+            updateUI(probs);
+            document.getElementById('final-label').innerText = 'Analysis Done';
+            statusText.innerText = 'Stable Result Applied.';
         }
 
         function updateUI(p) {
