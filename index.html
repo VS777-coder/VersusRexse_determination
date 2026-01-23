@@ -3,25 +3,24 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Versus Revise Analyzer Pro</title>
+    <title>Versus Revise - Cloud Analyzer</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@4/dist/tesseract.min.js"></script>
     <style>
         body { background-color: #0f172a; color: #f8fafc; font-family: sans-serif; }
         .glass { background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.1); }
-        .drop-zone { border: 2px dashed #334155; transition: all 0.3s; }
+        .drop-zone { border: 2px dashed #334155; transition: 0.3s; }
         .drop-zone.dragover { border-color: #38bdf8; background: rgba(56, 189, 248, 0.1); }
         .bar-bg { background: #334155; height: 12px; border-radius: 6px; overflow: hidden; }
-        .bar-fill { background: linear-gradient(90deg, #38bdf8, #818cf8); height: 100%; transition: width 1s cubic-bezier(0.16, 1, 0.3, 1); width: 0%; }
-        .loading { animation: pulse 2s infinite; }
-        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+        .bar-fill { background: linear-gradient(90deg, #38bdf8, #818cf8); height: 100%; transition: width 0.8s cubic-bezier(0.16, 1, 0.3, 1); width: 0%; }
+        .loading-shimmer { background: linear-gradient(90deg, #1e293b 25%, #334155 50%, #1e293b 75%); background-size: 200% 100%; animation: shimmer 1.5s infinite; }
+        @keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
     </style>
 </head>
 <body class="flex flex-col items-center p-4 min-h-screen">
 
     <header class="w-full max-w-md mb-6 text-center">
-        <h1 class="text-2xl font-bold tracking-tight text-sky-400 uppercase">Versus Revise</h1>
-        <p class="text-[10px] text-slate-500 font-mono italic">Bayesian OCR Analysis v2.5</p>
+        <h1 class="text-2xl font-bold text-sky-400 tracking-widest uppercase">Versus Revise</h1>
+        <p class="text-[10px] text-slate-500 font-mono">HIGH-SPEED CLOUD ENGINE v3.0</p>
     </header>
 
     <main class="w-full max-w-md space-y-4">
@@ -30,38 +29,37 @@
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 text-slate-400 mx-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                 </svg>
-                <p class="text-sm font-bold">ユニメモ画像をドロップ</p>
-                <p id="file-name" class="text-[10px] text-slate-500 italic">No image selected</p>
+                <p class="text-sm font-bold">ユニメモ画像を添付</p>
+                <p id="file-name" class="text-[10px] text-slate-500 font-mono italic">Ready to analyze</p>
             </div>
             <input type="file" id="file-input" class="hidden" accept="image/*">
         </div>
 
-        <div id="status-log" class="hidden text-[10px] font-mono glass p-4 rounded-xl space-y-1 border-l-2 border-sky-500">
-            <div id="log-ocr" class="text-slate-400">OCR: Waiting...</div>
-            <div id="log-calc" class="text-slate-400">Engine: Waiting...</div>
+        <div id="status-card" class="hidden glass p-4 rounded-2xl border-l-4 border-sky-500">
+            <div id="status-text" class="text-xs font-mono text-sky-400">Waiting for image...</div>
         </div>
 
         <div class="glass rounded-3xl p-6 shadow-2xl space-y-6">
             <div class="flex justify-between items-end border-b border-slate-700 pb-2">
-                <span class="text-xs text-slate-400 font-bold uppercase">Settings Probability</span>
-                <span id="final-status" class="text-[10px] text-sky-500 font-mono">STANDBY</span>
+                <span class="text-xs text-slate-400 font-bold uppercase tracking-tighter">Setting Estimation</span>
+                <span id="final-label" class="text-[10px] text-sky-500 font-mono uppercase tracking-widest">Standby</span>
             </div>
             
             <div id="results-container" class="space-y-6">
-                <div class="row">
-                    <div class="flex justify-between text-sm font-bold mb-2"><span>設定 1</span><span id="pct-1" class="text-sky-400">-- %</span></div>
+                <div id="row-1">
+                    <div class="flex justify-between text-sm font-bold mb-1"><span>設定 1</span><span id="pct-1">-- %</span></div>
                     <div class="bar-bg"><div id="bar-1" class="bar-fill"></div></div>
                 </div>
-                <div class="row">
-                    <div class="flex justify-between text-sm font-bold mb-2"><span>設定 2</span><span id="pct-2" class="text-sky-400">-- %</span></div>
+                <div id="row-2">
+                    <div class="flex justify-between text-sm font-bold mb-1"><span>設定 2</span><span id="pct-2">-- %</span></div>
                     <div class="bar-bg"><div id="bar-2" class="bar-fill"></div></div>
                 </div>
-                <div class="row">
-                    <div class="flex justify-between text-sm font-bold mb-2"><span>設定 5</span><span id="pct-5" class="text-sky-400">-- %</span></div>
+                <div id="row-5">
+                    <div class="flex justify-between text-sm font-bold mb-1"><span>設定 5</span><span id="pct-5">-- %</span></div>
                     <div class="bar-bg"><div id="bar-5" class="bar-fill"></div></div>
                 </div>
-                <div class="row">
-                    <div class="flex justify-between text-sm font-bold mb-2"><span>設定 6</span><span id="pct-6" class="text-sky-400">-- %</span></div>
+                <div id="row-6">
+                    <div class="flex justify-between text-sm font-bold mb-1"><span>設定 6</span><span id="pct-6">-- %</span></div>
                     <div class="bar-bg"><div id="bar-6" class="bar-fill"></div></div>
                 </div>
             </div>
@@ -69,6 +67,8 @@
     </main>
 
     <script>
+        const API_KEY = 'AIzaSyClYhUVGiryRB5d0YGRzp3ll6ZJIcvJWa0';
+
         const MASTER = {
             bonus: { 1:{bb:350.4, rb:438}, 2:{bb:334.3, rb:411.7}, 5:{bb:318.1, rb:378.8}, 6:{bb:297.8, rb:354.2} },
             normal: { 1:{ba:10.9, sa:74.5, ca:119.2, cb:56.2}, 2:{ba:10.7, sa:70.6, ca:118.9, cb:57.7}, 5:{ba:10.5, sa:72.5, ca:118.9, cb:53.1}, 6:{ba:10.2, sa:68.8, ca:118.9, cb:54.4} },
@@ -77,27 +77,44 @@
             rbIn: { 1:{h:100000}, 2:{h:100000}, 5:{h:376.6}, 6:{h:376.6} }
         };
 
-        const dropZone = document.getElementById('drop-zone');
         const fileInput = document.getElementById('file-input');
+        const dropZone = document.getElementById('drop-zone');
+        const statusCard = document.getElementById('status-card');
+        const statusText = document.getElementById('status-text');
 
         dropZone.onclick = () => fileInput.click();
-        fileInput.onchange = e => process(e.target.files[0]);
+        fileInput.onchange = e => handleFile(e.target.files[0]);
 
-        async function process(file) {
+        async function handleFile(file) {
             if (!file) return;
             document.getElementById('file-name').innerText = file.name;
-            document.getElementById('status-log').classList.remove('hidden');
-            document.getElementById('log-ocr').className = 'text-sky-400 loading';
-            document.getElementById('log-ocr').innerText = 'OCR: Scanning...';
+            statusCard.classList.remove('hidden');
+            statusText.innerText = 'Uploading to Cloud OCR...';
 
-            const worker = await Tesseract.createWorker('jpn');
-            const { data: { text } } = await worker.recognize(file);
-            await worker.terminate();
+            try {
+                const base64 = await toBase64(file);
+                const response = await fetch(`https://vision.googleapis.com/v1/images:annotate?key=${API_KEY}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        requests: [{
+                            image: { content: base64.split(',')[1] },
+                            features: [{ type: 'TEXT_DETECTION' }]
+                        }]
+                    })
+                });
 
-            document.getElementById('log-ocr').className = 'text-green-400';
-            document.getElementById('log-ocr').innerText = 'OCR: Complete';
-            
-            runBayes(extract(text));
+                const json = await response.json();
+                const rawText = json.responses[0]?.fullTextAnnotation?.text || "";
+                
+                if (!rawText) throw new Error('Could not read image text.');
+
+                statusText.innerText = 'Analysis Success. Calculating...';
+                runBayes(extract(rawText));
+            } catch (err) {
+                statusText.innerText = 'Error: ' + err.message;
+                statusText.className = 'text-xs font-mono text-red-400';
+            }
         }
 
         function extract(text) {
@@ -111,20 +128,12 @@
                 bonus: { bb: find(/総BB.*?1\/([\d,.]+)/), rb: find(/RB.*?1\/([\d,.]+)/) },
                 normal: { ba: find(/ベルA.*?1\/([\d,.]+)/), sa: find(/スイカA.*?1\/([\d,.]+)/), ca: find(/チェリーA.*?1\/([\d,.]+)/), cb: find(/チェリーB.*?1\/([\d,.]+)/) },
                 rt: { vc: find(/VSチャンス中はずれ.*?1\/([\d,.]+)/), vg: find(/VSGAME中はずれ.*?1\/([\d,.]+)/) },
-                bbIn: { 
-                    bl: find(/BB中詳細.*?ベル.*?1\/([\d,.]+)/), 
-                    cbs: find(/チェリー＋ベル揃い.*?1\/([\d,.]+)/), 
-                    cbh: find(/チェリー＋ベルはずれ.*?1\/([\d,.]+)/), 
-                    mc: find(/中段チェリー.*?1\/([\d,.]+)/) || 16384 
-                },
+                bbIn: { bl: find(/BB中詳細.*?ベル.*?1\/([\d,.]+)/), cbs: find(/チェリー＋ベル揃い.*?1\/([\d,.]+)/), cbh: find(/チェリー＋ベルはずれ.*?1\/([\d,.]+)/), mc: find(/中段チェリー.*?1\/([\d,.]+)/) || 16384 },
                 rbIn: { h: find(/RB中詳細.*?はずれ.*?1\/([\d,.]+)/) || 100000 }
             };
         }
 
         function runBayes(data) {
-            document.getElementById('log-calc').className = 'text-sky-400 loading';
-            document.getElementById('log-calc').innerText = 'Engine: Calculating...';
-
             let probs = { 1: 0.25, 2: 0.25, 5: 0.25, 6: 0.25 };
             const settings = [1, 2, 5, 6];
 
@@ -134,18 +143,15 @@
                     if (!obs) return;
                     settings.forEach(s => {
                         const target = MASTER[cat][s][key];
-                        probs[s] *= Math.exp(-Math.abs((1/obs) - (1/target)) * 800);
+                        probs[s] *= Math.exp(-Math.pow((1/obs) - (1/target), 2) / 0.0001);
                     });
                 });
                 normalize(probs);
             });
 
-            setTimeout(() => {
-                updateUI(probs);
-                document.getElementById('log-calc').className = 'text-green-400';
-                document.getElementById('log-calc').innerText = 'Engine: Ready';
-                document.getElementById('final-status').innerText = 'COMPLETE';
-            }, 500);
+            updateUI(probs);
+            document.getElementById('final-label').innerText = 'Complete';
+            statusText.innerText = 'Estimation Finished.';
         }
 
         function normalize(p) {
@@ -160,6 +166,13 @@
                 document.getElementById(`bar-${s}`).style.width = `${v}%`;
             });
         }
+
+        const toBase64 = file => new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.readAsDataURL(file);
+            reader.onload = () => resolve(reader.result);
+            reader.onerror = e => reject(e);
+        });
     </script>
 </body>
 </html>
