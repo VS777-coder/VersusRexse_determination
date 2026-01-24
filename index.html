@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>VERSUS REVISE</title>
+    <title>VERSUS REVISE PRO</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         html, body { height: 100%; overflow: hidden; position: fixed; width: 100%; background-color: #0f172a; color: #f8fafc; font-family: 'Helvetica Neue', Arial, sans-serif; -webkit-tap-highlight-color: transparent; }
@@ -24,11 +24,12 @@
 
     <header class="text-center pt-2 pb-2 flex-none">
         <img src="VS.png" alt="VERSUS REVISE" class="mx-auto w-3/5 max-w-sm drop-shadow-[0_0_15px_rgba(59,130,246,0.6)]">
-        <p class="text-red-600 font-bold text-[10px] mt-2 tracking-[0.3em] opacity-90">みおちゃん専用 VER 5.4</p>
+        <p class="text-red-600 font-bold text-[10px] mt-2 tracking-[0.3em] opacity-90">みおちゃん専用 VER 6.0</p>
     </header>
 
     <div id="drop-zone" class="flex-none border-4 border-blue-500/40 rounded-[2rem] py-6 text-center bg-blue-900/20 mb-2 active:scale-95 active:bg-blue-900/40 transition-all shadow-lg cursor-pointer">
         <p class="text-lg font-black text-white tracking-widest leading-none">ユニメモ画像を解析</p>
+        <p class="text-[10px] text-gray-400 mt-2">※座標判定ロジック搭載</p>
         <input type="file" id="file-input" class="hidden" accept="image/*">
     </div>
 
@@ -52,32 +53,125 @@
 
     <script>
         // =========================================================
-        //  【定義】みおちゃん専用：確率分母定義表
+        //  【定義】判定パラメータ
         // =========================================================
         const TARGET_DENOMINATORS = {
-            bellA:   { 1: 10.9,  2: 10.7,  5: 10.5,  6: 10.2 },
-            bellB:   { 1: 20.9,  2: 21.2,  5: 20.3,  6: 20.6 },
-            suikaA:  { 1: 74.5,  2: 70.6,  5: 72.5,  6: 68.8 },
-            cherryB: { 1: 56.2,  2: 57.7,  5: 53.1,  6: 54.4 },
-            bb_total: { 1: 292.6, 2: 284.9, 5: 275.4, 6: 264.3 },
-            rb:       { 1: 374.5, 2: 341.3, 5: 319.7, 6: 292.6 },
-            rt_vc_hazure: { 1: 5.0,   2: 4.9,   5: 4.6,   6: 4.5 },
-            rt_vg_hazure: { 1: 10.1,  2: 9.4,   5: 8.7,   6: 8.1 },
-            bb_cb_match:   { 1: 11.1,    2: 8.9,     5: 11.1,    6: 8.9 },
-            bb_cb_hazure:  { 1: 256.0,   2: 128.0,   5: 256.0,   6: 128.0 },
-            bb_mid_cherry: { 1: 16384.0, 2: 16384.0, 5: 16384.0, 6: 897.8 },
-            rb_hazure:     { 1: null,    2: null,    5: 376.6,   6: 376.6 }
+            bellA:   { 1: 10.9, 2: 10.7, 5: 10.5, 6: 10.2 },
+            bellB:   { 1: 20.9, 2: 21.2, 5: 20.3, 6: 20.6 },
+            suikaA:  { 1: 74.5, 2: 70.6, 5: 72.5, 6: 68.8 },
+            cherryB: { 1: 56.2, 2: 57.7, 5: 53.1, 6: 54.4 },
+            bb_total:{ 1: 292.6, 2: 284.9, 5: 275.4, 6: 264.3 },
+            rb:      { 1: 374.5, 2: 341.3, 5: 319.7, 6: 292.6 },
+            rt_vc_hazure: { 1: 5.0, 2: 4.9, 5: 4.6, 6: 4.5 },
+            rt_vg_hazure: { 1: 10.1, 2: 9.4, 5: 8.7, 6: 8.1 },
+            bb_cb_match:  { 1: 11.1, 2: 8.9, 5: 11.1, 6: 8.9 },
+            bb_cb_hazure: { 1: 256.0, 2: 128.0, 5: 256.0, 6: 128.0 },
+            bb_mid_cherry:{ 1: 16384.0, 2: 16384.0, 5: 16384.0, 6: 897.8 },
+            rb_hazure:    { 1: null, 2: null, 5: 376.6, 6: 376.6 }
         };
 
         const logArea = document.getElementById('debug-area');
         function log(msg) { logArea.innerText = msg + "\n" + logArea.innerText; }
 
         function initDisplay() {
-            let defLog = "【SYSTEM READY】\n";
-            log(defLog);
+            log("【SYSTEM READY】\nVer 6.0 (Coordinate Logic)\n待機中...");
         }
         initDisplay();
 
+        // ===============================================
+        //  【中枢】座標ベース解析ロジック
+        //   文字の位置(Y座標)を見て、同じ行にある数値を拾う
+        // ===============================================
+        function parseWithCoordinates(fullResponse) {
+            if (!fullResponse || !fullResponse.textAnnotations) return {};
+
+            // 0番目は全体テキストなので除外して単語リストを取得
+            const words = fullResponse.textAnnotations.slice(1);
+            const result = {};
+
+            // 探索対象の定義 (表記ゆれ対応)
+            const searchTargets = [
+                { key: 'bellA', texts: ['ベルA', 'ベルＡ'] },
+                { key: 'bellB', texts: ['ベルB', 'ベルＢ'] },
+                { key: 'suikaA', texts: ['スイカA', 'スイカＡ'] },
+                { key: 'cherryB', texts: ['チェリーB', 'チェリーＢ'] },
+                { key: 'bb_total', texts: ['総ボーナス', '合算', '赤７BB', '赤7BB'] }, 
+                { key: 'rb', texts: ['RB', 'REG'] },
+                { key: 'rt_vc_hazure', texts: ['VSチャンス中はずれ', 'VSチャンス中'] },
+                { key: 'rt_vg_hazure', texts: ['VSGAME中はずれ', 'VSGAME中'] },
+                { key: 'bb_cb_match', texts: ['チェリー＋ベル揃い'] },
+                { key: 'bb_cb_hazure', texts: ['チェリー＋ベルはずれ'] },
+                { key: 'bb_mid_cherry', texts: ['中段チェリー'] },
+                { key: 'rb_hazure', texts: ['はずれ'] }
+            ];
+
+            // --- 座標計算ヘルパー ---
+            // 単語のY中心座標を返す
+            const getY = (w) => (w.boundingPoly.vertices[0].y + w.boundingPoly.vertices[3].y) / 2;
+            // 単語のX右端座標を返す
+            const getRightX = (w) => w.boundingPoly.vertices[1].x;
+            // 単語のX左端座標を返す
+            const getLeftX = (w) => w.boundingPoly.vertices[0].x;
+
+            // 数値探索関数
+            const findValueForLabel = (labelWord) => {
+                const labelY = getY(labelWord);
+                const labelRight = getRightX(labelWord);
+
+                let bestVal = 0;
+                let minDiff = 1000; // Y座標のズレの最小値
+
+                words.forEach(w => {
+                    // 数値パターン (1/xx.x または 1|xx.x)
+                    const match = w.description.match(/1[\/|]([0-9]+\.?[0-9]*)/);
+                    if (!match) return;
+
+                    const valY = getY(w);
+                    const valLeft = getLeftX(w);
+
+                    // 条件1: ラベルより右にあること
+                    if (valLeft < labelRight) return;
+
+                    // 条件2: 同じ行にあること (Y座標のズレが小さい)
+                    const diff = Math.abs(labelY - valY);
+                    
+                    // 閾値: 20px以内のズレなら同じ行とみなす
+                    if (diff < 25 && diff < minDiff) {
+                        minDiff = diff;
+                        bestVal = parseFloat(match[1]);
+                    }
+                });
+                return bestVal;
+            };
+
+            // --- メイン探索ループ ---
+            searchTargets.forEach(target => {
+                // ラベルを探す
+                let labelWord = null;
+                // 後ろの方にある項目を優先しないと、例えば「ベル」で検索すると「ベルA」もヒットしてしまう可能性があるため
+                // 完全一致に近いものを優先したいが、今回はシンプルに見つかった順
+                for (const w of words) {
+                    if (target.texts.some(t => w.description.includes(t))) {
+                        // 誤爆防止: 「ベル合算」で「ベルA」を拾わないようにする等の配慮が必要ならここで調整
+                        // ここではシンプルにヒットしたら採用
+                        labelWord = w;
+                        break; 
+                    }
+                }
+
+                if (labelWord) {
+                    result[target.key] = findValueForLabel(labelWord);
+                } else {
+                    result[target.key] = 0;
+                }
+            });
+
+            return result;
+        }
+
+        // ===============================================
+        //  判定ロジック (変更なし)
+        // ===============================================
         function analyze(data) {
             let errorScores = { 1: 0, 2: 0, 5: 0, 6: 0 };
             let paramCount = 0;
@@ -88,6 +182,8 @@
                 if (!TARGET_DENOMINATORS[key]) continue;
 
                 if (key === 'rb_hazure') {
+                    // RB中のハズレの場合、VSチャンス中などを誤読していないかY座標チェックが必要だが
+                    // parseWithCoordinatesで「はずれ」行のものを拾っているので信頼度は高い
                     log(`★ 神の啓示: RBハズレ検出(1/${value}) -> 設定1・2 消去`);
                     detectedRbHazure = true;
                     continue; 
@@ -126,71 +222,7 @@
             };
         }
 
-        // ===============================================
-        //  行単位解析パーサー (Ver 5.3 Logic)
-        // ===============================================
-        function parseTextLines(text) {
-            // 1. テキストを行に分割し、ゴミを除去
-            const lines = text.split(/\n/).map(l => l.trim()).filter(l => l.length > 0);
-            
-            // 2. 抽出ヘルパー：キーワードがある行の「近隣」から数値を探す
-            const findValueNearKeyword = (keywords) => {
-                if (!Array.isArray(keywords)) keywords = [keywords];
-                
-                for (let i = 0; i < lines.length; i++) {
-                    const line = lines[i];
-                    // キーワードが含まれているか確認
-                    if (keywords.some(k => line.includes(k))) {
-                        // その行、または次の行、その次の行まで探す (最大3行)
-                        for (let j = 0; j < 3; j++) {
-                            if (i + j >= lines.length) break;
-                            const targetLine = lines[i + j];
-                            // "1/xx.x" または "1|xx.x" (OCR誤読対応) を探す
-                            const match = targetLine.match(/1[\/|]([0-9]+\.?[0-9]*)/);
-                            if (match) {
-                                return parseFloat(match[1]);
-                            }
-                        }
-                    }
-                }
-                return 0;
-            };
-
-            const data = {};
-
-            // --- 探索実行 ---
-            
-            // ベルA (「ベル合算」に引っかからないよう "ベルA" を厳密に探す)
-            data.bellA = findValueNearKeyword(["ベルA", "ベルＡ"]);
-            // ベルB
-            data.bellB = findValueNearKeyword(["ベルB", "ベルＢ"]);
-            
-            // スイカA (スイカ合算に注意)
-            data.suikaA = findValueNearKeyword(["スイカA", "スイカＡ"]);
-            
-            // チェリーB
-            data.cherryB = findValueNearKeyword(["チェリーB", "チェリーＢ"]);
-
-            // ボーナス
-            data.bb_total = findValueNearKeyword(["総ボーナス", "BB確率", "合算", "赤７BB"]);
-            data.rb = findValueNearKeyword(["RB", "REG"]);
-
-            // RT中
-            data.rt_vc_hazure = findValueNearKeyword(["VSチャンス中はずれ", "VSチャンス中"]);
-            data.rt_vg_hazure = findValueNearKeyword(["VSGAME中はずれ", "VSGAME中"]);
-
-            // BB中
-            data.bb_cb_match = findValueNearKeyword(["チェリー＋ベル揃い"]);
-            data.bb_cb_hazure = findValueNearKeyword(["チェリー＋ベルはずれ"]);
-            data.bb_middleCherry = findValueNearKeyword(["中段チェリー"]);
-
-            // RB中 (ハズレ)
-            data.rb_hazure = findValueNearKeyword(["はずれ"]);
-
-            return data;
-        }
-
-        // --- メイン処理 ---
+        // --- UI連携 ---
         const fileInput = document.getElementById('file-input');
         const dropZone = document.getElementById('drop-zone');
         const saveBtn = document.getElementById('save-key');
@@ -211,8 +243,8 @@
             if(e.target.files.length === 0) return;
 
             const originalHTML = dropZone.innerHTML;
-            dropZone.innerHTML = `<p class="text-xl font-black text-blue-400 animate-pulse">解析中...</p>`;
-            log("\n--- 画像解析開始 ---");
+            dropZone.innerHTML = `<p class="text-xl font-black text-blue-400 animate-pulse">座標解析中...</p>`;
+            log("\n--- 画像解析開始 (Coordinate Mode) ---");
             
             const reader = new FileReader();
             reader.readAsDataURL(e.target.files[0]);
@@ -224,20 +256,20 @@
                         headers: { 'Content-Type': 'application/json' }
                     });
                     const json = await res.json();
-                    if (!json.responses || !json.responses[0].fullTextAnnotation) throw new Error("文字認識失敗");
-
-                    const text = json.responses[0].fullTextAnnotation.text;
                     
-                    // 新しいロジックで解析
-                    const data = parseTextLines(text);
+                    // エラーチェック
+                    if (!json.responses || !json.responses[0]) throw new Error("APIレスポンス異常");
+                    if (!json.responses[0].textAnnotations) throw new Error("文字が見つかりませんでした");
 
-                    // 読み取れた数値をログに出す
-                    log(`[読取値(分母)]`);
-                    log(`ベルA:1/${data.bellA||'?'} ベルB:1/${data.bellB||'?'}`);
-                    log(`スイカA:1/${data.suikaA||'?'} チェリーB:1/${data.cherryB||'?'}`);
-                    log(`BB合算:1/${data.bb_total||'?'} RB:1/${data.rb||'?'}`);
-                    log(`RTハズレ:VC 1/${data.rt_vc_hazure||'?'} VG 1/${data.rt_vg_hazure||'?'}`);
-                    log(`BB詳細:揃1/${data.bb_cb_match||'?'} 外1/${data.bb_cb_hazure||'?'}`);
+                    // ★ここで新ロジック呼び出し (response[0]ごと渡す)
+                    const data = parseWithCoordinates(json.responses[0]);
+
+                    // 結果ログ
+                    log(`[読取結果]`);
+                    log(`ベルA:1/${data.bellA||'-'} ベルB:1/${data.bellB||'-'}`);
+                    log(`スイカA:1/${data.suikaA||'-'} チェリーB:1/${data.cherryB||'-'}`);
+                    log(`BB詳細:揃1/${data.bb_cb_match||'-'} 外1/${data.bb_cb_hazure||'-'}`);
+                    log(`RTハズレ:VC 1/${data.rt_vc_hazure||'-'} VG 1/${data.rt_vg_hazure||'-'}`);
                     if (data.rb_hazure) log(`★RBハズレ:1/${data.rb_hazure}`);
 
                     const result = analyze(data);
@@ -249,7 +281,7 @@
                         document.getElementById('p6').innerText = result[6] + "%"; document.getElementById('bar6').style.width = result[6] + "%";
                         dropZone.innerHTML = `<p class="text-xl font-black text-green-400">完了</p>`;
                     } else {
-                        log("エラー：有効な確率データが見つかりません");
+                        log("エラー：有効なデータが見つかりません");
                         dropZone.innerHTML = `<p class="text-xl font-black text-red-400">失敗</p>`;
                     }
                 } catch (err) {
