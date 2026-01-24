@@ -11,7 +11,7 @@
         .app-container { height: 100%; display: flex; flex-direction: column; padding: 1.5rem; box-sizing: border-box; }
         img[src="VS.png"] { min-height: 50px; background-color: transparent; }
         
-        /* 緑色のデバッグログ (VER 5.2仕様) */
+        /* 緑色のデバッグログ */
         #debug-area { 
             font-size: 10px; font-family: monospace; color: #86efac; 
             background: rgba(0, 0, 0, 0.9); border: 1px solid #4ade80; 
@@ -25,12 +25,12 @@
 
     <header class="text-center pt-2 pb-2 flex-none">
         <img src="VS.png" alt="VERSUS REVISE" class="mx-auto w-3/5 max-w-sm drop-shadow-[0_0_15px_rgba(59,130,246,0.6)]">
-        <p class="text-red-600 font-bold text-[10px] mt-2 tracking-[0.3em] opacity-90">みおちゃん専用 VER 9.1</p>
+        <p class="text-red-600 font-bold text-[10px] mt-2 tracking-[0.3em] opacity-90">みおちゃん専用 VER 10.0</p>
     </header>
 
     <div id="drop-zone" class="flex-none border-4 border-blue-500/40 rounded-[2rem] py-6 text-center bg-blue-900/20 mb-2 active:scale-95 active:bg-blue-900/40 transition-all shadow-lg cursor-pointer">
         <p class="text-lg font-black text-white tracking-widest leading-none">ユニメモ画像を解析</p>
-        <p class="text-[10px] text-gray-400 mt-2">※空間ごっそり検索ロジック搭載</p>
+        <p class="text-[10px] text-gray-400 mt-2">※Y軸クラスタリング方式</p>
         <input type="file" id="file-input" class="hidden" accept="image/*">
     </div>
 
@@ -54,7 +54,7 @@
 
     <script>
         // ===============================================
-        //  設定差パラメータ (分母)
+        //  設定定義 (ターゲット分母)
         // ===============================================
         const TARGETS = {
             bellA:   { 1: 10.9, 2: 10.7, 5: 10.5, 6: 10.2 },
@@ -74,101 +74,132 @@
         function log(msg) { logArea.innerText = msg + "\n" + logArea.innerText; }
 
         function initDisplay() {
-            log("【SYSTEM READY】\nVer 9.1 (Logic: Spatial Scrape)\n待機中...");
+            log("【SYSTEM READY】\nVer 10.0 (Y-Axis Clustering)\n待機中...");
         }
         initDisplay();
 
         // ===============================================
-        //  【最終兵器】空間ごっそり検索 (Spatial Scraper)
-        //   ※項目名の右側にある文字を全部吸い込んで連結する
+        //  【新機軸】Y軸クラスタリングエンジン
+        //  バラバラの文字を「物理的な行」に強制整列させる
         // ===============================================
-        function parseSpatial(annotations) {
-            // 1. 全単語をマップ化
+        function parseByClustering(annotations) {
+            // 1. 全文字データの取得と整形
             const words = annotations.slice(1).map(w => ({
                 text: w.description,
                 x: w.boundingPoly.vertices[0].x,
-                y: (w.boundingPoly.vertices[0].y + w.boundingPoly.vertices[3].y) / 2, // 中心Y
-                right: w.boundingPoly.vertices[1].x,
+                // 中心Y座標を計算
+                y: (w.boundingPoly.vertices[0].y + w.boundingPoly.vertices[3].y) / 2,
+                // 文字の高さ
                 h: (w.boundingPoly.vertices[3].y - w.boundingPoly.vertices[0].y)
             }));
 
-            const result = {};
+            // 2. Y座標でソート
+            words.sort((a, b) => a.y - b.y);
+
+            // 3. クラスタリング実行（行の生成）
+            const rows = [];
+            if (words.length > 0) {
+                let currentRow = {
+                    y: words[0].y, // 行の代表Y座標
+                    items: [words[0]]
+                };
+
+                for (let i = 1; i < words.length; i++) {
+                    const w = words[i];
+                    // 閾値: 現在の行の代表Y座標と、文字のY座標の差が「15px」以内なら同じ行とする
+                    if (Math.abs(w.y - currentRow.y) < 15) {
+                        currentRow.items.push(w);
+                    } else {
+                        // 新しい行へ
+                        rows.push(currentRow);
+                        currentRow = { y: w.y, items: [w] };
+                    }
+                }
+                rows.push(currentRow);
+            }
+
+            // 4. 行内データの整形
+            // 各行の中で、X座標順（左から右）に並べ替え、文字列として結合する
+            const structuredData = rows.map(row => {
+                row.items.sort((a, b) => a.x - b.x);
+                // 単語をスペースで繋いで1行の文字列にする
+                return row.items.map(item => item.text).join(' ');
+            });
+
+            // デバッグ: 認識した行をログに出す（確認用）
+            // log("--- 行構造解析 ---");
+            // structuredData.forEach(l => log(l));
+
+            return structuredData;
+        }
+
+
+        // ===============================================
+        //  データ抽出 & マッチング
+        // ===============================================
+        function extractData(rows) {
+            const data = {};
             
+            // 検索定義
             const mapping = [
                 { key: 'bellA',    keywords: ['ベルA', 'ベルＡ'] },
                 { key: 'bellB',    keywords: ['ベルB', 'ベルＢ'] },
                 { key: 'suikaA',   keywords: ['スイカA', 'スイカＡ'] },
                 { key: 'cherryB',  keywords: ['チェリーB', 'チェリーＢ'] },
-                { key: 'bb_total', keywords: ['総ボーナス', '合算', '赤７BB', '赤7BB'] },
+                // BB合算は複数の表記ゆれに対応
+                { key: 'bb_total', keywords: ['総ボーナス', '合算', '赤７BB', '赤7BB', 'BB確率'] },
                 { key: 'rb',       keywords: ['RB', 'REG'] },
-                { key: 'rt_vc',    keywords: ['VSチャンス中はずれ', 'VSチャンス中'] },
-                { key: 'rt_vg',    keywords: ['VSGAME中はずれ', 'VSGAME中'] },
-                { key: 'bb_match', keywords: ['チェリー＋ベル揃い'] },
-                { key: 'bb_miss',  keywords: ['チェリー＋ベルはずれ'] },
+                { key: 'rt_vc',    keywords: ['VSチャンス'] }, // 短縮形でもヒットするように
+                { key: 'rt_vg',    keywords: ['VSGAME'] },
+                { key: 'bb_match', keywords: ['チェリー＋ベル揃い', 'チェリー+ベル揃い'] },
+                { key: 'bb_miss',  keywords: ['チェリー＋ベルはずれ', 'チェリー+ベルはずれ'] },
                 { key: 'rb_miss',  keywords: ['はずれ'] }
             ];
 
+            // 数値抽出用正規表現
+            // 1 / 10.8 のようなスペース入りにも対応
+            // 行の「最後の方」にある確率を優先的に拾うための工夫
+            const regex = /1\s*[\/|]\s*([0-9]+\.?[0-9]*)/g; 
+
             mapping.forEach(target => {
-                // 1. キーワード(ラベル)を探す
-                let labelWord = null;
-                
-                // 完全一致に近いものを優先
-                for (const k of target.keywords) {
-                    const found = words.find(w => w.text.includes(k));
-                    if (found) {
-                        labelWord = found;
-                        break;
+                let bestVal = 0;
+
+                // RBハズレは「一番下」の行から探す
+                if (target.key === 'rb_miss') {
+                    for (let i = rows.length - 1; i >= 0; i--) {
+                        const rowText = rows[i];
+                        if (rowText.includes('はずれ')) {
+                            const matches = [...rowText.matchAll(regex)];
+                            if (matches.length > 0) {
+                                // 最後のマッチを採用
+                                bestVal = parseFloat(matches[matches.length - 1][1]);
+                                break;
+                            }
+                        }
+                    }
+                } else {
+                    // 通常探索
+                    for (const rowText of rows) {
+                        // キーワードが含まれる行を探す
+                        if (target.keywords.some(k => rowText.includes(k))) {
+                            // その行にある全ての「1/xx」を探す
+                            const matches = [...rowText.matchAll(regex)];
+                            if (matches.length > 0) {
+                                // 通常、確率は行の一番右にあるので、最後のマッチを採用する
+                                bestVal = parseFloat(matches[matches.length - 1][1]);
+                                break; // 最初に見つかった行を採用
+                            }
+                        }
                     }
                 }
-
-                // RBハズレの場合、一番下にある「はずれ」を探す
-                if (target.key === 'rb_miss') {
-                    let maxY = -1;
-                    words.forEach(w => {
-                        if (w.text.includes('はずれ') && w.y > maxY) {
-                            maxY = w.y;
-                            labelWord = w;
-                        }
-                    });
-                }
-
-                if (!labelWord) {
-                    result[target.key] = 0;
-                    return;
-                }
-
-                // 2. ラベルの右側にある文字を全部吸い込む
-                // 範囲: Y座標がラベルの上下50px以内、X座標がラベルより右
-                const nearbyWords = words.filter(w => {
-                    const isRight = w.x > labelWord.right;
-                    const isVerticalNear = Math.abs(w.y - labelWord.y) < 50; 
-                    return isRight && isVerticalNear;
-                });
-
-                // X座標順に並べる
-                nearbyWords.sort((a, b) => a.x - b.x);
-
-                // 文字列を結合 (スペースなしで)
-                const joinedText = nearbyWords.map(w => w.text).join('');
-
-                // ログに吸い込んだ文字列を表示（デバッグ用）
-                // log(`[${target.key}] 吸込: "${joinedText}"`);
-
-                // 3. 結合した文字列から正規表現で数値を抜く
-                // "1/10.8" や "1|10.8" を探す
-                const match = joinedText.match(/1[\/|]([0-9]+\.?[0-9]*)/);
-                if (match) {
-                    result[target.key] = parseFloat(match[1]);
-                } else {
-                    result[target.key] = 0;
-                }
+                data[target.key] = bestVal;
             });
 
-            return result;
+            return data;
         }
 
         // ===============================================
-        //  判定計算 (VER 5系互換)
+        //  判定計算 (変更なし)
         // ===============================================
         function calculate(data) {
             let scores = { 1: 0, 2: 0, 5: 0, 6: 0 };
@@ -189,7 +220,6 @@
                 [1, 2, 5, 6].forEach(s => {
                     const t = TARGETS[key][s];
                     if (t) {
-                        // 誤差率を加算
                         scores[s] += Math.abs(val - t) / t;
                     }
                 });
@@ -218,7 +248,7 @@
             };
         }
 
-        // --- メイン処理 (UI連携) ---
+        // --- メイン処理 ---
         const fileInput = document.getElementById('file-input');
         const dropZone = document.getElementById('drop-zone');
         const saveBtn = document.getElementById('save-key');
@@ -240,11 +270,10 @@
 
             const originalHTML = dropZone.innerHTML;
             dropZone.innerHTML = `<p class="text-xl font-black text-blue-400 animate-pulse">解析中...</p>`;
-            log("\n--- 解析開始 (Ver 9.1) ---");
+            log("\n--- 解析開始 (Ver 10.0) ---");
             
             const reader = new FileReader();
             reader.readAsDataURL(e.target.files[0]);
-            
             reader.onload = async () => {
                 try {
                     const res = await fetch(`https://vision.googleapis.com/v1/images:annotate?key=${key}`, {
@@ -253,15 +282,22 @@
                         headers: { 'Content-Type': 'application/json' }
                     });
                     const json = await res.json();
+                    
                     if (!json.responses || !json.responses[0].textAnnotations) throw new Error("文字認識失敗");
 
-                    const data = parseSpatial(json.responses[0].textAnnotations);
+                    // ★Ver 10.0 クラスタリングロジック実行
+                    const rows = parseByClustering(json.responses[0].textAnnotations);
                     
+                    // データ抽出
+                    const data = extractData(rows);
+
                     log(`[読取結果(分母)]`);
-                    log(`ベルA:1/${data.bellA} ベルB:1/${data.bellB}`);
-                    log(`スイカA:1/${data.suikaA} チェリーB:1/${data.cherryB}`);
-                    log(`BB詳細:揃1/${data.bb_match} 外1/${data.bb_miss}`);
-                    
+                    log(`ベルA:1/${data.bellA||'-'} ベルB:1/${data.bellB||'-'}`);
+                    log(`スイカA:1/${data.suikaA||'-'} チェリーB:1/${data.cherryB||'-'}`);
+                    log(`BB詳細:揃1/${data.bb_match||'-'} 外1/${data.bb_miss||'-'}`);
+                    log(`RTハズレ:VC 1/${data.rt_vc||'-'} VG 1/${data.rt_vg||'-'}`);
+                    if(data.rb_miss) log(`★RBハズレ:1/${data.rb_miss}`);
+
                     const result = calculate(data);
 
                     if (result) {
@@ -270,12 +306,10 @@
                         document.getElementById('p5').innerText = result[5] + "%"; document.getElementById('bar5').style.width = result[5] + "%";
                         document.getElementById('p6').innerText = result[6] + "%"; document.getElementById('bar6').style.width = result[6] + "%";
                         dropZone.innerHTML = `<p class="text-xl font-black text-green-400">完了</p>`;
-                        log(">> 解析成功");
                     } else {
-                        log("エラー: 数値が見つかりません");
+                        log("エラー：有効なデータが見つかりません");
                         dropZone.innerHTML = `<p class="text-xl font-black text-red-400">失敗</p>`;
                     }
-
                 } catch (err) {
                     log("Error: " + err.message);
                     dropZone.innerHTML = originalHTML;
