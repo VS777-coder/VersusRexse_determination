@@ -6,50 +6,51 @@
     <title>VERSUS REVISE FINAL</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        body { background-color: #0f172a; color: #f8fafc; font-family: monospace; padding: 20px; }
-        .bar-bg { background-color: #1e293b; height: 12px; border-radius: 99px; overflow: hidden; margin-bottom: 12px; }
-        .bar-fill { height: 100%; transition: width 0.8s ease-out; }
+        html, body { height: 100%; overflow: hidden; position: fixed; width: 100%; background-color: #0f172a; color: #f8fafc; font-family: 'Helvetica Neue', Arial, sans-serif; -webkit-tap-highlight-color: transparent; }
+        .setting-bar { transition: width 0.8s cubic-bezier(0.16, 1, 0.3, 1); width: 0%; }
+        .app-container { height: 100%; display: flex; flex-direction: column; padding: 1.5rem; box-sizing: border-box; }
+        img[src="VS.png"] { min-height: 50px; background-color: transparent; }
+        
+        /* 緑色のデバッグログ (VER 5.2仕様) */
         #debug-area { 
-            font-size: 10px; color: #4ade80; background: #000; padding: 10px; 
-            border: 1px solid #22c55e; height: 300px; overflow-y: scroll; 
-            white-space: pre-wrap; margin-top: 20px; border-radius: 6px;
+            font-size: 10px; font-family: monospace; color: #86efac; 
+            background: rgba(0, 0, 0, 0.9); border: 1px solid #4ade80; 
+            padding: 10px; margin-top: 10px; flex-grow: 1; 
+            overflow-y: scroll; white-space: pre-wrap; border-radius: 8px; 
+            display: block; 
         }
     </style>
 </head>
-<body>
-    <div class="max-w-md mx-auto">
-        <header class="text-center mb-4">
-            <h1 class="text-2xl font-black text-blue-500 italic">VERSUS REVISE</h1>
-            <p class="text-[10px] text-red-500 font-bold tracking-[0.3em]">VER 8.0 VISUAL RECONSTRUCTION</p>
-        </header>
+<body class="app-container">
 
-        <div id="drop-zone" class="border-2 border-dashed border-blue-500/50 rounded-xl p-8 text-center bg-blue-900/10 cursor-pointer active:bg-blue-900/30 transition mb-4">
-            <p class="font-bold text-blue-300">画像を解析</p>
-            <p class="text-xs text-gray-400 mt-1">※文字の並び順を強制補正します</p>
-            <input type="file" id="file-input" class="hidden" accept="image/*">
-        </div>
+    <header class="text-center pt-2 pb-2 flex-none">
+        <img src="VS.png" alt="VERSUS REVISE" class="mx-auto w-3/5 max-w-sm drop-shadow-[0_0_15px_rgba(59,130,246,0.6)]">
+        <p class="text-red-600 font-bold text-[10px] mt-2 tracking-[0.3em] opacity-90">みおちゃん専用 VER 9.1</p>
+    </header>
 
-        <div class="bg-slate-900/90 p-4 rounded-xl border border-white/10 shadow-xl mb-4">
-            <div class="mb-1 flex justify-between text-xs font-bold"><span class="text-gray-400">設定1</span><span id="p1">0.0%</span></div>
-            <div class="bar-bg"><div id="b1" class="bar-fill bg-gray-500" style="width:0%"></div></div>
-            
-            <div class="mb-1 flex justify-between text-xs font-bold"><span class="text-blue-400">設定2</span><span id="p2">0.0%</span></div>
-            <div class="bar-bg"><div id="b2" class="bar-fill bg-blue-500" style="width:0%"></div></div>
-            
-            <div class="mb-1 flex justify-between text-xs font-bold"><span class="text-orange-400">設定5</span><span id="p5">0.0%</span></div>
-            <div class="bar-bg"><div id="b5" class="bar-fill bg-orange-500" style="width:0%"></div></div>
-            
-            <div class="mb-1 flex justify-between text-xs font-bold"><span class="text-red-500">設定6</span><span id="p6">0.0%</span></div>
-            <div class="bar-bg"><div id="b6" class="bar-fill bg-red-600" style="width:0%"></div></div>
-        </div>
-
-        <div id="debug-area">待機中...</div>
-
-        <div class="mt-2 flex gap-2">
-            <input type="password" id="api-key" placeholder="API Key" class="flex-grow bg-slate-800 border border-slate-600 rounded px-3 text-xs h-10">
-            <button id="save-key" class="bg-blue-600 text-xs font-bold px-4 rounded h-10">SET</button>
-        </div>
+    <div id="drop-zone" class="flex-none border-4 border-blue-500/40 rounded-[2rem] py-6 text-center bg-blue-900/20 mb-2 active:scale-95 active:bg-blue-900/40 transition-all shadow-lg cursor-pointer">
+        <p class="text-lg font-black text-white tracking-widest leading-none">ユニメモ画像を解析</p>
+        <p class="text-[10px] text-gray-400 mt-2">※空間ごっそり検索ロジック搭載</p>
+        <input type="file" id="file-input" class="hidden" accept="image/*">
     </div>
+
+    <main class="flex-grow bg-slate-900/95 rounded-[2rem] p-4 border border-white/10 shadow-2xl flex flex-col mb-2 overflow-hidden relative z-10">
+        <div class="space-y-2 flex-none mb-2">
+            <div><div class="flex justify-between items-end mb-1 px-2"><span class="text-xs font-black text-gray-500">設定１</span><span id="p1" class="font-mono text-xs text-gray-400">0.0%</span></div><div class="w-full bg-slate-800 h-2 rounded-full overflow-hidden"><div id="bar1" class="setting-bar h-full bg-gray-600"></div></div></div>
+            <div><div class="flex justify-between items-end mb-1 px-2"><span class="text-xs font-black text-blue-500">設定２</span><span id="p2" class="font-mono text-xs text-blue-400">0.0%</span></div><div class="w-full bg-slate-800 h-2 rounded-full overflow-hidden"><div id="bar2" class="setting-bar h-full bg-blue-500"></div></div></div>
+            <div><div class="flex justify-between items-end mb-1 px-2"><span class="text-xs font-black text-orange-500">設定５</span><span id="p5" class="font-mono text-xs text-orange-400">0.0%</span></div><div class="w-full bg-slate-800 h-2 rounded-full overflow-hidden"><div id="bar5" class="setting-bar h-full bg-orange-500"></div></div></div>
+            <div><div class="flex justify-between items-end mb-1 px-2"><span class="text-xs font-black text-red-600">設定６</span><span id="p6" class="font-mono text-xs text-red-500">0.0%</span></div><div class="w-full bg-slate-800 h-2 rounded-full overflow-hidden"><div id="bar6" class="setting-bar h-full bg-red-600"></div></div></div>
+        </div>
+        
+        <div id="debug-area"></div>
+    </main>
+
+    <footer class="flex-none space-y-2">
+        <div class="flex gap-2 h-8">
+            <input type="password" id="api-key" placeholder="API Key" class="flex-grow bg-slate-800 border border-white/20 rounded-lg px-4 text-xs text-white focus:outline-none focus:border-blue-500">
+            <button id="save-key" class="bg-blue-600 px-4 rounded-lg text-[10px] font-black tracking-widest active:bg-blue-700">SET</button>
+        </div>
+    </footer>
 
     <script>
         // ===============================================
@@ -62,8 +63,8 @@
             cherryB: { 1: 56.2, 2: 57.7, 5: 53.1, 6: 54.4 },
             bb_total:{ 1: 292.6, 2: 284.9, 5: 275.4, 6: 264.3 },
             rb:      { 1: 374.5, 2: 341.3, 5: 319.7, 6: 292.6 },
-            rt_vc:   { 1: 5.0, 2: 4.9, 5: 4.6, 6: 4.5 }, // VS Chance
-            rt_vg:   { 1: 10.1, 2: 9.4, 5: 8.7, 6: 8.1 }, // VS Game
+            rt_vc:   { 1: 5.0, 2: 4.9, 5: 4.6, 6: 4.5 },
+            rt_vg:   { 1: 10.1, 2: 9.4, 5: 8.7, 6: 8.1 },
             bb_match:{ 1: 11.1, 2: 8.9, 5: 11.1, 6: 8.9 },
             bb_miss: { 1: 256.0, 2: 128.0, 5: 256.0, 6: 128.0 },
             rb_miss: { 1: null, 2: null, 5: 376.6, 6: 376.6 }
@@ -72,109 +73,102 @@
         const logArea = document.getElementById('debug-area');
         function log(msg) { logArea.innerText = msg + "\n" + logArea.innerText; }
 
+        function initDisplay() {
+            log("【SYSTEM READY】\nVer 9.1 (Logic: Spatial Scrape)\n待機中...");
+        }
+        initDisplay();
+
         // ===============================================
-        //  【核】視覚的行復元ロジック (Visual Line Reconstructor)
+        //  【最終兵器】空間ごっそり検索 (Spatial Scraper)
+        //   ※項目名の右側にある文字を全部吸い込んで連結する
         // ===============================================
-        function parseLines(annotations) {
-            // 1. 全単語を取得(0番目の全文は捨てる)
+        function parseSpatial(annotations) {
+            // 1. 全単語をマップ化
             const words = annotations.slice(1).map(w => ({
                 text: w.description,
                 x: w.boundingPoly.vertices[0].x,
-                y: (w.boundingPoly.vertices[0].y + w.boundingPoly.vertices[3].y) / 2, // 中心のY座標
-                h: (w.boundingPoly.vertices[3].y - w.boundingPoly.vertices[0].y) // 高さ
+                y: (w.boundingPoly.vertices[0].y + w.boundingPoly.vertices[3].y) / 2, // 中心Y
+                right: w.boundingPoly.vertices[1].x,
+                h: (w.boundingPoly.vertices[3].y - w.boundingPoly.vertices[0].y)
             }));
 
-            // 2. Y座標でソート
-            words.sort((a, b) => a.y - b.y);
-
-            // 3. 行ごとにグルーピング
-            const lines = [];
-            if (words.length > 0) {
-                let currentLine = [words[0]];
-                for (let i = 1; i < words.length; i++) {
-                    const w = words[i];
-                    const prev = currentLine[currentLine.length - 1];
-                    
-                    // 前の文字とのY座標の差が、文字の高さの半分以下なら「同じ行」とみなす
-                    if (Math.abs(w.y - prev.y) < (prev.h * 0.6)) {
-                        currentLine.push(w);
-                    } else {
-                        lines.push(currentLine);
-                        currentLine = [w];
-                    }
-                }
-                lines.push(currentLine);
-            }
-
-            // 4. 各行をX座標順にソートして文字列化
-            const textLines = lines.map(line => {
-                line.sort((a, b) => a.x - b.x);
-                // 単語の間にスペースを入れて連結する
-                return line.map(w => w.text).join(' ');
-            });
-
-            return textLines;
-        }
-
-        // ===============================================
-        //  解析 & マッチング
-        // ===============================================
-        function extractData(lines) {
-            log("--- [行認識ログ] ---");
-            // デバッグ用に最初の数行を表示
-            lines.slice(0, 5).forEach(l => log("Line: " + l)); 
-            log("...など (全" + lines.length + "行)");
-
-            const data = {};
+            const result = {};
             
-            // 検索定義
             const mapping = [
                 { key: 'bellA',    keywords: ['ベルA', 'ベルＡ'] },
                 { key: 'bellB',    keywords: ['ベルB', 'ベルＢ'] },
                 { key: 'suikaA',   keywords: ['スイカA', 'スイカＡ'] },
                 { key: 'cherryB',  keywords: ['チェリーB', 'チェリーＢ'] },
-                { key: 'bb_total', keywords: ['総ボーナス', '合算', '赤７BB', '赤7BB', 'BB確率'] },
+                { key: 'bb_total', keywords: ['総ボーナス', '合算', '赤７BB', '赤7BB'] },
                 { key: 'rb',       keywords: ['RB', 'REG'] },
-                { key: 'rt_vc',    keywords: ['VSチャンス', 'VSチャンス中'] },
-                { key: 'rt_vg',    keywords: ['VSGAME', 'VSGAME中'] },
-                { key: 'bb_match', keywords: ['チェリー＋ベル揃い', 'チェリー+ベル揃い'] },
-                { key: 'bb_miss',  keywords: ['チェリー＋ベルはずれ', 'チェリー+ベルはずれ'] },
+                { key: 'rt_vc',    keywords: ['VSチャンス中はずれ', 'VSチャンス中'] },
+                { key: 'rt_vg',    keywords: ['VSGAME中はずれ', 'VSGAME中'] },
+                { key: 'bb_match', keywords: ['チェリー＋ベル揃い'] },
+                { key: 'bb_miss',  keywords: ['チェリー＋ベルはずれ'] },
                 { key: 'rb_miss',  keywords: ['はずれ'] }
             ];
 
-            // スペース対応の正規表現: "1" + (スペース可) + "/"or"|" + (スペース可) + "数字"
-            const regex = /1\s*[\/|]\s*([0-9]+\.?[0-9]*)/;
-
-            mapping.forEach(item => {
-                // 行を下から探すか上から探すか？ -> RBハズレ以外は上から
-                let foundVal = 0;
+            mapping.forEach(target => {
+                // 1. キーワード(ラベル)を探す
+                let labelWord = null;
                 
-                if (item.key === 'rb_miss') {
-                    // RBハズレは一番下にあるはず
-                    for (let i = lines.length - 1; i >= 0; i--) {
-                        if (lines[i].includes('はずれ')) {
-                            const m = lines[i].match(regex);
-                            if (m) { foundVal = parseFloat(m[1]); break; }
-                        }
-                    }
-                } else {
-                    // 通常項目
-                    for (const line of lines) {
-                        // キーワードが含まれているか
-                        if (item.keywords.some(k => line.includes(k))) {
-                            const m = line.match(regex);
-                            if (m) { foundVal = parseFloat(m[1]); break; }
-                        }
+                // 完全一致に近いものを優先
+                for (const k of target.keywords) {
+                    const found = words.find(w => w.text.includes(k));
+                    if (found) {
+                        labelWord = found;
+                        break;
                     }
                 }
-                data[item.key] = foundVal;
+
+                // RBハズレの場合、一番下にある「はずれ」を探す
+                if (target.key === 'rb_miss') {
+                    let maxY = -1;
+                    words.forEach(w => {
+                        if (w.text.includes('はずれ') && w.y > maxY) {
+                            maxY = w.y;
+                            labelWord = w;
+                        }
+                    });
+                }
+
+                if (!labelWord) {
+                    result[target.key] = 0;
+                    return;
+                }
+
+                // 2. ラベルの右側にある文字を全部吸い込む
+                // 範囲: Y座標がラベルの上下50px以内、X座標がラベルより右
+                const nearbyWords = words.filter(w => {
+                    const isRight = w.x > labelWord.right;
+                    const isVerticalNear = Math.abs(w.y - labelWord.y) < 50; 
+                    return isRight && isVerticalNear;
+                });
+
+                // X座標順に並べる
+                nearbyWords.sort((a, b) => a.x - b.x);
+
+                // 文字列を結合 (スペースなしで)
+                const joinedText = nearbyWords.map(w => w.text).join('');
+
+                // ログに吸い込んだ文字列を表示（デバッグ用）
+                // log(`[${target.key}] 吸込: "${joinedText}"`);
+
+                // 3. 結合した文字列から正規表現で数値を抜く
+                // "1/10.8" や "1|10.8" を探す
+                const match = joinedText.match(/1[\/|]([0-9]+\.?[0-9]*)/);
+                if (match) {
+                    result[target.key] = parseFloat(match[1]);
+                } else {
+                    result[target.key] = 0;
+                }
             });
 
-            return data;
+            return result;
         }
 
         // ===============================================
-        //  判定計算
+        //  判定計算 (VER 5系互換)
         // ===============================================
         function calculate(data) {
             let scores = { 1: 0, 2: 0, 5: 0, 6: 0 };
@@ -186,7 +180,7 @@
                 if (!TARGETS[key]) continue;
 
                 if (key === 'rb_miss') {
-                    log(`★神の啓示: RBハズレ(1/${val}) -> 設定1/2否定`);
+                    log(`★RBハズレ検出(1/${val}) -> 設定1/2否定`);
                     rbMissDetected = true;
                     continue;
                 }
@@ -195,7 +189,7 @@
                 [1, 2, 5, 6].forEach(s => {
                     const t = TARGETS[key][s];
                     if (t) {
-                        // 誤差率を加算 (小さいほど良い)
+                        // 誤差率を加算
                         scores[s] += Math.abs(val - t) / t;
                     }
                 });
@@ -224,28 +218,30 @@
             };
         }
 
-        // ===============================================
-        //  メイン処理
-        // ===============================================
+        // --- メイン処理 (UI連携) ---
         const fileInput = document.getElementById('file-input');
         const dropZone = document.getElementById('drop-zone');
-        
+        const saveBtn = document.getElementById('save-key');
+
         const savedKey = localStorage.getItem('v_key');
         if (savedKey) document.getElementById('api-key').value = savedKey;
 
-        document.getElementById('save-key').onclick = () => {
-            localStorage.setItem('v_key', document.getElementById('api-key').value);
-            alert("KEY保存");
+        saveBtn.onclick = () => {
+            const k = document.getElementById('api-key').value;
+            if(k) { localStorage.setItem('v_key', k); alert("Key保存完了"); }
         };
 
         dropZone.onclick = () => fileInput.click();
 
         fileInput.onchange = async (e) => {
             const key = localStorage.getItem('v_key');
-            if(!key) return alert("API KEYがありません");
+            if(!key) return alert("API KEYを設定してください");
             if(e.target.files.length === 0) return;
 
-            log("\n--- 解析開始 (Ver 8.0) ---");
+            const originalHTML = dropZone.innerHTML;
+            dropZone.innerHTML = `<p class="text-xl font-black text-blue-400 animate-pulse">解析中...</p>`;
+            log("\n--- 解析開始 (Ver 9.1) ---");
+            
             const reader = new FileReader();
             reader.readAsDataURL(e.target.files[0]);
             
@@ -259,36 +255,32 @@
                     const json = await res.json();
                     if (!json.responses || !json.responses[0].textAnnotations) throw new Error("文字認識失敗");
 
-                    // 1. 行を復元
-                    const lines = parseLines(json.responses[0].textAnnotations);
+                    const data = parseSpatial(json.responses[0].textAnnotations);
                     
-                    // 2. データ抽出
-                    const data = extractData(lines);
+                    log(`[読取結果(分母)]`);
+                    log(`ベルA:1/${data.bellA} ベルB:1/${data.bellB}`);
+                    log(`スイカA:1/${data.suikaA} チェリーB:1/${data.cherryB}`);
+                    log(`BB詳細:揃1/${data.bb_match} 外1/${data.bb_miss}`);
                     
-                    log("[抽出データ]");
-                    log(`ベルA: 1/${data.bellA} | ベルB: 1/${data.bellB}`);
-                    log(`スイカA: 1/${data.suikaA} | チェリーB: 1/${data.cherryB}`);
-                    log(`BB合算: 1/${data.bb_total} | RB: 1/${data.rb}`);
-                    log(`RTハズレ: VC 1/${data.rt_vc} | VG 1/${data.rt_vg}`);
-                    log(`BB詳細: 揃 1/${data.bb_match} | 外 1/${data.bb_miss}`);
-                    if(data.rb_miss) log(`RBハズレ: 1/${data.rb_miss}`);
-
-                    // 3. 判定
                     const result = calculate(data);
 
                     if (result) {
-                        document.getElementById('p1').innerText = result[1] + "%"; document.getElementById('b1').style.width = result[1] + "%";
-                        document.getElementById('p2').innerText = result[2] + "%"; document.getElementById('b2').style.width = result[2] + "%";
-                        document.getElementById('p5').innerText = result[5] + "%"; document.getElementById('b5').style.width = result[5] + "%";
-                        document.getElementById('p6').innerText = result[6] + "%"; document.getElementById('b6').style.width = result[6] + "%";
-                        log(">> 解析完了");
+                        document.getElementById('p1').innerText = result[1] + "%"; document.getElementById('bar1').style.width = result[1] + "%";
+                        document.getElementById('p2').innerText = result[2] + "%"; document.getElementById('bar2').style.width = result[2] + "%";
+                        document.getElementById('p5').innerText = result[5] + "%"; document.getElementById('bar5').style.width = result[5] + "%";
+                        document.getElementById('p6').innerText = result[6] + "%"; document.getElementById('bar6').style.width = result[6] + "%";
+                        dropZone.innerHTML = `<p class="text-xl font-black text-green-400">完了</p>`;
+                        log(">> 解析成功");
                     } else {
-                        log("エラー: 数値が読み取れませんでした。上記ログを確認してください。");
+                        log("エラー: 数値が見つかりません");
+                        dropZone.innerHTML = `<p class="text-xl font-black text-red-400">失敗</p>`;
                     }
 
                 } catch (err) {
-                    log("SYSTEM ERROR: " + err.message);
+                    log("Error: " + err.message);
+                    dropZone.innerHTML = originalHTML;
                 }
+                setTimeout(() => dropZone.innerHTML = originalHTML, 2000);
             };
         };
     </script>
