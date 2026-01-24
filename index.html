@@ -11,7 +11,6 @@
         .app-container { height: 100%; display: flex; flex-direction: column; padding: 1.5rem; box-sizing: border-box; }
         img[src="VS.png"] { min-height: 50px; background-color: transparent; }
         
-        /* 緑色のデバッグログ */
         #debug-area { 
             font-size: 10px; font-family: monospace; color: #86efac; 
             background: rgba(0, 0, 0, 0.9); border: 1px solid #4ade80; 
@@ -25,7 +24,7 @@
 
     <header class="text-center pt-2 pb-2 flex-none">
         <img src="VS.png" alt="VERSUS REVISE" class="mx-auto w-3/5 max-w-sm drop-shadow-[0_0_15px_rgba(59,130,246,0.6)]">
-        <p class="text-red-600 font-bold text-[10px] mt-2 tracking-[0.3em] opacity-90">みおちゃん専用 VER 5.2</p>
+        <p class="text-red-600 font-bold text-[10px] mt-2 tracking-[0.3em] opacity-90">みおちゃん専用 VER 5.4</p>
     </header>
 
     <div id="drop-zone" class="flex-none border-4 border-blue-500/40 rounded-[2rem] py-6 text-center bg-blue-900/20 mb-2 active:scale-95 active:bg-blue-900/40 transition-all shadow-lg cursor-pointer">
@@ -54,51 +53,31 @@
     <script>
         // =========================================================
         //  【定義】みおちゃん専用：確率分母定義表
-        //   ※画像内の「1/xx.x」の「xx.x」と比較して判定する
-        //   ※修正厳禁 (DO NOT MODIFY)
         // =========================================================
         const TARGET_DENOMINATORS = {
-            // ■ 通常時小役
             bellA:   { 1: 10.9,  2: 10.7,  5: 10.5,  6: 10.2 },
             bellB:   { 1: 20.9,  2: 21.2,  5: 20.3,  6: 20.6 },
             suikaA:  { 1: 74.5,  2: 70.6,  5: 72.5,  6: 68.8 },
             cherryB: { 1: 56.2,  2: 57.7,  5: 53.1,  6: 54.4 },
-
-            // ■ ボーナス確率 (合算)
             bb_total: { 1: 292.6, 2: 284.9, 5: 275.4, 6: 264.3 },
             rb:       { 1: 374.5, 2: 341.3, 5: 319.7, 6: 292.6 },
-
-            // ■ RT中ハズレ
             rt_vc_hazure: { 1: 5.0,   2: 4.9,   5: 4.6,   6: 4.5 },
             rt_vg_hazure: { 1: 10.1,  2: 9.4,   5: 8.7,   6: 8.1 },
-
-            // ■ BB中詳細
             bb_cb_match:   { 1: 11.1,    2: 8.9,     5: 11.1,    6: 8.9 },
             bb_cb_hazure:  { 1: 256.0,   2: 128.0,   5: 256.0,   6: 128.0 },
             bb_mid_cherry: { 1: 16384.0, 2: 16384.0, 5: 16384.0, 6: 897.8 },
-
-            // ■ RB中詳細 (神の啓示)
             rb_hazure:     { 1: null,    2: null,    5: 376.6,   6: 376.6 }
         };
 
-        // UI連携
         const logArea = document.getElementById('debug-area');
         function log(msg) { logArea.innerText = msg + "\n" + logArea.innerText; }
 
-        // 初期化時に定義を表示
         function initDisplay() {
-            let defLog = "【定義データ読込完了】\n";
-            for (const [key, val] of Object.entries(TARGET_DENOMINATORS)) {
-                defLog += `${key.padEnd(12)}: 1(${val[1]||'-'}) 2(${val[2]||'-'}) 5(${val[5]}) 6(${val[6]})\n`;
-            }
-            defLog += "----------------------------";
+            let defLog = "【SYSTEM READY】\n";
             log(defLog);
         }
-        // 実行
         initDisplay();
 
-
-        // 解析ロジック (距離判定)
         function analyze(data) {
             let errorScores = { 1: 0, 2: 0, 5: 0, 6: 0 };
             let paramCount = 0;
@@ -147,48 +126,66 @@
             };
         }
 
-        // テキストパーサー (1/xx.x を探す)
-        function parseText(text) {
-            const cleanText = text.replace(/,/g, '');
-            // エリア分割
-            const idxRT = cleanText.indexOf("RT詳細");
-            const idxBB = cleanText.indexOf("BB中詳細") !== -1 ? cleanText.indexOf("BB中詳細") : cleanText.indexOf("BIG中詳細");
-            const idxRB = cleanText.indexOf("RB中詳細") !== -1 ? cleanText.indexOf("RB中詳細") : cleanText.indexOf("REG中詳細");
-
-            const header = cleanText.substring(0, idxRT > -1 ? idxRT : cleanText.length);
-            const rt = (idxRT > -1) ? cleanText.substring(idxRT, idxBB > -1 ? idxBB : cleanText.length) : "";
-            const bb = (idxBB > -1) ? cleanText.substring(idxBB, idxRB > -1 ? idxRB : cleanText.length) : "";
-            const rb = (idxRB > -1) ? cleanText.substring(idxRB) : "";
-
-            const getDenom = (str, keyword) => {
-                // キーワード ... 1/ (数値)
-                const regex = new RegExp(keyword + "[\\s\\S]*?1\\s*[\\/|]\\s*(\\d+\\.?\\d*)");
-                const match = str.match(regex);
-                return match ? parseFloat(match[1]) : 0;
+        // ===============================================
+        //  行単位解析パーサー (Ver 5.3 Logic)
+        // ===============================================
+        function parseTextLines(text) {
+            // 1. テキストを行に分割し、ゴミを除去
+            const lines = text.split(/\n/).map(l => l.trim()).filter(l => l.length > 0);
+            
+            // 2. 抽出ヘルパー：キーワードがある行の「近隣」から数値を探す
+            const findValueNearKeyword = (keywords) => {
+                if (!Array.isArray(keywords)) keywords = [keywords];
+                
+                for (let i = 0; i < lines.length; i++) {
+                    const line = lines[i];
+                    // キーワードが含まれているか確認
+                    if (keywords.some(k => line.includes(k))) {
+                        // その行、または次の行、その次の行まで探す (最大3行)
+                        for (let j = 0; j < 3; j++) {
+                            if (i + j >= lines.length) break;
+                            const targetLine = lines[i + j];
+                            // "1/xx.x" または "1|xx.x" (OCR誤読対応) を探す
+                            const match = targetLine.match(/1[\/|]([0-9]+\.?[0-9]*)/);
+                            if (match) {
+                                return parseFloat(match[1]);
+                            }
+                        }
+                    }
+                }
+                return 0;
             };
 
             const data = {};
-            // 通常時
-            data.bellA = getDenom(header, "ベルA");
-            data.bellB = getDenom(header, "ベルB");
-            data.suikaA = getDenom(header, "スイカA");
-            data.cherryB = getDenom(header, "チェリーB");
+
+            // --- 探索実行 ---
             
+            // ベルA (「ベル合算」に引っかからないよう "ベルA" を厳密に探す)
+            data.bellA = findValueNearKeyword(["ベルA", "ベルＡ"]);
+            // ベルB
+            data.bellB = findValueNearKeyword(["ベルB", "ベルＢ"]);
+            
+            // スイカA (スイカ合算に注意)
+            data.suikaA = findValueNearKeyword(["スイカA", "スイカＡ"]);
+            
+            // チェリーB
+            data.cherryB = findValueNearKeyword(["チェリーB", "チェリーＢ"]);
+
             // ボーナス
-            data.bb_total = getDenom(header, "合算") || getDenom(header, "BB確率") || getDenom(header, "赤７BB");
-            data.rb = getDenom(header, "RB") || getDenom(header, "REG");
+            data.bb_total = findValueNearKeyword(["総ボーナス", "BB確率", "合算", "赤７BB"]);
+            data.rb = findValueNearKeyword(["RB", "REG"]);
 
-            // RT
-            data.rt_vc_hazure = getDenom(rt, "VSチャンス中はずれ");
-            data.rt_vg_hazure = getDenom(rt, "VSGAME中はずれ");
+            // RT中
+            data.rt_vc_hazure = findValueNearKeyword(["VSチャンス中はずれ", "VSチャンス中"]);
+            data.rt_vg_hazure = findValueNearKeyword(["VSGAME中はずれ", "VSGAME中"]);
 
-            // BB
-            data.bb_cb_match = getDenom(bb, "チェリー＋ベル揃い");
-            data.bb_cb_hazure = getDenom(bb, "チェリー＋ベルはずれ");
-            data.bb_middleCherry = getDenom(bb, "中段チェリー");
+            // BB中
+            data.bb_cb_match = findValueNearKeyword(["チェリー＋ベル揃い"]);
+            data.bb_cb_hazure = findValueNearKeyword(["チェリー＋ベルはずれ"]);
+            data.bb_middleCherry = findValueNearKeyword(["中段チェリー"]);
 
-            // RB
-            data.rb_hazure = getDenom(rb, "はずれ");
+            // RB中 (ハズレ)
+            data.rb_hazure = findValueNearKeyword(["はずれ"]);
 
             return data;
         }
@@ -230,7 +227,9 @@
                     if (!json.responses || !json.responses[0].fullTextAnnotation) throw new Error("文字認識失敗");
 
                     const text = json.responses[0].fullTextAnnotation.text;
-                    const data = parseText(text);
+                    
+                    // 新しいロジックで解析
+                    const data = parseTextLines(text);
 
                     // 読み取れた数値をログに出す
                     log(`[読取値(分母)]`);
