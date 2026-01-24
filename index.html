@@ -3,106 +3,134 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>VERSUS REVISE - みおちゃん専用</title>
+    <title>VERSUS REVISE</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        body { background-color: #0f172a; color: #f8fafc; font-family: 'Helvetica Neue', Arial, sans-serif; -webkit-tap-highlight-color: transparent; }
+        /* 画面固定・スクロール禁止 */
+        html, body { 
+            height: 100%; 
+            overflow: hidden; 
+            position: fixed; 
+            width: 100%; 
+            background-color: #0f172a; 
+            color: #f8fafc; 
+            font-family: sans-serif; 
+            -webkit-tap-highlight-color: transparent; 
+        }
         .setting-bar { transition: width 0.8s cubic-bezier(0.16, 1, 0.3, 1); width: 0%; }
-        .main-container { min-height: 100vh; display: flex; flex-direction: column; padding-bottom: 3rem; }
+        /* コンテナ定義 */
+        .app-container { 
+            height: 100%; 
+            display: flex; 
+            flex-direction: column; 
+            padding: 1.5rem; 
+            box-sizing: border-box; 
+        }
     </style>
 </head>
-<body class="main-container">
+<body class="app-container">
 
-    <header class="text-center py-8">
-        <h1 class="text-4xl font-black italic tracking-tighter text-blue-500 underline decoration-white/10">VERSUS <span class="text-white">REVISE</span></h1>
-        <p class="text-red-600 font-bold text-xs mt-2 tracking-[0.4em] opacity-80">みおちゃん専用 VER 1.8.0</p>
+    <header class="text-center pt-4 pb-2 flex-none">
+        <img src="VS.png" alt="VERSUS REVISE" class="mx-auto w-4/5 max-w-sm drop-shadow-[0_0_15px_rgba(59,130,246,0.6)]">
+        <p class="text-red-600 font-bold text-[10px] mt-3 tracking-[0.3em] opacity-90">みおちゃん専用 VER 1.0.0</p>
     </header>
 
-    <div id="drop-zone" class="mx-6 border-4 border-blue-500/40 rounded-[2.5rem] p-12 text-center bg-blue-900/20 mb-8 active:scale-95 active:bg-blue-900/40 transition-all shadow-lg shadow-blue-500/10">
-        <p class="text-3xl font-black text-white tracking-widest">ユニメモ画像を解析</p>
+    <div id="drop-zone" class="flex-none border-4 border-blue-500/40 rounded-[2rem] py-6 text-center bg-blue-900/20 mb-4 active:scale-95 active:bg-blue-900/40 transition-all shadow-lg">
+        <p class="text-xl font-black text-white tracking-widest leading-none">ユニメモ画像を解析</p>
         <input type="file" id="file-input" multiple class="hidden" accept="image/*">
     </div>
 
-    <main class="mx-5 bg-slate-900/95 rounded-[3rem] p-10 border border-white/10 shadow-2xl mb-8">
-        <div class="space-y-12">
+    <main class="flex-grow bg-slate-900/95 rounded-[2.5rem] p-6 border border-white/10 shadow-2xl flex flex-col justify-around mb-4 overflow-hidden relative z-10">
+        <div class="space-y-5">
             <div>
-                <div class="flex justify-between items-end mb-4 px-2">
-                    <span class="text-2xl font-black text-gray-500 tracking-tighter">設定１</span>
-                    <span id="p1" class="font-mono text-2xl text-gray-400">0.0%</span>
+                <div class="flex justify-between items-end mb-1.5 px-2">
+                    <span class="text-lg font-black text-gray-500">設定１</span>
+                    <span id="p1" class="font-mono text-lg text-gray-400">0.0%</span>
                 </div>
-                <div class="w-full bg-slate-800 h-4 rounded-full overflow-hidden shadow-inner">
-                    <div id="bar1" class="setting-bar h-full bg-gray-600 shadow-[0_0_20px_rgba(107,114,128,0.5)]"></div>
+                <div class="w-full bg-slate-800 h-3.5 rounded-full overflow-hidden shadow-inner">
+                    <div id="bar1" class="setting-bar h-full bg-gray-600 shadow-[0_0_10px_rgba(107,114,128,0.3)]"></div>
                 </div>
             </div>
             <div>
-                <div class="flex justify-between items-end mb-4 px-2">
-                    <span class="text-2xl font-black text-blue-500 tracking-tighter text-shadow-blue">設定２</span>
-                    <span id="p2" class="font-mono text-2xl text-blue-400">0.0%</span>
+                <div class="flex justify-between items-end mb-1.5 px-2">
+                    <span class="text-lg font-black text-blue-500 text-shadow-blue">設定２</span>
+                    <span id="p2" class="font-mono text-lg text-blue-400">0.0%</span>
                 </div>
-                <div class="w-full bg-slate-800 h-4 rounded-full overflow-hidden shadow-inner">
-                    <div id="bar2" class="setting-bar h-full bg-blue-500 shadow-[0_0_20px_rgba(59,130,246,0.6)]"></div>
-                </div>
-            </div>
-            <div>
-                <div class="flex justify-between items-end mb-4 px-2">
-                    <span class="text-2xl font-black text-orange-500 tracking-tighter">設定５</span>
-                    <span id="p5" class="font-mono text-2xl text-orange-400">0.0%</span>
-                </div>
-                <div class="w-full bg-slate-800 h-4 rounded-full overflow-hidden shadow-inner">
-                    <div id="bar5" class="setting-bar h-full bg-orange-500 shadow-[0_0_20px_rgba(249,115,22,0.6)]"></div>
+                <div class="w-full bg-slate-800 h-3.5 rounded-full overflow-hidden shadow-inner">
+                    <div id="bar2" class="setting-bar h-full bg-blue-500 shadow-[0_0_15px_rgba(59,130,246,0.5)]"></div>
                 </div>
             </div>
             <div>
-                <div class="flex justify-between items-end mb-4 px-2">
-                    <span class="text-2xl font-black text-red-600 tracking-tighter">設定６</span>
-                    <span id="p6" class="font-mono text-2xl text-red-500">0.0%</span>
+                <div class="flex justify-between items-end mb-1.5 px-2">
+                    <span class="text-lg font-black text-orange-500">設定５</span>
+                    <span id="p5" class="font-mono text-lg text-orange-400">0.0%</span>
                 </div>
-                <div class="w-full bg-slate-800 h-4 rounded-full overflow-hidden shadow-inner">
-                    <div id="bar6" class="setting-bar h-full bg-red-600 shadow-[0_0_25px_rgba(220,38,38,0.7)]"></div>
+                <div class="w-full bg-slate-800 h-3.5 rounded-full overflow-hidden shadow-inner">
+                    <div id="bar5" class="setting-bar h-full bg-orange-500 shadow-[0_0_15px_rgba(249,115,22,0.5)]"></div>
+                </div>
+            </div>
+            <div>
+                <div class="flex justify-between items-end mb-1.5 px-2">
+                    <span class="text-lg font-black text-red-600 text-shadow-red">設定６</span>
+                    <span id="p6" class="font-mono text-lg text-red-500">0.0%</span>
+                </div>
+                <div class="w-full bg-slate-800 h-3.5 rounded-full overflow-hidden shadow-inner">
+                    <div id="bar6" class="setting-bar h-full bg-red-600 shadow-[0_0_20px_rgba(220,38,38,0.6)]"></div>
                 </div>
             </div>
         </div>
     </main>
 
-    <footer class="mt-auto px-6 space-y-4">
-        <div class="flex gap-4 h-14">
-            <input type="password" id="api-key" placeholder="Google Vision API Key" class="flex-grow bg-slate-800 border border-white/20 rounded-2xl px-6 text-lg text-white focus:outline-none focus:border-blue-500 shadow-inner">
-            <button id="save-key" class="bg-blue-600 px-10 rounded-2xl text-sm font-black tracking-widest active:bg-blue-700 transition-all shadow-lg">SET</button>
+    <footer class="flex-none space-y-2">
+        <div class="flex gap-2 h-10">
+            <input type="password" id="api-key" placeholder="Google Vision API Key" class="flex-grow bg-slate-800 border border-white/20 rounded-xl px-4 text-xs text-white focus:outline-none focus:border-blue-500 shadow-inner">
+            <button id="save-key" class="bg-blue-600 px-6 rounded-xl text-xs font-black tracking-widest active:bg-blue-700 shadow-lg">SET</button>
         </div>
-        <p id="key-status" class="text-[10px] text-center text-gray-500 font-bold uppercase tracking-[0.4em]">API Key Status: Idle</p>
+        <p id="key-status" class="text-[9px] text-center text-gray-500 font-bold uppercase tracking-[0.2em]">API Key: Inactive</p>
     </footer>
 
     <script>
-        // 設定3, 4除外済 / ユニメモ項目厳別ロジック
-        const TARGETS = {
-            bellA: [10.5, 10.1, 9.8, 9.4], //
-            rb: [409.6, 397.2, 350.5, 312.1] //
+        // ロジック設定（最新版維持）
+        const TARGETS = { 
+            bellA: [10.5, 10.1, 9.8, 9.4], // 設定1,2,5,6
+            rb: [409.6, 397.2, 350.5, 312.1]
         };
 
         function analyze(data) {
             let s = { 1: 1.0, 2: 1.0, 5: 1.0, 6: 1.0 };
             const trials = data.totalGames;
-            const rel = trials < 300 ? 0.1 : (trials < 3000 ? 0.7 : 1.0); // 信頼度動的計算
+            
+            // 信頼度の動的計算（3000G未満はベルを疑う）
+            const rel = trials < 300 ? 0.1 : (trials < 3000 ? 0.6 : 1.0);
 
+            // 確率計算
             [1, 2, 5, 6].forEach((set, i) => {
                 const bExp = trials / TARGETS.bellA[i];
-                const bScore = Math.exp(-Math.pow(data.bellACount - bExp, 2) / (2 * bExp));
-                s[set] *= (1 - rel) + (bScore * rel);
-
                 const rExp = trials / TARGETS.rb[i];
-                const rScore = Math.exp(-Math.pow(data.rbCount - rExp, 2) / (2 * rExp));
-                s[set] *= (1 - rel) + (rScore * rel);
+                
+                // ベルA：信頼度補正あり
+                s[set] *= (1 - rel) + (Math.exp(-Math.pow(data.bellACount - bExp, 2) / (2 * bExp)) * rel);
+                // RB確率：信頼度補正あり
+                s[set] *= (1 - rel) + (Math.exp(-Math.pow(data.rbCount - rExp, 2) / (2 * rExp)) * rel);
             });
 
-            if (data.rbHazure > 0) { s[1] = 0; s[2] = 0; } //
-            if (data.bbHazure > 0) {
-                s[1] *= (1/16384); s[2] *= (1/16384);
-                s[5] *= (1/2048); s[6] *= (1/1489); //
+            // 【鉄の掟】確定・強フラグの処理
+            // 1. RB中ハズレ：1・2即死
+            if (data.rbHazure > 0) { 
+                s[1] = 0; s[2] = 0; 
             }
+            
+            // 2. BB中ハズレ（純粋なハズレ）：高設定期待度大幅UP
+            if (data.bbHazure > 0) {
+                s[1] *= (1/16384); s[2] *= (1/16384); 
+                s[5] *= (1/2048); s[6] *= (1/1489); 
+            }
+            
+            // 3. BB中チェリー+ベルはずれ：偶数（2・6）優遇
             if (data.bbCherryBellHazure > 0) {
                 const c = data.bbCherryBellHazure;
                 s[1] *= Math.pow(1/81.9, c); s[5] *= Math.pow(1/81.9, c);
-                s[2] *= Math.pow(1/41.0, c); s[6] *= Math.pow(1/41.0, c); //
+                s[2] *= Math.pow(1/41.0, c); s[6] *= Math.pow(1/41.0, c); 
             }
 
             const total = Object.values(s).reduce((a, b) => a + b) || 1;
@@ -114,12 +142,19 @@
             };
         }
 
+        // イベントリスナー
         document.getElementById('save-key').onclick = () => {
             localStorage.setItem('v_key', document.getElementById('api-key').value);
-            document.getElementById('key-status').innerText = 'API KEY SAVED';
+            document.getElementById('key-status').innerText = 'API KEY: READY';
             document.getElementById('key-status').style.color = '#3b82f6';
         };
+        
         document.getElementById('drop-zone').onclick = () => document.getElementById('file-input').click();
+        
+        // ここに実際のVision API連携処理（analyze関数呼び出し）が入ります
+        document.getElementById('file-input').onchange = (e) => {
+            console.log("Files selected. Need to implement Vision API call here.");
+        };
     </script>
 </body>
 </html>
