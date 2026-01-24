@@ -2,60 +2,99 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <title>Versus Revise - Pro Edition v5.2</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>バーサスリヴァイズ 判別ツール Pro</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        body { background: #020617; color: #f8fafc; font-family: sans-serif; }
-        .glass { background: rgba(15, 23, 42, 0.9); border: 1px solid rgba(255,255,255,0.05); }
-        .bar-fill { height: 100%; transition: width 1s ease-out; }
+        body { 
+            background: #0f172a; 
+            color: #f1f5f9; 
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            overflow: hidden; /* 画面全体の揺れを防止 */
+            height: 100vh;
+        }
+        .card { background: rgba(30, 41, 59, 0.8); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.1); }
+        .bar-container { background: #1e293b; height: 14px; border-radius: 7px; overflow: hidden; }
+        .bar-inner { height: 100%; transition: width 0.8s cubic-bezier(0.2, 1, 0.3, 1); }
+        /* モバイル用タップハイライト除去 */
+        * { -webkit-tap-highlight-color: transparent; }
     </style>
 </head>
-<body class="flex flex-col items-center p-4 min-h-screen">
-    <header class="w-full max-w-md my-6 text-center">
-        <h1 class="text-2xl font-black italic">VERSUS <span class="text-sky-500">REVISE</span></h1>
-        <p class="text-[10px] text-slate-500 font-mono tracking-widest uppercase">Logic Transferred Edition</p>
+<body class="flex flex-col p-4">
+
+    <header class="text-center mb-4">
+        <h1 class="text-xl font-black italic tracking-tighter text-white">VERSUS <span class="text-sky-400">REVISE</span></h1>
+        <div id="status" class="text-[9px] font-bold text-slate-500 tracking-[0.2em] uppercase mt-1">待機中</div>
     </header>
 
-    <main class="w-full max-w-md space-y-4">
-        <div class="glass p-4 rounded-xl">
-            <input type="password" id="api-key" placeholder="Google Vision API Key" class="w-full bg-black/40 border border-slate-800 rounded p-2 text-xs text-sky-400">
-            <button onclick="localStorage.setItem('vs_key', document.getElementById('api-key').value);alert('Saved')" class="w-full mt-2 bg-slate-800 py-1 rounded text-[10px] font-bold">SET KEY</button>
-        </div>
-
-        <div id="drop-zone" class="glass rounded-2xl p-8 border-2 border-dashed border-slate-700 hover:border-sky-500 text-center cursor-pointer">
-            <p class="text-xs text-slate-400 font-bold uppercase">ここに画像をドロップ</p>
-            <input type="file" id="file-input" class="hidden" accept="image/*">
-        </div>
-
-        <div class="glass rounded-3xl p-6 space-y-4">
-            <div id="status" class="text-[10px] text-slate-500 font-mono uppercase tracking-widest text-center italic">Waiting...</div>
-            <div id="results" class="space-y-5">
-                <div id="res-1">
-                    <div class="flex justify-between text-[11px] font-bold mb-1"><span>SETTING 1</span><span id="p1">--%</span></div>
-                    <div class="h-2 bg-slate-800 rounded-full overflow-hidden"><div id="b1" class="bar-fill bg-sky-500" style="width:0%"></div></div>
+    <main class="flex-grow flex flex-col justify-center space-y-4">
+        <div class="card p-6 rounded-[2rem] shadow-2xl">
+            <div class="space-y-6">
+                <div class="res-row">
+                    <div class="flex justify-between items-end mb-1">
+                        <span class="text-xs font-black text-slate-300">設定 1</span>
+                        <span id="p1" class="font-mono text-lg font-black text-slate-400">--%</span>
+                    </div>
+                    <div class="bar-container"><div id="b1" class="bar-inner bg-slate-500" style="width:0%"></div></div>
                 </div>
-                <div id="res-2">
-                    <div class="flex justify-between text-[11px] font-bold mb-1"><span>SETTING 2</span><span id="p2">--%</span></div>
-                    <div class="h-2 bg-slate-800 rounded-full overflow-hidden"><div id="b2" class="bar-fill bg-sky-500" style="width:0%"></div></div>
+                <div class="res-row text-sky-400">
+                    <div class="flex justify-between items-end mb-1">
+                        <span class="text-xs font-black">設定 2</span>
+                        <span id="p2" class="font-mono text-lg font-black">--%</span>
+                    </div>
+                    <div class="bar-container"><div id="b2" class="bar-inner bg-sky-500" style="width:0%"></div></div>
                 </div>
-                <div id="res-5">
-                    <div class="flex justify-between text-[11px] font-bold mb-1"><span>SETTING 5</span><span id="p5">--%</span></div>
-                    <div class="h-2 bg-slate-800 rounded-full overflow-hidden"><div id="b5" class="bar-fill bg-indigo-500" style="width:0%"></div></div>
+                <div class="res-row text-amber-400">
+                    <div class="flex justify-between items-end mb-1">
+                        <span class="text-xs font-black">設定 5</span>
+                        <span id="p5" class="font-mono text-lg font-black">--%</span>
+                    </div>
+                    <div class="bar-container"><div id="b5" class="bar-inner bg-amber-500" style="width:0%"></div></div>
                 </div>
-                <div id="res-6">
-                    <div class="flex justify-between text-[11px] font-bold mb-1"><span>SETTING 6</span><span id="p6">--%</span></div>
-                    <div class="h-2 bg-slate-800 rounded-full overflow-hidden"><div id="b6" class="bar-fill bg-pink-500" style="width:0%"></div></div>
+                <div class="res-row text-rose-500">
+                    <div class="flex justify-between items-end mb-1">
+                        <span class="text-xs font-black">設定 6</span>
+                        <span id="p6" class="font-mono text-lg font-black">--%</span>
+                    </div>
+                    <div class="bar-container"><div id="b6" class="bar-inner bg-rose-500" style="width:0%"></div></div>
                 </div>
             </div>
+            <div id="game-count" class="mt-4 text-center text-[10px] text-slate-500 font-mono tracking-widest">--- G</div>
         </div>
+
+        <button id="drop-zone" class="w-full card py-5 rounded-2xl flex items-center justify-center space-x-2 active:scale-95 transition-transform">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-sky-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
+            </svg>
+            <span class="text-sm font-black text-slate-200 uppercase">画像を解析する</span>
+            <input type="file" id="file-input" class="hidden" accept="image/*">
+        </button>
     </main>
+
+    <footer class="mt-4 pb-4 space-y-2">
+        <div class="flex space-x-2">
+            <input type="password" id="api-key" placeholder="APIキーを入力" class="flex-grow bg-slate-900/80 border border-slate-700 rounded-lg px-3 py-2 text-xs text-sky-400 focus:outline-none">
+            <button onclick="saveKey()" class="bg-slate-700 px-4 py-2 rounded-lg text-[10px] font-black whitespace-nowrap">保存</button>
+        </div>
+    </footer>
 
     <script>
         const SPECS = {
-            1: {ba:10.9, rb:438.0, vc:5.0, vg:10.1, r1:5.5, bbC:11.1},
-            2: {ba:10.7, rb:411.7, vc:4.9, vg:9.4,  r1:8.5, bbC:8.9},
-            5: {ba:10.5, rb:378.8, vc:4.6, vg:8.7,  r1:5.5, bbC:11.1},
-            6: {ba:10.2, rb:354.2, vc:4.5, vg:8.1,  r1:8.5, bbC:8.9}
+            1: {ba:10.9, rb:438.0, vg:10.1, r1:5.5, bbC:11.1},
+            2: {ba:10.7, rb:411.7, vg:9.4,  r1:8.5, bbC:8.9},
+            5: {ba:10.5, rb:378.8, vg:8.7,  r1:5.5, bbC:11.1},
+            6: {ba:10.2, rb:354.2, vg:8.1,  r1:8.5, bbC:8.9}
+        };
+
+        function saveKey() {
+            localStorage.setItem('vs_key_final', document.getElementById('api-key').value);
+            alert('キーを保存しました。');
+        }
+
+        window.onload = () => {
+            const saved = localStorage.getItem('vs_key_final');
+            if(saved) document.getElementById('api-key').value = saved;
         };
 
         const fileInput = document.getElementById('file-input');
@@ -64,9 +103,10 @@
         fileInput.onchange = e => handleFile(e.target.files[0]);
 
         async function handleFile(file) {
-            const key = localStorage.getItem('vs_key');
-            if(!key) return alert('No Key');
-            document.getElementById('status').innerText = "Analyzing...";
+            const key = localStorage.getItem('vs_key_final');
+            if(!key) return alert('APIキーを設定してください');
+            
+            document.getElementById('status').innerText = "解析中...";
             const reader = new FileReader();
             reader.readAsDataURL(file);
             reader.onload = async () => {
@@ -94,22 +134,17 @@
             };
 
             let scores = {1:1, 2:1, 5:1, 6:1};
-            
-            // ★【現場調整】ゲーム数に応じたベルの信頼度
-            let bW = data.g < 1000 ? 0.2 : (data.g < 2000 ? 0.6 : (data.g < 4000 ? 1.1 : 3.5));
-            // ★【現場調整】RB確率の絶望感を最優先
-            let rbW = 3.8;
+            let bW = data.g < 1000 ? 0.2 : (data.g < 2000 ? 0.5 : (data.g < 4000 ? 1.0 : 3.0));
+            let rbW = 4.0; // RB確率の悪さを徹底評価
 
             [1,2,5,6].forEach(s => {
                 const sp = SPECS[s];
                 if(data.ba) scores[s] *= Math.pow(1 / (Math.abs(data.ba - sp.ba) + 0.1), bW);
                 if(data.rb) scores[s] *= Math.pow(1 / (Math.abs(data.rb - sp.rb) + 0.1), rbW);
-                if(data.vg) scores[s] *= Math.pow(1 / (Math.abs(data.vg - sp.vg) + 0.1), 1.8);
-                if(data.r1) scores[s] *= Math.pow(1 / (Math.abs(data.r1 - sp.r1) + 0.1), 1.0);
+                if(data.vg) scores[s] *= Math.pow(1 / (Math.abs(data.vg - sp.vg) + 0.1), 2.0);
             });
 
-            // 確定フラグがあってもボナが悪ければ1・2を死なせない
-            if(data.rbH < 1000) { scores[1]*=0.05; scores[2]*=0.05; scores[5]*=5; scores[6]*=5; }
+            if(data.rbH < 1000) { scores[1]*=0.1; scores[2]*=0.1; scores[5]*=5; scores[6]*=5; }
 
             const total = scores[1]+scores[2]+scores[5]+scores[6];
             [1,2,5,6].forEach(s => {
@@ -117,7 +152,8 @@
                 document.getElementById(`p${s}`).innerText = pct + '%';
                 document.getElementById(`b${s}`).style.width = pct + '%';
             });
-            document.getElementById('status').innerText = `ANALYSIS COMPLETE (${data.g}G)`;
+            document.getElementById('status').innerText = "解析完了";
+            document.getElementById('game-count').innerText = `${data.g} G`;
         }
     </script>
 </body>
