@@ -11,20 +11,20 @@
         .app-container { height: 100%; display: flex; flex-direction: column; padding: 1.5rem; box-sizing: border-box; }
         img[src="VS.png"] { min-height: 50px; background-color: transparent; }
         
-        /* デバッグエリア（常時表示・スクロール可） */
+        /* デバッグエリア（超重要） */
         #debug-area { 
-            font-size: 11px; 
-            font-family: monospace;
-            color: #86efac; /* 薄緑で見やすく */
-            background: rgba(0, 0, 0, 0.8); 
+            font-size: 10px; 
+            font-family: monospace; 
+            color: #86efac; 
+            background: rgba(0, 0, 0, 0.9); 
             border: 1px solid #4ade80;
             padding: 10px; 
             margin-top: 10px; 
-            height: 150px; /* 高さを確保 */
-            overflow-y: scroll; 
-            white-space: pre-wrap; /* 改行を反映 */
+            flex-grow: 1; /* 残りのスペースを埋める */
+            overflow-y: scroll; /* スクロール必須 */
+            white-space: pre-wrap; 
             border-radius: 8px;
-            display: block; /* 最初から表示 */
+            display: block; 
         }
     </style>
 </head>
@@ -32,7 +32,7 @@
 
     <header class="text-center pt-2 pb-2 flex-none">
         <img src="VS.png" alt="VERSUS REVISE" class="mx-auto w-3/5 max-w-sm drop-shadow-[0_0_15px_rgba(59,130,246,0.6)]">
-        <p class="text-red-600 font-bold text-[10px] mt-2 tracking-[0.3em] opacity-90">みおちゃん専用 VER 1.9.4</p>
+        <p class="text-red-600 font-bold text-[10px] mt-2 tracking-[0.3em] opacity-90">みおちゃん専用 VER 2.1.0</p>
     </header>
 
     <div id="drop-zone" class="flex-none border-4 border-blue-500/40 rounded-[2rem] py-4 text-center bg-blue-900/20 mb-2 active:scale-95 active:bg-blue-900/40 transition-all shadow-lg cursor-pointer">
@@ -40,15 +40,15 @@
         <input type="file" id="file-input" multiple class="hidden" accept="image/*">
     </div>
 
-    <main class="flex-grow bg-slate-900/95 rounded-[2rem] p-4 border border-white/10 shadow-2xl flex flex-col justify-between mb-2 overflow-hidden relative z-10">
-        <div class="space-y-3">
-            <div><div class="flex justify-between items-end mb-1 px-2"><span class="text-base font-black text-gray-500">設定１</span><span id="p1" class="font-mono text-base text-gray-400">0.0%</span></div><div class="w-full bg-slate-800 h-2.5 rounded-full overflow-hidden"><div id="bar1" class="setting-bar h-full bg-gray-600"></div></div></div>
-            <div><div class="flex justify-between items-end mb-1 px-2"><span class="text-base font-black text-blue-500">設定２</span><span id="p2" class="font-mono text-base text-blue-400">0.0%</span></div><div class="w-full bg-slate-800 h-2.5 rounded-full overflow-hidden"><div id="bar2" class="setting-bar h-full bg-blue-500"></div></div></div>
-            <div><div class="flex justify-between items-end mb-1 px-2"><span class="text-base font-black text-orange-500">設定５</span><span id="p5" class="font-mono text-base text-orange-400">0.0%</span></div><div class="w-full bg-slate-800 h-2.5 rounded-full overflow-hidden"><div id="bar5" class="setting-bar h-full bg-orange-500"></div></div></div>
-            <div><div class="flex justify-between items-end mb-1 px-2"><span class="text-base font-black text-red-600">設定６</span><span id="p6" class="font-mono text-base text-red-500">0.0%</span></div><div class="w-full bg-slate-800 h-2.5 rounded-full overflow-hidden"><div id="bar6" class="setting-bar h-full bg-red-600"></div></div></div>
+    <main class="flex-grow bg-slate-900/95 rounded-[2rem] p-4 border border-white/10 shadow-2xl flex flex-col mb-2 overflow-hidden relative z-10">
+        <div class="space-y-2 flex-none mb-2">
+            <div><div class="flex justify-between items-end mb-1 px-2"><span class="text-xs font-black text-gray-500">設定１</span><span id="p1" class="font-mono text-xs text-gray-400">0.0%</span></div><div class="w-full bg-slate-800 h-2 rounded-full overflow-hidden"><div id="bar1" class="setting-bar h-full bg-gray-600"></div></div></div>
+            <div><div class="flex justify-between items-end mb-1 px-2"><span class="text-xs font-black text-blue-500">設定２</span><span id="p2" class="font-mono text-xs text-blue-400">0.0%</span></div><div class="w-full bg-slate-800 h-2 rounded-full overflow-hidden"><div id="bar2" class="setting-bar h-full bg-blue-500"></div></div></div>
+            <div><div class="flex justify-between items-end mb-1 px-2"><span class="text-xs font-black text-orange-500">設定５</span><span id="p5" class="font-mono text-xs text-orange-400">0.0%</span></div><div class="w-full bg-slate-800 h-2 rounded-full overflow-hidden"><div id="bar5" class="setting-bar h-full bg-orange-500"></div></div></div>
+            <div><div class="flex justify-between items-end mb-1 px-2"><span class="text-xs font-black text-red-600">設定６</span><span id="p6" class="font-mono text-xs text-red-500">0.0%</span></div><div class="w-full bg-slate-800 h-2 rounded-full overflow-hidden"><div id="bar6" class="setting-bar h-full bg-red-600"></div></div></div>
         </div>
         
-        <div id="debug-area">ここに読み取った文字データ（生ログ）が表示されます...</div>
+        <div id="debug-area">ここに解析プロセスが表示されます...</div>
     </main>
 
     <footer class="flex-none space-y-2">
@@ -61,10 +61,15 @@
 
     <script>
         const TARGETS = { bellA: [10.5, 10.1, 9.8, 9.4], rb: [409.6, 397.2, 350.5, 312.1] };
+        
         function log(msg) {
             const d = document.getElementById('debug-area');
-            // 古いログに追加していく
-            d.innerText = msg + "\n\n----------------\n\n" + d.innerText;
+            // 新しいログを上に追加（見やすくするため）
+            d.innerText = msg + "\n\n" + d.innerText;
+        }
+
+        function clearLog() {
+            document.getElementById('debug-area').innerText = "";
         }
 
         function calculateReliability(trials) {
@@ -76,10 +81,9 @@
 
         function analyze(data) {
             let s = { 1: 1.0, 2: 1.0, 5: 1.0, 6: 1.0 };
-            const trials = data.totalGames || 0;
-            if (trials === 0) return { 1: "0.0", 2: "0.0", 5: "0.0", 6: "0.0" };
-
+            const trials = data.totalGames;
             const rel = calculateReliability(trials);
+            
             [1, 2, 5, 6].forEach((set, i) => {
                 const bExp = trials / TARGETS.bellA[i], rExp = trials / TARGETS.rb[i];
                 if (data.bellACount > 0) s[set] *= (1 - rel) + (Math.exp(-Math.pow(data.bellACount - bExp, 2) / (2 * bExp)) * rel);
@@ -118,8 +122,11 @@
             if (!key) return alert("APIキーが未設定です");
             if (e.target.files.length === 0) return;
 
-            document.getElementById('debug-area').innerText = "解析中...";
-            
+            clearLog();
+            log("--- 解析開始 ---");
+            const originalHTML = dropZone.innerHTML;
+            dropZone.innerHTML = `<p class="text-xl font-black text-blue-400 animate-pulse">通信中...</p>`;
+
             let combinedData = { totalGames: 0, bellACount: 0, rbCount: 0, rbHazure: 0, bbHazure: 0, bbCherryBellHazure: 0 };
 
             try {
@@ -135,25 +142,34 @@
                     combinedData.bbCherryBellHazure += res.bbCherryBellHazure;
                 });
 
-                // 【詳細デバッグダイアログ】
-                let msg = "【解析結果レポート】\n";
-                msg += `総ゲーム: ${combinedData.totalGames} G\n`;
-                msg += `ベルA: ${combinedData.bellACount} 回 ${combinedData.bellACount===0 ? "←ここが0！" : ""}\n`;
-                msg += `RB回数: ${combinedData.rbCount} 回\n`;
-                msg += `----------------\n`;
-                msg += `RB中ハズレ: ${combinedData.rbHazure}\n`;
-                msg += `BB中ハズレ: ${combinedData.bbHazure}\n`;
-                msg += `BBチェリベ: ${combinedData.bbCherryBellHazure}\n`;
-                msg += `\n※画面下の緑色の文字(生データ)を確認してください`;
+                // 【ここが重要】抽出したパラメータを並べる
+                let report = "【抽出パラメータ確認】\n";
+                report += `総ゲーム数: [ ${combinedData.totalGames} ]\n`;
+                report += `ベルA: [ ${combinedData.bellACount} ]\n`;
+                report += `RB回数: [ ${combinedData.rbCount} ]\n`;
+                report += `RB中ハズレ: [ ${combinedData.rbHazure} ]\n`;
+                report += `BB中ハズレ: [ ${combinedData.bbHazure} ]\n`;
+                report += `BBチェリベ: [ ${combinedData.bbCherryBellHazure} ]\n`;
                 
-                alert(msg);
+                log(report); // 緑の窓に表示
+
+                // 不正データチェック
+                if (combinedData.totalGames === 0) {
+                    alert("【解析失敗】\n総ゲーム数が読み取れませんでした。\n画面下のログ（生の文字データ）を確認してください。");
+                } else if (combinedData.bellACount === 0) {
+                    alert("【警告】\nベルAが「0回」と判定されました。\n画面下のログで「ベルA」という文字がどう誤認識されているか確認してください。");
+                }
 
                 const result = analyze(combinedData);
                 updateGraph(result);
+                dropZone.innerHTML = `<p class="text-xl font-black text-green-400">完了</p>`;
+                setTimeout(() => dropZone.innerHTML = originalHTML, 2000);
 
             } catch (err) {
                 console.error(err);
                 alert("エラー: " + err.message);
+                log("エラー詳細: " + err.message);
+                dropZone.innerHTML = originalHTML;
             }
         };
 
@@ -177,18 +193,17 @@
                         const json = await res.json();
                         
                         if (json.error) {
-                            log("APIエラー: " + json.error.message);
-                            reject(new Error(json.error.message));
+                            reject(new Error("API Error: " + json.error.message));
                             return;
                         }
                         
                         if (!json.responses || !json.responses[0].fullTextAnnotation) {
-                            log("文字が見つかりませんでした");
+                            log("【認識なし】画像から文字が読めませんでした。");
                             resolve({ totalGames: 0, bellACount: 0, rbCount: 0, rbHazure: 0, bbHazure: 0, bbCherryBellHazure: 0 });
                         } else {
                             const rawText = json.responses[0].fullTextAnnotation.text;
-                            // 生データを画面下の緑エリアに表示
-                            log(rawText); 
+                            // ★ここで生の文字データを吐き出す
+                            log("【Google OCR 生データ】\n----------------\n" + rawText + "\n----------------"); 
                             resolve(parseText(rawText));
                         }
                     } catch (e) { reject(e); }
@@ -201,43 +216,38 @@
             const cleanText = text.replace(/,/g, '').replace(/ /g, '');
             const data = { totalGames: 0, bellACount: 0, rbCount: 0, rbHazure: 0, bbHazure: 0, bbCherryBellHazure: 0 };
             
-            // 総プレイ数
+            // 正規表現の微調整（ワロタ回避用）
+            
+            // 総プレイ数: 行をまたいで数字を探す
             const matchG = cleanText.match(/総プレイ数.*?(\d+)/s);
             if (matchG) data.totalGames = parseInt(matchG[1]);
             
-            // 【修正】ベルA: 条件を緩くした
-            // パターン1: "ベルA" + 数字
+            // ベルA: "ベルA"の後ろにある数字。もし改行されていても拾う。
+            // 読み取り例: "ベルA\n480回"
             let matchBellA = cleanText.match(/ベルA.*?(\d+)回/s);
-            
-            // パターン2: もしダメなら "ベル" + 数字 (誤認識対策)
             if (!matchBellA) {
-                 matchBellA = cleanText.match(/ベル.*?(\d+)回/s);
+                // "ベル"しか読めなかった場合
+                matchBellA = cleanText.match(/ベル.*?(\d+)回/s);
             }
-            // パターン3: それでもダメなら "A" + 数字 (さらに緩く)
-            if (!matchBellA) {
-                 // "ベルA"の"ベル"が読めず "A" だけになっているケース
-                 // ただし他のAと被る危険があるため、近くに"回"があるもの限定
-                 // ここはリスクがあるので一旦パターン2まで
-            }
-
             if (matchBellA) data.bellACount = parseInt(matchBellA[1]);
 
             // RB
             const matchRB = cleanText.match(/(?:RB|REG).*?(\d+)回/s);
             if (matchRB) data.rbCount = parseInt(matchRB[1]);
 
-            // 詳細
+            // 詳細データ解析
             const lines = cleanText.split('\n');
             let section = "";
             lines.forEach(line => {
-                if (line.includes("BB中詳細")) section = "BB";
-                if (line.includes("RB中詳細")) section = "RB";
+                // セクション判定を強化
+                if (line.includes("BB中") || line.includes("BIG中")) section = "BB";
+                if (line.includes("RB中") || line.includes("REG中")) section = "RB";
                 
                 const numMatch = line.match(/(\d+)回/);
                 const count = numMatch ? parseInt(numMatch[1]) : 0;
 
                 if (section === "BB") {
-                    if (line.includes("チェリー+ベル") || line.includes("チェリ+ベル")) data.bbCherryBellHazure = count; // 表記揺れ対応
+                    if (line.includes("チェリー+ベル") || line.includes("チェリ+ベル")) data.bbCherryBellHazure = count;
                     else if (line.includes("ハズレ") && !line.includes("チェリー")) data.bbHazure = count;
                 }
                 if (section === "RB") {
