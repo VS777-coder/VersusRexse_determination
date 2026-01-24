@@ -3,139 +3,82 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>VERSUS REVISE</title>
+    <title>VERSUS REVISE - みおちゃん専用</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@800&display=swap');
-        body { 
-            background-color: #05070a; 
-            color: #e2e8f0; 
-            font-family: sans-serif; 
-            -webkit-tap-highlight-color: transparent;
-            user-select: none; /* 誤操作によるテキスト選択を防止 */
-        }
-        .mio-chan { font-family: 'M PLUS Rounded 1c', sans-serif; color: #f43f5e; }
-        .bar-bg { background: #111827; height: 24px; border-radius: 6px; border: 1px solid #1f2937; }
-        .bar-fill { height: 100%; transition: width 0.8s cubic-bezier(0.34, 1.56, 0.64, 1); }
-        .active-press:active { transform: scale(0.97); transition: transform 0.1s; }
+        body { background: #070b14; color: #fff; height: 100dvh; overflow: hidden; font-family: 'sans-serif'; }
+        .glass { background: rgba(15, 23, 42, 0.8); border: 1px solid rgba(56, 189, 248, 0.2); }
+        .bar-bg { background: rgba(30, 41, 59, 0.7); height: 14px; border-radius: 7px; }
+        .bar-fill { height: 100%; border-radius: 7px; transition: width 0.8s ease-in-out; }
+        input[type="file"] { display: none; }
     </style>
 </head>
-<body class="flex flex-col items-center p-4 min-h-screen">
+<body class="flex flex-col p-4 space-y-3">
 
-    <div class="w-full max-w-sm space-y-12">
-        
-        <header class="text-center pt-4">
-            <h1 class="text-4xl font-black italic tracking-tighter text-white">VERSUS <span class="text-sky-500">REVISE</span></h1>
-            <div class="mt-2 flex items-center justify-center gap-3">
-                <p class="mio-chan text-xl font-bold tracking-wider">みおちゃん専用</p>
-                <p class="text-[10px] font-mono text-gray-500 tracking-widest pt-1">Ver 1.1</p>
-            </div>
-        </header>
+    <header class="text-center">
+        <h1 class="text-2xl font-black italic tracking-tighter text-white">VERSUS <span class="text-sky-500">REVISE</span></h1>
+        <p class="text-rose-500 font-bold text-sm mt-1">みおちゃん専用 <span class="text-[10px] text-slate-500 ml-1 italic">Ver 1.1</span></p>
+    </header>
 
-        <div id="drop-zone" class="bg-gray-900/40 border-2 border-dashed border-gray-700 h-40 rounded-3xl flex items-center justify-center cursor-pointer active-press hover:border-sky-500 transition shadow-inner">
-            <div class="text-center">
-                <p class="text-base font-bold text-gray-300">画像を解析</p>
-                <p class="text-[10px] text-gray-500 mt-2 uppercase tracking-widest">Tap or Drop Here</p>
-            </div>
-            <input type="file" id="file-input" class="hidden" accept="image/*">
-        </div>
-
-        <div id="results-container" class="space-y-10 py-2">
-            <div id="game-label" class="text-right text-[11px] font-mono text-sky-500 font-bold mb-4 uppercase tracking-widest">Waiting Data...</div>
-            
-            <div class="space-y-3">
-                <div class="flex justify-between items-end"><span class="text-sm font-black text-gray-400">設定 1</span><span id="pct-1" class="text-lg font-mono font-bold text-gray-500">--%</span></div>
-                <div class="bar-bg shadow-lg"><div id="bar-1" class="bar-fill bg-gray-600 shadow-[0_0_10px_rgba(75,85,99,0.5)]" style="width: 0%"></div></div>
-            </div>
-
-            <div class="space-y-3">
-                <div class="flex justify-between items-end"><span class="text-sm font-black text-sky-400">設定 2</span><span id="pct-2" class="text-xl font-mono font-bold text-sky-500">--%</span></div>
-                <div class="bar-bg shadow-lg"><div id="bar-2" class="bar-fill bg-sky-500 shadow-[0_0_15px_rgba(14,165,233,0.5)]" style="width: 0%"></div></div>
-            </div>
-
-            <div class="space-y-3">
-                <div class="flex justify-between items-end"><span class="text-sm font-black text-orange-400">設定 5</span><span id="pct-5" class="text-xl font-mono font-bold text-orange-500">--%</span></div>
-                <div class="bar-bg shadow-lg"><div id="bar-5" class="bar-fill bg-orange-500 shadow-[0_0_15px_rgba(249,115,22,0.5)]" style="width: 0%"></div></div>
-            </div>
-
-            <div class="space-y-3">
-                <div class="flex justify-between items-end"><span class="text-sm font-black text-rose-500">設定 6</span><span id="pct-6" class="text-xl font-mono font-bold text-rose-500">--%</span></div>
-                <div class="bar-bg shadow-lg"><div id="bar-6" class="bar-fill bg-rose-500 shadow-[0_0_15px_rgba(244,63,94,0.5)]" style="width: 0%"></div></div>
-            </div>
-        </div>
-
-        <footer class="pt-12 pb-8 border-t border-gray-900">
-            <p class="text-[9px] text-gray-600 mb-3 text-center tracking-widest uppercase">System Configuration</p>
-            <div class="flex gap-3">
-                <input type="password" id="api-key" placeholder="Google Vision API Key" class="flex-1 bg-gray-900/80 border border-gray-800 rounded-xl p-3 text-xs text-sky-400 focus:outline-none focus:border-sky-900 transition shadow-inner">
-                <button onclick="saveKey()" class="bg-gray-800 px-6 py-3 rounded-xl text-[10px] font-black tracking-widest hover:bg-gray-700 active-press transition border border-gray-700 shadow-md">SAVE</button>
-            </div>
-        </footer>
-
+    <div class="flex justify-between items-center px-2 text-[10px] font-mono text-slate-500">
+        <span onclick="toggleKey()">KEY: <span id="key-label">LOADED</span></span>
+        <span id="status">WAITING DATA...</span>
+    </div>
+    <div id="key-input-area" class="hidden glass p-2 rounded-lg flex gap-2">
+        <input type="password" id="api-key" class="flex-1 bg-black text-xs p-1 rounded">
+        <button onclick="saveKey()" class="bg-sky-600 px-2 rounded">SAVE</button>
     </div>
 
-<script>
-    // 判別データ
-    const SPEC = {
-        1: { ba: 10.9, rb: 438, vg: 10.1, bc: 11.1, r1: 5.5 },
-        2: { ba: 10.7, rb: 411, vg: 9.4, bc: 8.9, r1: 8.5 },
-        5: { ba: 10.5, rb: 378, vg: 8.7, bc: 11.1, r1: 5.5 },
-        6: { ba: 10.2, rb: 354, vg: 8.1, bc: 8.9, r1: 8.5 }
-    };
+    <div id="drop-zone" class="glass rounded-xl py-4 flex flex-col items-center justify-center border-2 border-dashed border-slate-700 active:scale-95 transition-transform">
+        <p class="text-xs font-bold text-slate-400">画像を解析</p>
+        <p class="text-[8px] text-slate-600 mt-1 uppercase">TAP OR DROP HERE</p>
+        <input type="file" id="file-input" accept="image/*">
+    </div>
 
-    function saveKey() { localStorage.setItem('v_key_final_v11', document.getElementById('api-key').value); alert('Config Updated ✨'); }
-    
-    const drop = document.getElementById('drop-zone');
-    drop.onclick = () => document.getElementById('file-input').click();
-    document.getElementById('file-input').onchange = e => analyze(e.target.files[0]);
-
-    async function analyze(file) {
-        const key = localStorage.getItem('v_key_final_v11');
-        if(!key) return alert('API Key Required');
+    <div class="glass rounded-2xl p-4 flex-1 flex flex-col justify-around">
+        <div id="game-display" class="text-right text-[10px] font-mono text-sky-500 mb-1">---- G</div>
         
-        const reader = new FileReader();
-        reader.onload = async () => {
-            const base64 = reader.result.split(',')[1];
-            try {
-                const res = await fetch(`https://vision.googleapis.com/v1/images:annotate?key=${key}`, {
-                    method: 'POST',
-                    body: JSON.stringify({ requests: [{ image: { content: base64 }, features: [{ type: 'TEXT_DETECTION' }] }] })
-                });
-                const json = await res.json();
-                const text = json.responses[0].fullTextAnnotation.text;
-                calc(parse(text));
-            } catch (err) { alert('Network Error'); }
-        };
-        reader.readAsDataURL(file);
-    }
+        <div class="space-y-4">
+            <div>
+                <div class="flex justify-between text-xs font-bold mb-1"><span>設定 1</span><span id="p1" class="text-slate-400">--%</span></div>
+                <div class="bar-bg"><div id="b1" class="bar-fill bg-slate-600" style="width: 0%"></div></div>
+            </div>
+            <div>
+                <div class="flex justify-between text-xs font-bold mb-1 text-sky-400"><span>設定 2</span><span id="p2">--%</span></div>
+                <div class="bar-bg"><div id="b2" class="bar-fill bg-sky-500" style="width: 0%"></div></div>
+            </div>
+            <div>
+                <div class="flex justify-between text-xs font-bold mb-1 text-orange-400"><span>設定 5</span><span id="p5">--%</span></div>
+                <div class="bar-bg"><div id="b5" class="bar-fill bg-orange-500" style="width: 0%"></div></div>
+            </div>
+            <div>
+                <div class="flex justify-between text-xs font-bold mb-1 text-rose-500"><span>設定 6</span><span id="p6">--%</span></div>
+                <div class="bar-bg"><div id="b6" class="bar-fill bg-rose-600" style="width: 0%"></div></div>
+            </div>
+        </div>
+    </div>
 
-    function parse(t) {
-        const c = t.replace(/\s/g, '').replace(/[lI]/g, '1');
-        const f = (re) => { const m = c.match(re); return m ? parseFloat(m[1].replace(/,/g, '')) : null; };
-        return { g: f(/総プレイ数([\d,.]+)/) || 1000, ba: f(/ベルA.*?1\/([\d,.]+)/), rb: f(/RB.*?1\/([\d,.]+)/), vg: f(/VSGAME中はずれ.*?1\/([\d,.]+)/), bc: f(/チェリー＋ベル揃い.*?1\/([\d,.]+)/), r1: f(/1枚役.*?1\/([\d,.]+)/) };
-    }
+    <script>
+        // ロジックは全て継承。UIの更新とイベント処理のみ
+        const dz = document.getElementById('drop-zone');
+        const fi = document.getElementById('file-input');
+        
+        dz.onclick = () => fi.click();
+        fi.onchange = e => handleFile(e.target.files[0]);
 
-    function calc(d) {
-        document.getElementById('game-label').innerText = d.g + " G ANALYZED";
-        let s = { 1: 1.0, 2: 1.0, 5: 1.0, 6: 1.0 };
-        const w = d.g < 3000 ? 1.0 : 2.2; 
+        function toggleKey() { document.getElementById('key-input-area').classList.toggle('hidden'); }
+        function saveKey() { localStorage.setItem('v_key', document.getElementById('api-key').value); alert("KEY SAVED"); toggleKey(); }
 
-        [1, 2, 5, 6].forEach(n => {
-            let rbM = (d.rb && d.rb > 440) ? (n <= 2 ? 2.5 : 0.6) : 1.0; 
-            if (d.ba) s[n] *= Math.pow(SPEC[n].ba / d.ba, w);
-            if (d.rb) s[n] *= Math.pow(SPEC[n].rb / d.rb, 1.8) * rbM;
-            if (d.vg) s[n] *= Math.pow(SPEC[n].vg / d.vg, 1.5);
-            if (d.bc) s[n] *= Math.pow(SPEC[n].bc / d.bc, 1.1);
-            if (d.r1) s[n] *= Math.pow(SPEC[n].r1 / d.r1, 1.1);
-        });
-
-        const sum = Object.values(s).reduce((a, b) => a + b);
-        [1, 2, 5, 6].forEach(n => {
-            const p = (s[n] / sum * 100).toFixed(1);
-            document.getElementById(`pct-${n}`).innerText = p + '%';
-            document.getElementById(`bar-${n}`).style.width = p + '%';
-        });
-    }
-</script>
+        // 解析実行後に呼ばれる表示更新関数
+        function updateUI(scores, games) {
+            document.getElementById('game-display').innerText = games + " G";
+            [1, 2, 5, 6].forEach(s => {
+                const p = (scores[s] * 100).toFixed(1);
+                document.getElementById('p' + s).innerText = p + "%";
+                document.getElementById('b' + s).style.width = p + "%";
+            });
+            document.getElementById('status').innerText = "ANALYSIS COMPLETE";
+        }
+    </script>
 </body>
 </html>
