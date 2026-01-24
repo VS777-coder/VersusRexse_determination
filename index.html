@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Versus Revise - Pro Analyzer</title>
+    <title>Versus Revise - Pro Analyzer v3.5</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         body { background-color: #0f172a; color: #f8fafc; font-family: sans-serif; }
@@ -11,36 +11,35 @@
         .drop-zone { border: 2px dashed #334155; transition: 0.3s; }
         .drop-zone.dragover { border-color: #38bdf8; background: rgba(56, 189, 248, 0.1); }
         .bar-bg { background: #334155; height: 12px; border-radius: 6px; overflow: hidden; }
-        .bar-fill { background: linear-gradient(90deg, #38bdf8, #818cf8); height: 100%; transition: width 0.8s ease-out; width: 0%; }
+        .bar-fill { background: linear-gradient(90deg, #38bdf8, #818cf8); height: 100%; transition: width 1s cubic-bezier(0.16, 1, 0.3, 1); width: 0%; }
     </style>
 </head>
 <body class="flex flex-col items-center p-4 min-h-screen">
 
     <header class="w-full max-w-md mb-6 text-center">
         <h1 class="text-2xl font-bold text-sky-400 tracking-widest uppercase">Versus Revise</h1>
-        <p class="text-[10px] text-slate-500 font-mono">STABLE BAYESIAN ENGINE v3.1</p>
+        <p class="text-[10px] text-slate-500 font-mono italic">STATISTICAL WEIGHTING ENGINE v3.5</p>
     </header>
 
     <main class="w-full max-w-md space-y-4">
+        <div class="glass p-4 rounded-2xl">
+            <input type="password" id="api-key" value="AIzaSyClYhUVGiryRB5d0YGRzp3ll6ZJIcvJWa0" placeholder="Google API Key" class="w-full bg-slate-800 border border-slate-700 rounded-lg p-2 text-xs text-sky-300">
+        </div>
+
         <div id="drop-zone" class="drop-zone glass rounded-3xl p-8 text-center cursor-pointer">
-            <div id="drop-content" class="space-y-2 text-slate-400">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 mx-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                </svg>
-                <p class="text-sm font-bold">ユニメモ画像を添付</p>
-                <p id="file-name" class="text-[10px] font-mono italic">Ready</p>
-            </div>
+            <p class="text-sm font-bold text-slate-200">ユニメモをアップロード</p>
+            <p id="file-name" class="text-[10px] font-mono italic text-slate-500">Waiting for image...</p>
             <input type="file" id="file-input" class="hidden" accept="image/*">
         </div>
 
-        <div id="status-card" class="hidden glass p-4 rounded-2xl border-l-4 border-sky-500">
-            <div id="status-text" class="text-xs font-mono text-sky-400 text-center">Ready...</div>
+        <div id="status-card" class="hidden glass p-4 rounded-xl border-l-4 border-sky-500">
+            <div id="status-text" class="text-xs font-mono text-sky-400 text-center uppercase tracking-widest">Processing...</div>
         </div>
 
         <div class="glass rounded-3xl p-6 shadow-2xl space-y-6">
             <div class="flex justify-between items-end border-b border-slate-700 pb-2">
                 <span class="text-xs text-slate-400 font-bold uppercase tracking-tighter">Setting Estimation</span>
-                <span id="final-label" class="text-[10px] text-sky-500 font-mono uppercase tracking-widest">Wait</span>
+                <span id="final-label" class="text-[10px] text-sky-500 font-mono">STANDBY</span>
             </div>
             
             <div id="results-container" class="space-y-6">
@@ -65,8 +64,6 @@
     </main>
 
     <script>
-        const API_KEY = 'AIzaSyClYhUVGiryRB5d0YGRzp3ll6ZJIcvJWa0';
-
         const MASTER = {
             bonus: { 1:{bb:350.4, rb:438}, 2:{bb:334.3, rb:411.7}, 5:{bb:318.1, rb:378.8}, 6:{bb:297.8, rb:354.2} },
             normal: { 1:{ba:10.9, sa:74.5, ca:119.2, cb:56.2}, 2:{ba:10.7, sa:70.6, ca:118.9, cb:57.7}, 5:{ba:10.5, sa:72.5, ca:118.9, cb:53.1}, 6:{ba:10.2, sa:68.8, ca:118.9, cb:54.4} },
@@ -83,10 +80,11 @@
         fileInput.onchange = e => handleFile(e.target.files[0]);
 
         async function handleFile(file) {
-            if (!file) return;
+            const API_KEY = document.getElementById('api-key').value;
+            if (!file || !API_KEY) return;
             document.getElementById('file-name').innerText = file.name;
             document.getElementById('status-card').classList.remove('hidden');
-            statusText.innerText = 'Cloud OCR Processing...';
+            statusText.innerText = 'Analyzing Image...';
 
             try {
                 const base64 = await toBase64(file);
@@ -98,30 +96,32 @@
                     })
                 });
                 const json = await response.json();
-                const rawText = json.responses[0]?.fullTextAnnotation?.text || "";
-                if (!rawText) throw new Error('Empty result from Google.');
-                runBayes(extract(rawText));
-            } catch (err) {
-                statusText.innerText = 'Error: ' + err.message;
-            }
+                const text = json.responses[0]?.fullTextAnnotation?.text || "";
+                runBayes(extract(text));
+            } catch (err) { statusText.innerText = 'Error: ' + err.message; }
         }
 
         function extract(text) {
-            const cleanText = text.replace(/[lI]/g, '1').replace(/\s/g, '');
+            const clean = text.replace(/[lI]/g, '1').replace(/\s/g, '');
             const find = (re) => {
-                const m = cleanText.match(re);
+                const m = clean.match(re);
                 return m ? parseFloat(m[1].replace(/,/g, '')) : null;
             };
+            const games = find(/総プレイ数([\d,.]+)/) || 1000;
             return {
-                bonus: { bb: find(/総BB.*?1\/([\d,.]+)/), rb: find(/RB.*?1\/([\d,.]+)/) },
-                normal: { ba: find(/ベルA.*?1\/([\d,.]+)/), sa: find(/スイカA.*?1\/([\d,.]+)/), ca: find(/チェリーA.*?1\/([\d,.]+)/), cb: find(/チェリーB.*?1\/([\d,.]+)/) },
-                rt: { vc: find(/VSチャンス中はずれ.*?1\/([\d,.]+)/), vg: find(/VSGAME中はずれ.*?1\/([\d,.]+)/) },
-                bbIn: { bl: find(/BB中詳細.*?ベル.*?1\/([\d,.]+)/), cbs: find(/チェリー＋ベル揃い.*?1\/([\d,.]+)/), cbh: find(/チェリー＋ベルはずれ.*?1\/([\d,.]+)/), mc: find(/中段チェリー.*?1\/([\d,.]+)/) || 16384 },
-                rbIn: { h: find(/RB中詳細.*?はずれ.*?1\/([\d,.]+)/) || 100000 }
+                games,
+                data: {
+                    bonus: { bb: find(/総BB.*?1\/([\d,.]+)/), rb: find(/RB.*?1\/([\d,.]+)/) },
+                    normal: { ba: find(/ベルA.*?1\/([\d,.]+)/), sa: find(/スイカA.*?1\/([\d,.]+)/), ca: find(/チェリーA.*?1\/([\d,.]+)/), cb: find(/チェリーB.*?1\/([\d,.]+)/) },
+                    rt: { vc: find(/VSチャンス中はずれ.*?1\/([\d,.]+)/), vg: find(/VSGAME中はずれ.*?1\/([\d,.]+)/) },
+                    bbIn: { bl: find(/BB中詳細.*?ベル.*?1\/([\d,.]+)/), cbs: find(/チェリー＋ベル揃い.*?1\/([\d,.]+)/), cbh: find(/チェリー＋ベルはずれ.*?1\/([\d,.]+)/), mc: find(/中段チェリー.*?1\/([\d,.]+)/) || 16384 },
+                    rbIn: { h: find(/RB中詳細.*?はずれ.*?1\/([\d,.]+)/) || 100000 }
+                }
             };
         }
 
-        function runBayes(data) {
+        function runBayes(input) {
+            const { games, data } = input;
             let logScores = { 1: Math.log(0.25), 2: Math.log(0.25), 5: Math.log(0.25), 6: Math.log(0.25) };
             const settings = [1, 2, 5, 6];
 
@@ -129,26 +129,31 @@
                 Object.keys(MASTER[cat][1]).forEach(key => {
                     const obs = data[cat][key];
                     if (!obs) return;
+
                     settings.forEach(s => {
                         const target = MASTER[cat][s][key];
-                        const error = Math.abs((1/obs) - (1/target)) / (1/target);
-                        logScores[s] -= Math.pow(error, 2) * 50; 
+                        // 確率密度関数に近い重み付け
+                        // 試行回数 (games/target) が多いほど、わずかな差が対数尤度に大きく響く
+                        const expectedRate = 1 / target;
+                        const actualRate = 1 / obs;
+                        const trials = (cat === 'normal' || cat === 'bonus') ? games : (games * 0.1); // RT等は推測値で減衰
+                        
+                        logScores[s] -= Math.pow(actualRate - expectedRate, 2) * trials * 10000;
                     });
                 });
             });
 
-            let maxLog = Math.max(...Object.values(logScores));
-            let probs = {};
+            const maxLog = Math.max(...Object.values(logScores));
             let sum = 0;
+            let finalProbs = {};
             settings.forEach(s => {
-                probs[s] = Math.exp(logScores[s] - maxLog);
-                sum += probs[s];
+                finalProbs[s] = Math.exp(logScores[s] - maxLog);
+                sum += finalProbs[s];
             });
+            settings.forEach(s => finalProbs[s] /= sum);
 
-            settings.forEach(s => probs[s] /= sum);
-            updateUI(probs);
-            document.getElementById('final-label').innerText = 'Analysis Done';
-            statusText.innerText = 'Stable Result Applied.';
+            updateUI(finalProbs);
+            statusText.innerText = 'Analysis Complete';
         }
 
         function updateUI(p) {
@@ -159,11 +164,9 @@
             });
         }
 
-        const toBase64 = file => new Promise((resolve, reject) => {
-            const reader = new FileReader();
-            reader.readAsDataURL(file);
-            reader.onload = () => resolve(reader.result);
-            reader.onerror = e => reject(e);
+        const toBase64 = f => new Promise((res, rej) => {
+            const r = new FileReader(); r.readAsDataURL(f);
+            r.onload = () => res(r.result); r.onerror = e => rej(e);
         });
     </script>
 </body>
