@@ -10,13 +10,15 @@
         .setting-bar { transition: width 0.8s cubic-bezier(0.16, 1, 0.3, 1); width: 0%; }
         .app-container { height: 100%; display: flex; flex-direction: column; padding: 1.5rem; box-sizing: border-box; }
         img[src="VS.png"] { min-height: 50px; background-color: transparent; }
+        /* デバッグ用エリア */
+        #debug-area { font-size: 10px; color: #fca5a5; overflow-y: scroll; max-height: 100px; background: rgba(0,0,0,0.5); padding: 5px; margin-top: 10px; display: none; }
     </style>
 </head>
 <body class="app-container">
 
     <header class="text-center pt-4 pb-2 flex-none">
         <img src="VS.png" alt="VERSUS REVISE" class="mx-auto w-4/5 max-w-sm drop-shadow-[0_0_15px_rgba(59,130,246,0.6)]">
-        <p class="text-red-600 font-bold text-[10px] mt-3 tracking-[0.3em] opacity-90">みおちゃん専用 VER 1.9.2</p>
+        <p class="text-red-600 font-bold text-[10px] mt-3 tracking-[0.3em] opacity-90">みおちゃん専用 VER 1.9.3</p>
     </header>
 
     <div id="drop-zone" class="flex-none border-4 border-blue-500/40 rounded-[2rem] py-6 text-center bg-blue-900/20 mb-4 active:scale-95 active:bg-blue-900/40 transition-all shadow-lg cursor-pointer">
@@ -63,6 +65,7 @@
                 </div>
             </div>
         </div>
+        <div id="debug-area"></div>
     </main>
 
     <footer class="flex-none space-y-2">
@@ -75,6 +78,12 @@
 
     <script>
         const TARGETS = { bellA: [10.5, 10.1, 9.8, 9.4], rb: [409.6, 397.2, 350.5, 312.1] };
+        function log(msg) {
+            const d = document.getElementById('debug-area');
+            d.style.display = 'block';
+            d.innerText += msg + "\n";
+            console.log(msg);
+        }
 
         function calculateReliability(trials) {
             if (trials < 300) return 0.1;
@@ -86,7 +95,6 @@
         function analyze(data) {
             let s = { 1: 1.0, 2: 1.0, 5: 1.0, 6: 1.0 };
             const trials = data.totalGames || 0;
-            // 数値が0なら0%を返す
             if (trials === 0) return { 1: "0.0", 2: "0.0", 5: "0.0", 6: "0.0" };
 
             const rel = calculateReliability(trials);
@@ -122,13 +130,15 @@
         }
 
         dropZone.onclick = () => fileInput.click();
+        
         fileInput.onchange = async (e) => {
             const key = localStorage.getItem('v_key');
             if (!key) return alert("APIキーが未設定です");
             if (e.target.files.length === 0) return;
 
+            document.getElementById('debug-area').innerText = ""; // ログクリア
             const originalHTML = dropZone.innerHTML;
-            dropZone.innerHTML = `<p class="text-xl font-black text-blue-400 animate-pulse">解析中...</p>`;
+            dropZone.innerHTML = `<p class="text-xl font-black text-blue-400 animate-pulse">通信中...</p>`;
 
             let combinedData = { totalGames: 0, bellACount: 0, rbCount: 0, rbHazure: 0, bbHazure: 0, bbCherryBellHazure: 0 };
 
@@ -145,17 +155,23 @@
                     combinedData.bbCherryBellHazure += res.bbCherryBellHazure;
                 });
 
-                // 【デバッグ用】読み取った数値を表示する（ここが0ならOCR失敗）
-                alert(`読み取り結果:\n総ゲーム数: ${combinedData.totalGames}G\nベルA: ${combinedData.bellACount}回\nRB: ${combinedData.rbCount}回\n\nこれが0なら画像がうまく読めていません。`);
+                // デバッグ: 読み取った数値を表示
+                if (combinedData.totalGames === 0) {
+                     alert("警告：数字が読み取れませんでした。画面下の赤いログを確認してください。");
+                     log("【解析失敗】数字がすべて0です。画像が粗いか、APIキーがリファラー制限で弾かれています。");
+                } else {
+                     alert(`成功: ${combinedData.totalGames}G / ベルA:${combinedData.bellACount}回 / RB:${combinedData.rbCount}回`);
+                }
 
                 const result = analyze(combinedData);
                 updateGraph(result);
-                dropZone.innerHTML = `<p class="text-xl font-black text-green-400">完了！</p>`;
+                dropZone.innerHTML = `<p class="text-xl font-black text-green-400">解析完了</p>`;
                 setTimeout(() => dropZone.innerHTML = originalHTML, 2000);
 
             } catch (err) {
                 console.error(err);
                 alert("エラー: " + err.message);
+                log("エラー詳細: " + err.message);
                 dropZone.innerHTML = originalHTML;
             }
         };
@@ -178,33 +194,47 @@
                             method: 'POST', body: JSON.stringify({ requests: [{ image: { content: base64 }, features: [{ type: 'TEXT_DETECTION' }] }] }), headers: { 'Content-Type': 'application/json' }
                         });
                         const json = await res.json();
+                        
+                        // エラーハンドリング強化
+                        if (json.error) {
+                            log("APIエラー: " + json.error.message + " (Code: " + json.error.code + ")");
+                            reject(new Error(json.error.message));
+                            return;
+                        }
+                        
                         if (!json.responses || !json.responses[0].fullTextAnnotation) {
+                            log("テキスト検出なし: 画像から文字が見つかりませんでした。");
                             resolve({ totalGames: 0, bellACount: 0, rbCount: 0, rbHazure: 0, bbHazure: 0, bbCherryBellHazure: 0 });
                         } else {
-                            resolve(parseText(json.responses[0].fullTextAnnotation.text));
+                            const rawText = json.responses[0].fullTextAnnotation.text;
+                            // log("生データ: " + rawText.substring(0, 50) + "..."); // 最初の50文字だけログに
+                            resolve(parseText(rawText));
                         }
                     } catch (e) { reject(e); }
                 };
             });
         }
 
-        // 修正版：カンマを除去してから数値化する
         function parseText(text) {
+            // カンマとスペースを除去して解析しやすくする
+            const cleanText = text.replace(/,/g, '').replace(/ /g, '');
             const data = { totalGames: 0, bellACount: 0, rbCount: 0, rbHazure: 0, bbHazure: 0, bbCherryBellHazure: 0 };
             
-            // カンマを全て消して、数値として読みやすくする
-            const cleanText = text.replace(/,/g, '');
-
-            const matchG = cleanText.match(/総プレイ数[\s\S]*?(\d+)/);
+            // 強力な検索ロジック (行またぎ対応)
+            
+            // 総プレイ数: "総" のあとにある最初の大きな数字を探す
+            const matchG = cleanText.match(/総プレイ数.*?(\d+)/s); // sフラグで改行もまたぐ
             if (matchG) data.totalGames = parseInt(matchG[1]);
-
-            const matchBellA = cleanText.match(/ベルA[\s\S]*?(\d+)回/);
+            
+            // ベルA: "ベルA" のあとの数字
+            const matchBellA = cleanText.match(/ベルA.*?(\d+)回/s);
             if (matchBellA) data.bellACount = parseInt(matchBellA[1]);
 
-            const matchRB = cleanText.match(/RB[\s\S]*?(\d+)回/);
+            // RB: "RB" または "REG" のあとの数字
+            const matchRB = cleanText.match(/(?:RB|REG).*?(\d+)回/s);
             if (matchRB) data.rbCount = parseInt(matchRB[1]);
 
-            // 詳細データの解析
+            // 詳細データ解析
             const lines = cleanText.split('\n');
             let section = "";
             lines.forEach(line => {
@@ -215,7 +245,7 @@
                 const count = numMatch ? parseInt(numMatch[1]) : 0;
 
                 if (section === "BB") {
-                    if (line.includes("チェリー+ベル") || line.includes("チェリー+ベル外れ")) data.bbCherryBellHazure = count;
+                    if (line.includes("チェリー+ベル")) data.bbCherryBellHazure = count;
                     else if (line.includes("ハズレ") && !line.includes("チェリー")) data.bbHazure = count;
                 }
                 if (section === "RB") {
