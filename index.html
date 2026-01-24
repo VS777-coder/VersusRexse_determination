@@ -10,79 +10,61 @@
         .setting-bar { transition: width 0.8s cubic-bezier(0.16, 1, 0.3, 1); width: 0%; }
         .app-container { height: 100%; display: flex; flex-direction: column; padding: 1.5rem; box-sizing: border-box; }
         img[src="VS.png"] { min-height: 50px; background-color: transparent; }
-        /* デバッグ用エリア */
-        #debug-area { font-size: 10px; color: #fca5a5; overflow-y: scroll; max-height: 100px; background: rgba(0,0,0,0.5); padding: 5px; margin-top: 10px; display: none; }
+        
+        /* デバッグエリア（常時表示・スクロール可） */
+        #debug-area { 
+            font-size: 11px; 
+            font-family: monospace;
+            color: #86efac; /* 薄緑で見やすく */
+            background: rgba(0, 0, 0, 0.8); 
+            border: 1px solid #4ade80;
+            padding: 10px; 
+            margin-top: 10px; 
+            height: 150px; /* 高さを確保 */
+            overflow-y: scroll; 
+            white-space: pre-wrap; /* 改行を反映 */
+            border-radius: 8px;
+            display: block; /* 最初から表示 */
+        }
     </style>
 </head>
 <body class="app-container">
 
-    <header class="text-center pt-4 pb-2 flex-none">
-        <img src="VS.png" alt="VERSUS REVISE" class="mx-auto w-4/5 max-w-sm drop-shadow-[0_0_15px_rgba(59,130,246,0.6)]">
-        <p class="text-red-600 font-bold text-[10px] mt-3 tracking-[0.3em] opacity-90">みおちゃん専用 VER 1.9.3</p>
+    <header class="text-center pt-2 pb-2 flex-none">
+        <img src="VS.png" alt="VERSUS REVISE" class="mx-auto w-3/5 max-w-sm drop-shadow-[0_0_15px_rgba(59,130,246,0.6)]">
+        <p class="text-red-600 font-bold text-[10px] mt-2 tracking-[0.3em] opacity-90">みおちゃん専用 VER 1.9.4</p>
     </header>
 
-    <div id="drop-zone" class="flex-none border-4 border-blue-500/40 rounded-[2rem] py-6 text-center bg-blue-900/20 mb-4 active:scale-95 active:bg-blue-900/40 transition-all shadow-lg cursor-pointer">
-        <p class="text-xl font-black text-white tracking-widest leading-none">ユニメモ画像を解析</p>
+    <div id="drop-zone" class="flex-none border-4 border-blue-500/40 rounded-[2rem] py-4 text-center bg-blue-900/20 mb-2 active:scale-95 active:bg-blue-900/40 transition-all shadow-lg cursor-pointer">
+        <p class="text-lg font-black text-white tracking-widest leading-none">ユニメモ画像を解析</p>
         <input type="file" id="file-input" multiple class="hidden" accept="image/*">
     </div>
 
-    <main class="flex-grow bg-slate-900/95 rounded-[2.5rem] p-6 border border-white/10 shadow-2xl flex flex-col justify-around mb-4 overflow-hidden relative z-10">
-        <div class="space-y-5">
-            <div>
-                <div class="flex justify-between items-end mb-1.5 px-2">
-                    <span class="text-lg font-black text-gray-500">設定１</span>
-                    <span id="p1" class="font-mono text-lg text-gray-400">0.0%</span>
-                </div>
-                <div class="w-full bg-slate-800 h-3.5 rounded-full overflow-hidden shadow-inner">
-                    <div id="bar1" class="setting-bar h-full bg-gray-600 shadow-[0_0_10px_rgba(107,114,128,0.3)]"></div>
-                </div>
-            </div>
-            <div>
-                <div class="flex justify-between items-end mb-1.5 px-2">
-                    <span class="text-lg font-black text-blue-500 text-shadow-blue">設定２</span>
-                    <span id="p2" class="font-mono text-lg text-blue-400">0.0%</span>
-                </div>
-                <div class="w-full bg-slate-800 h-3.5 rounded-full overflow-hidden shadow-inner">
-                    <div id="bar2" class="setting-bar h-full bg-blue-500 shadow-[0_0_15px_rgba(59,130,246,0.5)]"></div>
-                </div>
-            </div>
-            <div>
-                <div class="flex justify-between items-end mb-1.5 px-2">
-                    <span class="text-lg font-black text-orange-500">設定５</span>
-                    <span id="p5" class="font-mono text-lg text-orange-400">0.0%</span>
-                </div>
-                <div class="w-full bg-slate-800 h-3.5 rounded-full overflow-hidden shadow-inner">
-                    <div id="bar5" class="setting-bar h-full bg-orange-500 shadow-[0_0_15px_rgba(249,115,22,0.5)]"></div>
-                </div>
-            </div>
-            <div>
-                <div class="flex justify-between items-end mb-1.5 px-2">
-                    <span class="text-lg font-black text-red-600 text-shadow-red">設定６</span>
-                    <span id="p6" class="font-mono text-lg text-red-500">0.0%</span>
-                </div>
-                <div class="w-full bg-slate-800 h-3.5 rounded-full overflow-hidden shadow-inner">
-                    <div id="bar6" class="setting-bar h-full bg-red-600 shadow-[0_0_20px_rgba(220,38,38,0.6)]"></div>
-                </div>
-            </div>
+    <main class="flex-grow bg-slate-900/95 rounded-[2rem] p-4 border border-white/10 shadow-2xl flex flex-col justify-between mb-2 overflow-hidden relative z-10">
+        <div class="space-y-3">
+            <div><div class="flex justify-between items-end mb-1 px-2"><span class="text-base font-black text-gray-500">設定１</span><span id="p1" class="font-mono text-base text-gray-400">0.0%</span></div><div class="w-full bg-slate-800 h-2.5 rounded-full overflow-hidden"><div id="bar1" class="setting-bar h-full bg-gray-600"></div></div></div>
+            <div><div class="flex justify-between items-end mb-1 px-2"><span class="text-base font-black text-blue-500">設定２</span><span id="p2" class="font-mono text-base text-blue-400">0.0%</span></div><div class="w-full bg-slate-800 h-2.5 rounded-full overflow-hidden"><div id="bar2" class="setting-bar h-full bg-blue-500"></div></div></div>
+            <div><div class="flex justify-between items-end mb-1 px-2"><span class="text-base font-black text-orange-500">設定５</span><span id="p5" class="font-mono text-base text-orange-400">0.0%</span></div><div class="w-full bg-slate-800 h-2.5 rounded-full overflow-hidden"><div id="bar5" class="setting-bar h-full bg-orange-500"></div></div></div>
+            <div><div class="flex justify-between items-end mb-1 px-2"><span class="text-base font-black text-red-600">設定６</span><span id="p6" class="font-mono text-base text-red-500">0.0%</span></div><div class="w-full bg-slate-800 h-2.5 rounded-full overflow-hidden"><div id="bar6" class="setting-bar h-full bg-red-600"></div></div></div>
         </div>
-        <div id="debug-area"></div>
+        
+        <div id="debug-area">ここに読み取った文字データ（生ログ）が表示されます...</div>
     </main>
 
     <footer class="flex-none space-y-2">
-        <div class="flex gap-2 h-10">
-            <input type="password" id="api-key" placeholder="Google Vision API Key" class="flex-grow bg-slate-800 border border-white/20 rounded-xl px-4 text-xs text-white focus:outline-none focus:border-blue-500 shadow-inner">
-            <button id="save-key" class="bg-blue-600 px-6 rounded-xl text-xs font-black tracking-widest active:bg-blue-700 shadow-lg">SET</button>
+        <div class="flex gap-2 h-8">
+            <input type="password" id="api-key" placeholder="API Key" class="flex-grow bg-slate-800 border border-white/20 rounded-lg px-4 text-xs text-white focus:outline-none focus:border-blue-500">
+            <button id="save-key" class="bg-blue-600 px-4 rounded-lg text-[10px] font-black tracking-widest active:bg-blue-700">SET</button>
         </div>
-        <p id="key-status" class="text-[9px] text-center text-gray-500 font-bold uppercase tracking-[0.2em]">API Key: Inactive</p>
+        <p id="key-status" class="text-[8px] text-center text-gray-500 font-bold uppercase tracking-[0.2em]">Key: Inactive</p>
     </footer>
 
     <script>
         const TARGETS = { bellA: [10.5, 10.1, 9.8, 9.4], rb: [409.6, 397.2, 350.5, 312.1] };
         function log(msg) {
             const d = document.getElementById('debug-area');
-            d.style.display = 'block';
-            d.innerText += msg + "\n";
-            console.log(msg);
+            // 古いログに追加していく
+            d.innerText = msg + "\n\n----------------\n\n" + d.innerText;
         }
 
         function calculateReliability(trials) {
@@ -117,7 +99,7 @@
 
         document.getElementById('save-key').onclick = () => {
             const val = document.getElementById('api-key').value;
-            if(!val) return alert("APIキーを入れてください");
+            if(!val) return alert("APIキーを入力してください");
             localStorage.setItem('v_key', val);
             updateKeyStatus(true);
         };
@@ -136,10 +118,8 @@
             if (!key) return alert("APIキーが未設定です");
             if (e.target.files.length === 0) return;
 
-            document.getElementById('debug-area').innerText = ""; // ログクリア
-            const originalHTML = dropZone.innerHTML;
-            dropZone.innerHTML = `<p class="text-xl font-black text-blue-400 animate-pulse">通信中...</p>`;
-
+            document.getElementById('debug-area').innerText = "解析中...";
+            
             let combinedData = { totalGames: 0, bellACount: 0, rbCount: 0, rbHazure: 0, bbHazure: 0, bbCherryBellHazure: 0 };
 
             try {
@@ -155,24 +135,25 @@
                     combinedData.bbCherryBellHazure += res.bbCherryBellHazure;
                 });
 
-                // デバッグ: 読み取った数値を表示
-                if (combinedData.totalGames === 0) {
-                     alert("警告：数字が読み取れませんでした。画面下の赤いログを確認してください。");
-                     log("【解析失敗】数字がすべて0です。画像が粗いか、APIキーがリファラー制限で弾かれています。");
-                } else {
-                     alert(`成功: ${combinedData.totalGames}G / ベルA:${combinedData.bellACount}回 / RB:${combinedData.rbCount}回`);
-                }
+                // 【詳細デバッグダイアログ】
+                let msg = "【解析結果レポート】\n";
+                msg += `総ゲーム: ${combinedData.totalGames} G\n`;
+                msg += `ベルA: ${combinedData.bellACount} 回 ${combinedData.bellACount===0 ? "←ここが0！" : ""}\n`;
+                msg += `RB回数: ${combinedData.rbCount} 回\n`;
+                msg += `----------------\n`;
+                msg += `RB中ハズレ: ${combinedData.rbHazure}\n`;
+                msg += `BB中ハズレ: ${combinedData.bbHazure}\n`;
+                msg += `BBチェリベ: ${combinedData.bbCherryBellHazure}\n`;
+                msg += `\n※画面下の緑色の文字(生データ)を確認してください`;
+                
+                alert(msg);
 
                 const result = analyze(combinedData);
                 updateGraph(result);
-                dropZone.innerHTML = `<p class="text-xl font-black text-green-400">解析完了</p>`;
-                setTimeout(() => dropZone.innerHTML = originalHTML, 2000);
 
             } catch (err) {
                 console.error(err);
                 alert("エラー: " + err.message);
-                log("エラー詳細: " + err.message);
-                dropZone.innerHTML = originalHTML;
             }
         };
 
@@ -195,19 +176,19 @@
                         });
                         const json = await res.json();
                         
-                        // エラーハンドリング強化
                         if (json.error) {
-                            log("APIエラー: " + json.error.message + " (Code: " + json.error.code + ")");
+                            log("APIエラー: " + json.error.message);
                             reject(new Error(json.error.message));
                             return;
                         }
                         
                         if (!json.responses || !json.responses[0].fullTextAnnotation) {
-                            log("テキスト検出なし: 画像から文字が見つかりませんでした。");
+                            log("文字が見つかりませんでした");
                             resolve({ totalGames: 0, bellACount: 0, rbCount: 0, rbHazure: 0, bbHazure: 0, bbCherryBellHazure: 0 });
                         } else {
                             const rawText = json.responses[0].fullTextAnnotation.text;
-                            // log("生データ: " + rawText.substring(0, 50) + "..."); // 最初の50文字だけログに
+                            // 生データを画面下の緑エリアに表示
+                            log(rawText); 
                             resolve(parseText(rawText));
                         }
                     } catch (e) { reject(e); }
@@ -216,25 +197,36 @@
         }
 
         function parseText(text) {
-            // カンマとスペースを除去して解析しやすくする
+            // カンマとスペース除去
             const cleanText = text.replace(/,/g, '').replace(/ /g, '');
             const data = { totalGames: 0, bellACount: 0, rbCount: 0, rbHazure: 0, bbHazure: 0, bbCherryBellHazure: 0 };
             
-            // 強力な検索ロジック (行またぎ対応)
-            
-            // 総プレイ数: "総" のあとにある最初の大きな数字を探す
-            const matchG = cleanText.match(/総プレイ数.*?(\d+)/s); // sフラグで改行もまたぐ
+            // 総プレイ数
+            const matchG = cleanText.match(/総プレイ数.*?(\d+)/s);
             if (matchG) data.totalGames = parseInt(matchG[1]);
             
-            // ベルA: "ベルA" のあとの数字
-            const matchBellA = cleanText.match(/ベルA.*?(\d+)回/s);
+            // 【修正】ベルA: 条件を緩くした
+            // パターン1: "ベルA" + 数字
+            let matchBellA = cleanText.match(/ベルA.*?(\d+)回/s);
+            
+            // パターン2: もしダメなら "ベル" + 数字 (誤認識対策)
+            if (!matchBellA) {
+                 matchBellA = cleanText.match(/ベル.*?(\d+)回/s);
+            }
+            // パターン3: それでもダメなら "A" + 数字 (さらに緩く)
+            if (!matchBellA) {
+                 // "ベルA"の"ベル"が読めず "A" だけになっているケース
+                 // ただし他のAと被る危険があるため、近くに"回"があるもの限定
+                 // ここはリスクがあるので一旦パターン2まで
+            }
+
             if (matchBellA) data.bellACount = parseInt(matchBellA[1]);
 
-            // RB: "RB" または "REG" のあとの数字
+            // RB
             const matchRB = cleanText.match(/(?:RB|REG).*?(\d+)回/s);
             if (matchRB) data.rbCount = parseInt(matchRB[1]);
 
-            // 詳細データ解析
+            // 詳細
             const lines = cleanText.split('\n');
             let section = "";
             lines.forEach(line => {
@@ -245,7 +237,7 @@
                 const count = numMatch ? parseInt(numMatch[1]) : 0;
 
                 if (section === "BB") {
-                    if (line.includes("チェリー+ベル")) data.bbCherryBellHazure = count;
+                    if (line.includes("チェリー+ベル") || line.includes("チェリ+ベル")) data.bbCherryBellHazure = count; // 表記揺れ対応
                     else if (line.includes("ハズレ") && !line.includes("チェリー")) data.bbHazure = count;
                 }
                 if (section === "RB") {
