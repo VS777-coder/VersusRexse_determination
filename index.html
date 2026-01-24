@@ -10,21 +10,10 @@
         .setting-bar { transition: width 0.8s cubic-bezier(0.16, 1, 0.3, 1); width: 0%; }
         .app-container { height: 100%; display: flex; flex-direction: column; padding: 1.5rem; box-sizing: border-box; }
         img[src="VS.png"] { min-height: 50px; background-color: transparent; }
-        
-        /* デバッグエリア（超重要） */
         #debug-area { 
-            font-size: 10px; 
-            font-family: monospace; 
-            color: #86efac; 
-            background: rgba(0, 0, 0, 0.9); 
-            border: 1px solid #4ade80;
-            padding: 10px; 
-            margin-top: 10px; 
-            flex-grow: 1; /* 残りのスペースを埋める */
-            overflow-y: scroll; /* スクロール必須 */
-            white-space: pre-wrap; 
-            border-radius: 8px;
-            display: block; 
+            font-size: 10px; font-family: monospace; color: #86efac; background: rgba(0, 0, 0, 0.9); 
+            border: 1px solid #4ade80; padding: 10px; margin-top: 10px; flex-grow: 1; 
+            overflow-y: scroll; white-space: pre-wrap; border-radius: 8px; display: block; 
         }
     </style>
 </head>
@@ -32,7 +21,7 @@
 
     <header class="text-center pt-2 pb-2 flex-none">
         <img src="VS.png" alt="VERSUS REVISE" class="mx-auto w-3/5 max-w-sm drop-shadow-[0_0_15px_rgba(59,130,246,0.6)]">
-        <p class="text-red-600 font-bold text-[10px] mt-2 tracking-[0.3em] opacity-90">みおちゃん専用 VER 2.1.0</p>
+        <p class="text-red-600 font-bold text-[10px] mt-2 tracking-[0.3em] opacity-90">みおちゃん専用 VER 2.2.0</p>
     </header>
 
     <div id="drop-zone" class="flex-none border-4 border-blue-500/40 rounded-[2rem] py-4 text-center bg-blue-900/20 mb-2 active:scale-95 active:bg-blue-900/40 transition-all shadow-lg cursor-pointer">
@@ -47,8 +36,7 @@
             <div><div class="flex justify-between items-end mb-1 px-2"><span class="text-xs font-black text-orange-500">設定５</span><span id="p5" class="font-mono text-xs text-orange-400">0.0%</span></div><div class="w-full bg-slate-800 h-2 rounded-full overflow-hidden"><div id="bar5" class="setting-bar h-full bg-orange-500"></div></div></div>
             <div><div class="flex justify-between items-end mb-1 px-2"><span class="text-xs font-black text-red-600">設定６</span><span id="p6" class="font-mono text-xs text-red-500">0.0%</span></div><div class="w-full bg-slate-800 h-2 rounded-full overflow-hidden"><div id="bar6" class="setting-bar h-full bg-red-600"></div></div></div>
         </div>
-        
-        <div id="debug-area">ここに解析プロセスが表示されます...</div>
+        <div id="debug-area">解析結果待機中...</div>
     </main>
 
     <footer class="flex-none space-y-2">
@@ -64,12 +52,7 @@
         
         function log(msg) {
             const d = document.getElementById('debug-area');
-            // 新しいログを上に追加（見やすくするため）
             d.innerText = msg + "\n\n" + d.innerText;
-        }
-
-        function clearLog() {
-            document.getElementById('debug-area').innerText = "";
         }
 
         function calculateReliability(trials) {
@@ -122,10 +105,9 @@
             if (!key) return alert("APIキーが未設定です");
             if (e.target.files.length === 0) return;
 
-            clearLog();
-            log("--- 解析開始 ---");
+            document.getElementById('debug-area').innerText = "";
             const originalHTML = dropZone.innerHTML;
-            dropZone.innerHTML = `<p class="text-xl font-black text-blue-400 animate-pulse">通信中...</p>`;
+            dropZone.innerHTML = `<p class="text-xl font-black text-blue-400 animate-pulse">解析中...</p>`;
 
             let combinedData = { totalGames: 0, bellACount: 0, rbCount: 0, rbHazure: 0, bbHazure: 0, bbCherryBellHazure: 0 };
 
@@ -142,23 +124,16 @@
                     combinedData.bbCherryBellHazure += res.bbCherryBellHazure;
                 });
 
-                // 【ここが重要】抽出したパラメータを並べる
-                let report = "【抽出パラメータ確認】\n";
-                report += `総ゲーム数: [ ${combinedData.totalGames} ]\n`;
-                report += `ベルA: [ ${combinedData.bellACount} ]\n`;
-                report += `RB回数: [ ${combinedData.rbCount} ]\n`;
-                report += `RB中ハズレ: [ ${combinedData.rbHazure} ]\n`;
-                report += `BB中ハズレ: [ ${combinedData.bbHazure} ]\n`;
-                report += `BBチェリベ: [ ${combinedData.bbCherryBellHazure} ]\n`;
-                
-                log(report); // 緑の窓に表示
+                let report = "【抽出パラメータ】\n";
+                report += `総G: ${combinedData.totalGames}\n`;
+                report += `ベルA: ${combinedData.bellACount}\n`;
+                report += `RB: ${combinedData.rbCount}\n`;
+                report += `RB中ハズレ: ${combinedData.rbHazure}\n`;
+                report += `BB中ハズレ: ${combinedData.bbHazure}\n`;
+                report += `BBチェリベ: ${combinedData.bbCherryBellHazure}\n`;
+                log(report);
 
-                // 不正データチェック
-                if (combinedData.totalGames === 0) {
-                    alert("【解析失敗】\n総ゲーム数が読み取れませんでした。\n画面下のログ（生の文字データ）を確認してください。");
-                } else if (combinedData.bellACount === 0) {
-                    alert("【警告】\nベルAが「0回」と判定されました。\n画面下のログで「ベルA」という文字がどう誤認識されているか確認してください。");
-                }
+                if (combinedData.totalGames === 0) alert("【失敗】総ゲーム数が読めません。");
 
                 const result = analyze(combinedData);
                 updateGraph(result);
@@ -166,9 +141,8 @@
                 setTimeout(() => dropZone.innerHTML = originalHTML, 2000);
 
             } catch (err) {
-                console.error(err);
                 alert("エラー: " + err.message);
-                log("エラー詳細: " + err.message);
+                log("Err: " + err.message);
                 dropZone.innerHTML = originalHTML;
             }
         };
@@ -191,19 +165,12 @@
                             method: 'POST', body: JSON.stringify({ requests: [{ image: { content: base64 }, features: [{ type: 'TEXT_DETECTION' }] }] }), headers: { 'Content-Type': 'application/json' }
                         });
                         const json = await res.json();
-                        
-                        if (json.error) {
-                            reject(new Error("API Error: " + json.error.message));
-                            return;
-                        }
-                        
+                        if (json.error) return reject(new Error(json.error.message));
                         if (!json.responses || !json.responses[0].fullTextAnnotation) {
-                            log("【認識なし】画像から文字が読めませんでした。");
                             resolve({ totalGames: 0, bellACount: 0, rbCount: 0, rbHazure: 0, bbHazure: 0, bbCherryBellHazure: 0 });
                         } else {
                             const rawText = json.responses[0].fullTextAnnotation.text;
-                            // ★ここで生の文字データを吐き出す
-                            log("【Google OCR 生データ】\n----------------\n" + rawText + "\n----------------"); 
+                            log("【生データ一部】\n" + rawText.substring(0, 100) + "..."); 
                             resolve(parseText(rawText));
                         }
                     } catch (e) { reject(e); }
@@ -212,48 +179,68 @@
         }
 
         function parseText(text) {
-            // カンマとスペース除去
-            const cleanText = text.replace(/,/g, '').replace(/ /g, '');
+            const cleanText = text.replace(/,/g, ''); // カンマ削除
             const data = { totalGames: 0, bellACount: 0, rbCount: 0, rbHazure: 0, bbHazure: 0, bbCherryBellHazure: 0 };
             
-            // 正規表現の微調整（ワロタ回避用）
-            
-            // 総プレイ数: 行をまたいで数字を探す
-            const matchG = cleanText.match(/総プレイ数.*?(\d+)/s);
-            if (matchG) data.totalGames = parseInt(matchG[1]);
-            
-            // ベルA: "ベルA"の後ろにある数字。もし改行されていても拾う。
-            // 読み取り例: "ベルA\n480回"
-            let matchBellA = cleanText.match(/ベルA.*?(\d+)回/s);
-            if (!matchBellA) {
-                // "ベル"しか読めなかった場合
-                matchBellA = cleanText.match(/ベル.*?(\d+)回/s);
-            }
-            if (matchBellA) data.bellACount = parseInt(matchBellA[1]);
+            // 1. エリア分割（ヘッダー / BB / RB）
+            // "BB中" または "BIG中" を探す
+            let bbIndex = cleanText.search(/(?:BB|BIG)中/);
+            // "RB中" または "REG中" を探す
+            let rbIndex = cleanText.search(/(?:RB|REG)中/);
 
-            // RB
-            const matchRB = cleanText.match(/(?:RB|REG).*?(\d+)回/s);
+            // 見つからない場合は末尾扱い
+            if (bbIndex === -1) bbIndex = cleanText.length;
+            if (rbIndex === -1) rbIndex = cleanText.length;
+
+            // 文字列を切り出す
+            const headerText = cleanText.substring(0, Math.min(bbIndex, rbIndex));
+            // BBエリア: BB開始位置から、RB開始位置（もしBBより後ろなら）まで
+            let bbText = "";
+            if (bbIndex < cleanText.length) {
+                let end = (rbIndex > bbIndex) ? rbIndex : cleanText.length;
+                bbText = cleanText.substring(bbIndex, end);
+            }
+            // RBエリア: RB開始位置から最後まで
+            let rbText = "";
+            if (rbIndex < cleanText.length) {
+                rbText = cleanText.substring(rbIndex);
+            }
+
+            // --- ヘッダー解析 ---
+            // 総G: 改行もスペースも無視して数字を探す
+            const matchG = headerText.match(/総プレイ数[^\d]*(\d+)/);
+            if (matchG) data.totalGames = parseInt(matchG[1]);
+
+            // ベルA: "ベルA"必須。他のベルは拾わない。
+            const matchBellA = headerText.match(/ベルA[^\d]*(\d+)/);
+            if (matchBellA) {
+                data.bellACount = parseInt(matchBellA[1]);
+            } 
+            // ベルAが見つからない場合、無理に拾わない（0のままにする）
+
+            // RB回数
+            const matchRB = headerText.match(/(?:RB|REG)[^\d]*(\d+)回/);
             if (matchRB) data.rbCount = parseInt(matchRB[1]);
 
-            // 詳細データ解析
-            const lines = cleanText.split('\n');
-            let section = "";
-            lines.forEach(line => {
-                // セクション判定を強化
-                if (line.includes("BB中") || line.includes("BIG中")) section = "BB";
-                if (line.includes("RB中") || line.includes("REG中")) section = "RB";
-                
-                const numMatch = line.match(/(\d+)回/);
-                const count = numMatch ? parseInt(numMatch[1]) : 0;
+            // --- BBエリア解析 ---
+            // チェリー+ベルはずれ
+            // [^\d]* で改行や文字をまたいで数字を探す
+            const matchCB = bbText.match(/(?:チェリー\+ベル|チェリ\+ベル)[^\d]*(\d+)/);
+            if (matchCB) data.bbCherryBellHazure = parseInt(matchCB[1]);
 
-                if (section === "BB") {
-                    if (line.includes("チェリー+ベル") || line.includes("チェリ+ベル")) data.bbCherryBellHazure = count;
-                    else if (line.includes("ハズレ") && !line.includes("チェリー")) data.bbHazure = count;
-                }
-                if (section === "RB") {
-                    if (line.includes("ハズレ")) data.rbHazure = count;
-                }
-            });
+            // BB中ハズレ
+            // "チェリー"を含まない "ハズレ" を探すのは難しいので、
+            // 単純に "ハズレ" を探すが、それが "チェリー+ベル" の一部でないか確認が必要。
+            // 簡易策: "ハズレ" の前に "ベル" がないものを探す...のは正規表現で難しい。
+            // なので、BBエリアから "チェリー+ベル..." の行を消してから "ハズレ" を探すのが確実。
+            let cleanBB = bbText.replace(/(?:チェリー\+ベル|チェリ\+ベル).*?(\d+)回?/g, "");
+            const matchBBHaze = cleanBB.match(/ハズレ[^\d]*(\d+)/);
+            if (matchBBHaze) data.bbHazure = parseInt(matchBBHaze[1]);
+
+            // --- RBエリア解析 ---
+            const matchRBHaze = rbText.match(/ハズレ[^\d]*(\d+)/);
+            if (matchRBHaze) data.rbHazure = parseInt(matchRBHaze[1]);
+
             return data;
         }
     </script>
