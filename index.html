@@ -2,82 +2,61 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Versus Revise PRO v6.0</title>
+    <title>Versus Revise - Pro Edition v5.2</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        body { background-color: #0f172a; color: #f8fafc; font-family: 'Helvetica Neue', Arial, sans-serif; }
-        .glass { background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.05); }
-        .bar-bg { background: #1e293b; height: 12px; border-radius: 6px; overflow: hidden; }
-        .bar-fill { height: 100%; transition: width 1s cubic-bezier(0.2, 1, 0.3, 1); width: 0%; }
-        .drop-zone.dragover { border-color: #38bdf8; background: rgba(56, 189, 248, 0.05); }
+        body { background: #020617; color: #f8fafc; font-family: sans-serif; }
+        .glass { background: rgba(15, 23, 42, 0.9); border: 1px solid rgba(255,255,255,0.05); }
+        .bar-fill { height: 100%; transition: width 1s ease-out; }
     </style>
 </head>
 <body class="flex flex-col items-center p-4 min-h-screen">
-
-    <header class="w-full max-w-md my-8 text-center">
-        <h1 class="text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-sky-400 to-indigo-500 tracking-tighter italic">VERSUS REV PRO</h1>
-        <p class="text-[10px] text-slate-500 font-mono tracking-[0.4em] mt-1 uppercase">Advanced Judgment Engine v6.0</p>
+    <header class="w-full max-w-md my-6 text-center">
+        <h1 class="text-2xl font-black italic">VERSUS <span class="text-sky-500">REVISE</span></h1>
+        <p class="text-[10px] text-slate-500 font-mono tracking-widest uppercase">Logic Transferred Edition</p>
     </header>
 
     <main class="w-full max-w-md space-y-4">
-        <div class="glass p-4 rounded-2xl border-l-4 border-sky-500">
-            <div class="flex gap-2">
-                <input type="password" id="api-key-input" placeholder="Google Vision API Key..." class="flex-1 bg-slate-900 border border-slate-700 rounded-lg p-2 text-xs text-sky-300 focus:outline-none focus:border-sky-500">
-                <button onclick="saveKey()" class="bg-sky-600 hover:bg-sky-500 px-4 py-2 rounded-lg text-[10px] font-bold transition">SAVE</button>
-            </div>
-            <p id="key-status" class="text-[9px] text-slate-500 mt-2 font-mono uppercase text-center italic">API Key is required for image analysis</p>
+        <div class="glass p-4 rounded-xl">
+            <input type="password" id="api-key" placeholder="Google Vision API Key" class="w-full bg-black/40 border border-slate-800 rounded p-2 text-xs text-sky-400">
+            <button onclick="localStorage.setItem('vs_key', document.getElementById('api-key').value);alert('Saved')" class="w-full mt-2 bg-slate-800 py-1 rounded text-[10px] font-bold">SET KEY</button>
         </div>
 
-        <div id="drop-zone" class="glass rounded-3xl border-2 border-dashed border-slate-700 p-8 text-center cursor-pointer hover:border-sky-500 transition-colors">
-            <p class="text-sm font-bold text-slate-400">ユニメモ画像をドロップ</p>
-            <p id="file-name" class="text-[10px] font-mono text-sky-500 mt-2 uppercase tracking-widest">or Click to Select</p>
+        <div id="drop-zone" class="glass rounded-2xl p-8 border-2 border-dashed border-slate-700 hover:border-sky-500 text-center cursor-pointer">
+            <p class="text-xs text-slate-400 font-bold uppercase">ここに画像をドロップ</p>
             <input type="file" id="file-input" class="hidden" accept="image/*">
         </div>
 
-        <div class="glass rounded-[2.5rem] p-10 shadow-2xl space-y-8">
-            <div class="flex justify-between items-center border-b border-slate-700/50 pb-4">
-                <span class="text-[11px] text-slate-500 font-bold uppercase tracking-[0.2em]">Judgment Result</span>
-                <span id="game-display" class="text-[11px] text-sky-400 font-mono">0G</span>
-            </div>
-            
-            <div class="space-y-7">
-                <div id="row-1">
-                    <div class="flex justify-between text-xs font-bold mb-2"><span>SETTING 1</span><span id="pct-1" class="text-slate-400">--%</span></div>
-                    <div class="bar-bg"><div id="bar-1" class="bar-fill bg-slate-500"></div></div>
+        <div class="glass rounded-3xl p-6 space-y-4">
+            <div id="status" class="text-[10px] text-slate-500 font-mono uppercase tracking-widest text-center italic">Waiting...</div>
+            <div id="results" class="space-y-5">
+                <div id="res-1">
+                    <div class="flex justify-between text-[11px] font-bold mb-1"><span>SETTING 1</span><span id="p1">--%</span></div>
+                    <div class="h-2 bg-slate-800 rounded-full overflow-hidden"><div id="b1" class="bar-fill bg-sky-500" style="width:0%"></div></div>
                 </div>
-                <div id="row-2">
-                    <div class="flex justify-between text-xs font-bold mb-2"><span>SETTING 2</span><span id="pct-2" class="text-sky-400">--%</span></div>
-                    <div class="bar-bg"><div id="bar-2" class="bar-fill bg-sky-500"></div></div>
+                <div id="res-2">
+                    <div class="flex justify-between text-[11px] font-bold mb-1"><span>SETTING 2</span><span id="p2">--%</span></div>
+                    <div class="h-2 bg-slate-800 rounded-full overflow-hidden"><div id="b2" class="bar-fill bg-sky-500" style="width:0%"></div></div>
                 </div>
-                <div id="row-5">
-                    <div class="flex justify-between text-xs font-bold mb-2"><span>SETTING 5</span><span id="pct-5" class="text-indigo-400">--%</span></div>
-                    <div class="bar-bg"><div id="bar-5" class="bar-fill bg-indigo-500"></div></div>
+                <div id="res-5">
+                    <div class="flex justify-between text-[11px] font-bold mb-1"><span>SETTING 5</span><span id="p5">--%</span></div>
+                    <div class="h-2 bg-slate-800 rounded-full overflow-hidden"><div id="b5" class="bar-fill bg-indigo-500" style="width:0%"></div></div>
                 </div>
-                <div id="row-6">
-                    <div class="flex justify-between text-xs font-bold mb-2"><span>SETTING 6</span><span id="pct-6" class="text-pink-500">--%</span></div>
-                    <div class="bar-bg"><div id="bar-6" class="bar-fill bg-pink-600"></div></div>
+                <div id="res-6">
+                    <div class="flex justify-between text-[11px] font-bold mb-1"><span>SETTING 6</span><span id="p6">--%</span></div>
+                    <div class="h-2 bg-slate-800 rounded-full overflow-hidden"><div id="b6" class="bar-fill bg-pink-500" style="width:0%"></div></div>
                 </div>
-            </div>
-
-            <div id="analysis-text" class="text-[10px] text-slate-500 leading-relaxed font-medium italic border-t border-slate-700/50 pt-4">
-                Waiting for input data...
             </div>
         </div>
     </main>
 
     <script>
-        // Versus Revise Internal Specs
-        const SPEC = {
-            bonus: { 1:{bb:350.4, rb:438}, 2:{bb:334.3, rb:411.7}, 5:{bb:318.1, rb:378.8}, 6:{bb:297.8, rb:354.2} },
-            normal: { 1:{ba:10.9, sa:74.5}, 2:{ba:10.7, sa:70.6}, 5:{ba:10.5, sa:72.5}, 6:{ba:10.2, sa:68.8} },
-            rt: { 1:{vc:5.0, vg:10.1}, 2:{vc:4.9, vg:9.4}, 5:{vc:4.6, vg:8.7}, 6:{vc:4.5, vg:8.1} },
-            bbIn: { 1:{cbs:11.1}, 2:{cbs:8.9}, 5:{cbs:11.1}, 6:{cbs:8.9} },
-            rbIn: { 1:{r1m:5.5}, 2:{r1m:8.5}, 5:{r1m:5.5}, 6:{r1m:8.5} }
+        const SPECS = {
+            1: {ba:10.9, rb:438.0, vc:5.0, vg:10.1, r1:5.5, bbC:11.1},
+            2: {ba:10.7, rb:411.7, vc:4.9, vg:9.4,  r1:8.5, bbC:8.9},
+            5: {ba:10.5, rb:378.8, vc:4.6, vg:8.7,  r1:5.5, bbC:11.1},
+            6: {ba:10.2, rb:354.2, vc:4.5, vg:8.1,  r1:8.5, bbC:8.9}
         };
-
-        window.onload = () => { if(localStorage.getItem('v_rev_key')) document.getElementById('key-status').innerText = 'KEY LOADED'; };
-        function saveKey() { const v = document.getElementById('api-key-input').value; if(v){localStorage.setItem('v_rev_key', v); location.reload();} }
 
         const fileInput = document.getElementById('file-input');
         const dropZone = document.getElementById('drop-zone');
@@ -85,72 +64,61 @@
         fileInput.onchange = e => handleFile(e.target.files[0]);
 
         async function handleFile(file) {
-            const key = localStorage.getItem('v_rev_key');
-            if(!key) return alert("API Key is missing!");
-            document.getElementById('file-name').innerText = "Analyzing...";
-            const base64 = await toBase64(file);
-            try {
+            const key = localStorage.getItem('vs_key');
+            if(!key) return alert('No Key');
+            document.getElementById('status').innerText = "Analyzing...";
+            const reader = new FileReader();
+            reader.readAsDataURL(file);
+            reader.onload = async () => {
+                const base64 = reader.result.split(',')[1];
                 const res = await fetch(`https://vision.googleapis.com/v1/images:annotate?key=${key}`, {
                     method: 'POST',
-                    body: JSON.stringify({ requests: [{ image: { content: base64.split(',')[1] }, features: [{ type: 'TEXT_DETECTION' }] }] })
+                    body: JSON.stringify({ requests: [{ image: { content: base64 }, features: [{ type: 'TEXT_DETECTION' }] }] })
                 });
                 const json = await res.json();
-                const text = json.responses[0].fullTextAnnotation.text;
-                process(parse(text));
-            } catch (e) { alert("Analysis failed."); }
-        }
-
-        function parse(t) {
-            const c = t.replace(/[lI]/g, '1').replace(/\s/g, '');
-            const f = (re) => { const m = c.match(re); return m ? parseFloat(m[1].replace(/,/g, '')) : null; };
-            return {
-                g: f(/総プレイ数([\d,.]+)/) || 1000,
-                ba: f(/ベルA.*?1\/([\d,.]+)/),
-                rb: f(/RB.*?1\/([\d,.]+)/),
-                vg: f(/VSGAME中はずれ.*?1\/([\d,.]+)/),
-                cbs: f(/チェリー＋ベル揃い.*?1\/([\d,.]+)/),
-                r1m: f(/1枚役.*?1\/([\d,.]+)/),
-                rbh: c.includes('RB中詳細') && c.includes('はずれ1/'),
-                mc: c.includes('中段チェリー1/') && !c.includes('1/16384')
+                if(json.responses[0].fullTextAnnotation) run(json.responses[0].fullTextAnnotation.text);
             };
         }
 
-        function process(data) {
-            const settings = [1, 2, 5, 6];
-            let scores = { 1: 1.0, 2: 1.0, 5: 1.0, 6: 1.0 };
-            document.getElementById('game-display').innerText = `${data.g.toLocaleString()}G`;
+        function run(text) {
+            const clean = text.replace(/\s/g, '').replace(/[lI]/g, '1');
+            const find = (re) => { const m = clean.match(re); return m ? parseFloat(m[1].replace(/,/g, '')) : null; };
+            const data = {
+                g: find(/総プレイ数([\d,.]+)/) || 1000,
+                ba: find(/ベルA.*?1\/([\d,.]+)/),
+                rb: find(/RB.*?1\/([\d,.]+)/),
+                vg: find(/VSGAME中はずれ.*?1\/([\d,.]+)/),
+                r1: find(/1枚役.*?1\/([\d,.]+)/),
+                bbC: find(/チェリー＋ベル揃い.*?1\/([\d,.]+)/),
+                rbH: find(/RB中詳細.*?はずれ.*?1\/([\d,.]+)/) || 100000
+            };
 
-            settings.forEach(s => {
-                // 1. ベルA判定 (ゲーム数に応じたマイルドな重み付け)
-                if(data.ba) {
-                    let w = data.g < 1000 ? 0.3 : data.g < 2500 ? 0.8 : 1.5;
-                    scores[s] *= Math.pow(1 / (Math.abs(data.ba - SPEC.normal[s].ba) + 1), w);
-                }
-                // 2. VGハズレ判定 (ベルより信頼)
-                if(data.vg) {
-                    scores[s] *= Math.pow(1 / (Math.abs(data.vg - SPEC.rt[s].vg) + 1), 1.2);
-                }
-                // 3. 奇偶判定 (BB小役・RB1枚役)
-                if(data.cbs) scores[s] *= Math.pow(1 / (Math.abs(data.cbs - SPEC.bbIn[s].cbs) + 1), 1.0);
-                if(data.r1m) scores[s] *= Math.pow(1 / (Math.abs(data.r1m - SPEC.rbIn[s].r1m) + 1), 1.0);
-                // 4. ボーナス合算
-                if(data.rb) scores[s] *= Math.pow(1 / (Math.abs(data.rb - SPEC.bonus[s].rb) + 1), 0.5);
-                
-                // 確定・否定
-                if(data.rbh || data.mc) { scores[1] = 0; scores[2] = 0; }
+            let scores = {1:1, 2:1, 5:1, 6:1};
+            
+            // ★【現場調整】ゲーム数に応じたベルの信頼度
+            let bW = data.g < 1000 ? 0.2 : (data.g < 2000 ? 0.6 : (data.g < 4000 ? 1.1 : 3.5));
+            // ★【現場調整】RB確率の絶望感を最優先
+            let rbW = 3.8;
+
+            [1,2,5,6].forEach(s => {
+                const sp = SPECS[s];
+                if(data.ba) scores[s] *= Math.pow(1 / (Math.abs(data.ba - sp.ba) + 0.1), bW);
+                if(data.rb) scores[s] *= Math.pow(1 / (Math.abs(data.rb - sp.rb) + 0.1), rbW);
+                if(data.vg) scores[s] *= Math.pow(1 / (Math.abs(data.vg - sp.vg) + 0.1), 1.8);
+                if(data.r1) scores[s] *= Math.pow(1 / (Math.abs(data.r1 - sp.r1) + 0.1), 1.0);
             });
 
-            const sum = Object.values(scores).reduce((a, b) => a + b, 0);
-            settings.forEach(s => {
-                const p = (scores[s] / sum * 100).toFixed(1);
-                document.getElementById(`pct-${s}`).innerText = p + '%';
-                document.getElementById(`bar-${s}`).style.width = p + '%';
+            // 確定フラグがあってもボナが悪ければ1・2を死なせない
+            if(data.rbH < 1000) { scores[1]*=0.05; scores[2]*=0.05; scores[5]*=5; scores[6]*=5; }
+
+            const total = scores[1]+scores[2]+scores[5]+scores[6];
+            [1,2,5,6].forEach(s => {
+                const pct = (scores[s]/total*100).toFixed(1);
+                document.getElementById(`p${s}`).innerText = pct + '%';
+                document.getElementById(`b${s}`).style.width = pct + '%';
             });
-            document.getElementById('file-name').innerText = "DONE";
-            document.getElementById('analysis-text').innerText = "Analysis complete. Balanced judging logic applied.";
+            document.getElementById('status').innerText = `ANALYSIS COMPLETE (${data.g}G)`;
         }
-
-        const toBase64 = f => new Promise((res, rej) => { const r = new FileReader(); r.readAsDataURL(f); r.onload = () => res(r.result); });
     </script>
 </body>
 </html>
