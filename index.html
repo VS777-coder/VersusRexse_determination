@@ -6,26 +6,9 @@
     <title>VERSUS REVISE</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        /* 強制的に背景色を指定（読み込み時の白画面防止） */
-        html, body { 
-            height: 100%; 
-            overflow: hidden; 
-            position: fixed; 
-            width: 100%; 
-            background-color: #0f172a; /* ダークブルー */
-            color: #f8fafc; 
-            font-family: 'Helvetica Neue', Arial, sans-serif;
-            -webkit-tap-highlight-color: transparent; 
-        }
+        html, body { height: 100%; overflow: hidden; position: fixed; width: 100%; background-color: #0f172a; color: #f8fafc; font-family: 'Helvetica Neue', Arial, sans-serif; -webkit-tap-highlight-color: transparent; }
         .setting-bar { transition: width 0.8s cubic-bezier(0.16, 1, 0.3, 1); width: 0%; }
-        .app-container { 
-            height: 100%; 
-            display: flex; 
-            flex-direction: column; 
-            padding: 1.5rem; 
-            box-sizing: border-box; 
-        }
-        /* ロゴがない場合の代替スタイル */
+        .app-container { height: 100%; display: flex; flex-direction: column; padding: 1.5rem; box-sizing: border-box; }
         img[src="VS.png"] { min-height: 50px; background-color: transparent; }
     </style>
 </head>
@@ -33,7 +16,7 @@
 
     <header class="text-center pt-4 pb-2 flex-none">
         <img src="VS.png" alt="VERSUS REVISE" class="mx-auto w-4/5 max-w-sm drop-shadow-[0_0_15px_rgba(59,130,246,0.6)]">
-        <p class="text-red-600 font-bold text-[10px] mt-3 tracking-[0.3em] opacity-90">みおちゃん専用 VER 1.0.0</p>
+        <p class="text-red-600 font-bold text-[10px] mt-3 tracking-[0.3em] opacity-90">みおちゃん専用 VER 1.9.2</p>
     </header>
 
     <div id="drop-zone" class="flex-none border-4 border-blue-500/40 rounded-[2rem] py-6 text-center bg-blue-900/20 mb-4 active:scale-95 active:bg-blue-900/40 transition-all shadow-lg cursor-pointer">
@@ -91,13 +74,8 @@
     </footer>
 
     <script>
-        // === 1. 設定値 ===
-        const TARGETS = { 
-            bellA: [10.5, 10.1, 9.8, 9.4], 
-            rb: [409.6, 397.2, 350.5, 312.1]
-        };
+        const TARGETS = { bellA: [10.5, 10.1, 9.8, 9.4], rb: [409.6, 397.2, 350.5, 312.1] };
 
-        // === 2. 解析ロジック (みおちゃん専用仕様) ===
         function calculateReliability(trials) {
             if (trials < 300) return 0.1;
             if (trials < 1000) return 0.4;
@@ -108,93 +86,56 @@
         function analyze(data) {
             let s = { 1: 1.0, 2: 1.0, 5: 1.0, 6: 1.0 };
             const trials = data.totalGames || 0;
+            // 数値が0なら0%を返す
             if (trials === 0) return { 1: "0.0", 2: "0.0", 5: "0.0", 6: "0.0" };
 
             const rel = calculateReliability(trials);
-
             [1, 2, 5, 6].forEach((set, i) => {
-                const bExp = trials / TARGETS.bellA[i];
-                const rExp = trials / TARGETS.rb[i];
-                
-                // ベルA 
-                if (data.bellACount > 0) {
-                    s[set] *= (1 - rel) + (Math.exp(-Math.pow(data.bellACount - bExp, 2) / (2 * bExp)) * rel);
-                }
-                // RB確率
-                if (data.rbCount > 0) {
-                    s[set] *= (1 - rel) + (Math.exp(-Math.pow(data.rbCount - rExp, 2) / (2 * rExp)) * rel);
-                }
+                const bExp = trials / TARGETS.bellA[i], rExp = trials / TARGETS.rb[i];
+                if (data.bellACount > 0) s[set] *= (1 - rel) + (Math.exp(-Math.pow(data.bellACount - bExp, 2) / (2 * bExp)) * rel);
+                if (data.rbCount > 0) s[set] *= (1 - rel) + (Math.exp(-Math.pow(data.rbCount - rExp, 2) / (2 * rExp)) * rel);
             });
 
-            // 鉄の掟：RB中ハズレ (1・2 即死)
             if (data.rbHazure > 0) { s[1] = 0; s[2] = 0; }
-
-            // 鉄の掟：BB中ハズレ (高設定超優遇)
-            if (data.bbHazure > 0) {
-                s[1] *= (1/16384); s[2] *= (1/16384); 
-                s[5] *= (1/2048); s[6] *= (1/1489); 
-            }
-
-            // 鉄の掟：BB中チェリー+ベルはずれ (偶数優遇)
-            if (data.bbCherryBellHazure > 0) {
-                const c = data.bbCherryBellHazure;
-                s[1] *= Math.pow(1/81.9, c); s[5] *= Math.pow(1/81.9, c);
-                s[2] *= Math.pow(1/41.0, c); s[6] *= Math.pow(1/41.0, c); 
-            }
+            if (data.bbHazure > 0) { s[1] *= (1/16384); s[2] *= (1/16384); s[5] *= (1/2048); s[6] *= (1/1489); }
+            if (data.bbCherryBellHazure > 0) { const c = data.bbCherryBellHazure; s[1] *= Math.pow(1/81.9, c); s[5] *= Math.pow(1/81.9, c); s[2] *= Math.pow(1/41.0, c); s[6] *= Math.pow(1/41.0, c); }
 
             const total = Object.values(s).reduce((a, b) => a + b) || 1;
-            return {
-                1: (s[1]/total*100).toFixed(1),
-                2: (s[2]/total*100).toFixed(1),
-                5: (s[5]/total*100).toFixed(1),
-                6: (s[6]/total*100).toFixed(1)
-            };
+            return { 1: (s[1]/total*100).toFixed(1), 2: (s[2]/total*100).toFixed(1), 5: (s[5]/total*100).toFixed(1), 6: (s[6]/total*100).toFixed(1) };
         }
 
-        // === 3. UI操作 & Google Vision API連携 ===
         const fileInput = document.getElementById('file-input');
         const dropZone = document.getElementById('drop-zone');
 
-        // キー保存・読込
         document.getElementById('save-key').onclick = () => {
             const val = document.getElementById('api-key').value;
             if(!val) return alert("APIキーを入れてください");
             localStorage.setItem('v_key', val);
             updateKeyStatus(true);
         };
-
         const savedKey = localStorage.getItem('v_key');
-        if (savedKey) {
-            document.getElementById('api-key').value = savedKey;
-            updateKeyStatus(true);
-        }
-
+        if (savedKey) { document.getElementById('api-key').value = savedKey; updateKeyStatus(true); }
         function updateKeyStatus(active) {
             const el = document.getElementById('key-status');
             el.innerText = active ? 'API KEY: READY' : 'API Key: Inactive';
             el.style.color = active ? '#3b82f6' : '#6b7280';
         }
 
-        // ファイル操作
         dropZone.onclick = () => fileInput.click();
-
         fileInput.onchange = async (e) => {
             const key = localStorage.getItem('v_key');
-            if (!key) return alert("APIキーが設定されていません。下のフォームに入力してSETを押してください。");
+            if (!key) return alert("APIキーが未設定です");
             if (e.target.files.length === 0) return;
 
-            // ローディング表示
             const originalHTML = dropZone.innerHTML;
             dropZone.innerHTML = `<p class="text-xl font-black text-blue-400 animate-pulse">解析中...</p>`;
 
             let combinedData = { totalGames: 0, bellACount: 0, rbCount: 0, rbHazure: 0, bbHazure: 0, bbCherryBellHazure: 0 };
 
             try {
-                // 並列処理でOCR
                 const promises = Array.from(e.target.files).map(file => processImage(file, key));
                 const results = await Promise.all(promises);
 
-                // 合算
                 results.forEach(res => {
                     combinedData.totalGames += res.totalGames;
                     combinedData.bellACount += res.bellACount;
@@ -204,73 +145,67 @@
                     combinedData.bbCherryBellHazure += res.bbCherryBellHazure;
                 });
 
-                // 判定実行
+                // 【デバッグ用】読み取った数値を表示する（ここが0ならOCR失敗）
+                alert(`読み取り結果:\n総ゲーム数: ${combinedData.totalGames}G\nベルA: ${combinedData.bellACount}回\nRB: ${combinedData.rbCount}回\n\nこれが0なら画像がうまく読めていません。`);
+
                 const result = analyze(combinedData);
-                
-                // グラフ更新
                 updateGraph(result);
-                
                 dropZone.innerHTML = `<p class="text-xl font-black text-green-400">完了！</p>`;
                 setTimeout(() => dropZone.innerHTML = originalHTML, 2000);
 
             } catch (err) {
                 console.error(err);
-                alert("エラーが発生しました: " + err.message);
+                alert("エラー: " + err.message);
                 dropZone.innerHTML = originalHTML;
             }
         };
 
         function updateGraph(res) {
-            document.getElementById('p1').innerText = res[1] + "%";
-            document.getElementById('bar1').style.width = res[1] + "%";
-            document.getElementById('p2').innerText = res[2] + "%";
-            document.getElementById('bar2').style.width = res[2] + "%";
-            document.getElementById('p5').innerText = res[5] + "%";
-            document.getElementById('bar5').style.width = res[5] + "%";
-            document.getElementById('p6').innerText = res[6] + "%";
-            document.getElementById('bar6').style.width = res[6] + "%";
+            document.getElementById('p1').innerText = res[1] + "%"; document.getElementById('bar1').style.width = res[1] + "%";
+            document.getElementById('p2').innerText = res[2] + "%"; document.getElementById('bar2').style.width = res[2] + "%";
+            document.getElementById('p5').innerText = res[5] + "%"; document.getElementById('bar5').style.width = res[5] + "%";
+            document.getElementById('p6').innerText = res[6] + "%"; document.getElementById('bar6').style.width = res[6] + "%";
         }
 
-        // OCR処理
         async function processImage(file, key) {
             return new Promise((resolve, reject) => {
                 const reader = new FileReader();
                 reader.readAsDataURL(file);
                 reader.onload = async () => {
                     const base64 = reader.result.split(',')[1];
-                    const body = { requests: [{ image: { content: base64 }, features: [{ type: 'TEXT_DETECTION' }] }] };
-                    
                     try {
                         const res = await fetch(`https://vision.googleapis.com/v1/images:annotate?key=${key}`, {
-                            method: 'POST', body: JSON.stringify(body), headers: { 'Content-Type': 'application/json' }
+                            method: 'POST', body: JSON.stringify({ requests: [{ image: { content: base64 }, features: [{ type: 'TEXT_DETECTION' }] }] }), headers: { 'Content-Type': 'application/json' }
                         });
                         const json = await res.json();
                         if (!json.responses || !json.responses[0].fullTextAnnotation) {
                             resolve({ totalGames: 0, bellACount: 0, rbCount: 0, rbHazure: 0, bbHazure: 0, bbCherryBellHazure: 0 });
-                            return;
+                        } else {
+                            resolve(parseText(json.responses[0].fullTextAnnotation.text));
                         }
-                        resolve(parseText(json.responses[0].fullTextAnnotation.text));
                     } catch (e) { reject(e); }
                 };
             });
         }
 
-        // テキスト解析
+        // 修正版：カンマを除去してから数値化する
         function parseText(text) {
             const data = { totalGames: 0, bellACount: 0, rbCount: 0, rbHazure: 0, bbHazure: 0, bbCherryBellHazure: 0 };
             
-            // 簡易抽出ロジック
-            const matchG = text.match(/総プレイ数[\s\S]*?(\d+)/);
+            // カンマを全て消して、数値として読みやすくする
+            const cleanText = text.replace(/,/g, '');
+
+            const matchG = cleanText.match(/総プレイ数[\s\S]*?(\d+)/);
             if (matchG) data.totalGames = parseInt(matchG[1]);
 
-            const matchBellA = text.match(/ベルA[\s\S]*?(\d+)回/);
+            const matchBellA = cleanText.match(/ベルA[\s\S]*?(\d+)回/);
             if (matchBellA) data.bellACount = parseInt(matchBellA[1]);
 
-            const matchRB = text.match(/RB[\s\S]*?(\d+)回/);
+            const matchRB = cleanText.match(/RB[\s\S]*?(\d+)回/);
             if (matchRB) data.rbCount = parseInt(matchRB[1]);
 
-            // 詳細セクション解析
-            const lines = text.split('\n');
+            // 詳細データの解析
+            const lines = cleanText.split('\n');
             let section = "";
             lines.forEach(line => {
                 if (line.includes("BB中詳細")) section = "BB";
@@ -284,7 +219,6 @@
                     else if (line.includes("ハズレ") && !line.includes("チェリー")) data.bbHazure = count;
                 }
                 if (section === "RB") {
-                    // RB中のハズレ (確定役)
                     if (line.includes("ハズレ")) data.rbHazure = count;
                 }
             });
