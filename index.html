@@ -10,10 +10,14 @@
         .setting-bar { transition: width 0.8s cubic-bezier(0.16, 1, 0.3, 1); width: 0%; }
         .app-container { height: 100%; display: flex; flex-direction: column; padding: 1.5rem; box-sizing: border-box; }
         img[src="VS.png"] { min-height: 50px; background-color: transparent; }
+        
+        /* 緑色のデバッグログ（復活） */
         #debug-area { 
-            font-size: 10px; font-family: monospace; color: #86efac; background: rgba(0, 0, 0, 0.9); 
-            border: 1px solid #4ade80; padding: 10px; margin-top: 10px; flex-grow: 1; 
-            overflow-y: scroll; white-space: pre-wrap; border-radius: 8px; display: block; 
+            font-size: 10px; font-family: monospace; color: #86efac; 
+            background: rgba(0, 0, 0, 0.9); border: 1px solid #4ade80; 
+            padding: 10px; margin-top: 10px; flex-grow: 1; 
+            overflow-y: scroll; white-space: pre-wrap; border-radius: 8px; 
+            display: block; 
         }
     </style>
 </head>
@@ -21,12 +25,13 @@
 
     <header class="text-center pt-2 pb-2 flex-none">
         <img src="VS.png" alt="VERSUS REVISE" class="mx-auto w-3/5 max-w-sm drop-shadow-[0_0_15px_rgba(59,130,246,0.6)]">
-        <p class="text-red-600 font-bold text-[10px] mt-2 tracking-[0.3em] opacity-90">みおちゃん専用 VER 2.2.0</p>
+        <p class="text-red-600 font-bold text-[10px] mt-2 tracking-[0.3em] opacity-90">みおちゃん専用 VER 5.1</p>
     </header>
 
     <div id="drop-zone" class="flex-none border-4 border-blue-500/40 rounded-[2rem] py-4 text-center bg-blue-900/20 mb-2 active:scale-95 active:bg-blue-900/40 transition-all shadow-lg cursor-pointer">
         <p class="text-lg font-black text-white tracking-widest leading-none">ユニメモ画像を解析</p>
-        <input type="file" id="file-input" multiple class="hidden" accept="image/*">
+        <p class="text-[10px] text-gray-400 mt-1">※確率(1/xx.x)を直接読み取ります</p>
+        <input type="file" id="file-input" class="hidden" accept="image/*">
     </div>
 
     <main class="flex-grow bg-slate-900/95 rounded-[2rem] p-4 border border-white/10 shadow-2xl flex flex-col mb-2 overflow-hidden relative z-10">
@@ -36,7 +41,8 @@
             <div><div class="flex justify-between items-end mb-1 px-2"><span class="text-xs font-black text-orange-500">設定５</span><span id="p5" class="font-mono text-xs text-orange-400">0.0%</span></div><div class="w-full bg-slate-800 h-2 rounded-full overflow-hidden"><div id="bar5" class="setting-bar h-full bg-orange-500"></div></div></div>
             <div><div class="flex justify-between items-end mb-1 px-2"><span class="text-xs font-black text-red-600">設定６</span><span id="p6" class="font-mono text-xs text-red-500">0.0%</span></div><div class="w-full bg-slate-800 h-2 rounded-full overflow-hidden"><div id="bar6" class="setting-bar h-full bg-red-600"></div></div></div>
         </div>
-        <div id="debug-area">解析結果待機中...</div>
+        
+        <div id="debug-area">解析待機中...</div>
     </main>
 
     <footer class="flex-none space-y-2">
@@ -44,205 +50,203 @@
             <input type="password" id="api-key" placeholder="API Key" class="flex-grow bg-slate-800 border border-white/20 rounded-lg px-4 text-xs text-white focus:outline-none focus:border-blue-500">
             <button id="save-key" class="bg-blue-600 px-4 rounded-lg text-[10px] font-black tracking-widest active:bg-blue-700">SET</button>
         </div>
-        <p id="key-status" class="text-[8px] text-center text-gray-500 font-bold uppercase tracking-[0.2em]">Key: Inactive</p>
     </footer>
 
     <script>
-        const TARGETS = { bellA: [10.5, 10.1, 9.8, 9.4], rb: [409.6, 397.2, 350.5, 312.1] };
-        
-        function log(msg) {
-            const d = document.getElementById('debug-area');
-            d.innerText = msg + "\n\n" + d.innerText;
-        }
+        // =========================================================
+        //  【定義】みおちゃん専用：確率分母定義表
+        //   ※画像内の「1/xx.x」の「xx.x」と比較して判定する
+        //   ※修正厳禁 (DO NOT MODIFY)
+        // =========================================================
+        const TARGET_DENOMINATORS = {
+            // ■ 通常時小役
+            bellA:   { 1: 10.9,  2: 10.7,  5: 10.5,  6: 10.2 },
+            bellB:   { 1: 20.9,  2: 21.2,  5: 20.3,  6: 20.6 },
+            suikaA:  { 1: 74.5,  2: 70.6,  5: 72.5,  6: 68.8 },
+            cherryB: { 1: 56.2,  2: 57.7,  5: 53.1,  6: 54.4 },
 
-        function calculateReliability(trials) {
-            if (trials < 300) return 0.1;
-            if (trials < 1000) return 0.4;
-            if (trials < 3000) return 0.6;
-            return 1.0;
-        }
+            // ■ ボーナス確率 (合算)
+            bb_total: { 1: 292.6, 2: 284.9, 5: 275.4, 6: 264.3 },
+            rb:       { 1: 374.5, 2: 341.3, 5: 319.7, 6: 292.6 },
 
+            // ■ RT中ハズレ
+            rt_vc_hazure: { 1: 5.0,   2: 4.9,   5: 4.6,   6: 4.5 },
+            rt_vg_hazure: { 1: 10.1,  2: 9.4,   5: 8.7,   6: 8.1 },
+
+            // ■ BB中詳細
+            bb_cb_match:   { 1: 11.1,    2: 8.9,     5: 11.1,    6: 8.9 },
+            bb_cb_hazure:  { 1: 256.0,   2: 128.0,   5: 256.0,   6: 128.0 },
+            bb_mid_cherry: { 1: 16384.0, 2: 16384.0, 5: 16384.0, 6: 897.8 },
+
+            // ■ RB中詳細 (神の啓示)
+            rb_hazure:     { 1: null,    2: null,    5: 376.6,   6: 376.6 }
+        };
+
+        // UI連携
+        const logArea = document.getElementById('debug-area');
+        function log(msg) { logArea.innerText = msg + "\n" + logArea.innerText; }
+
+        // 解析ロジック (距離判定)
         function analyze(data) {
-            let s = { 1: 1.0, 2: 1.0, 5: 1.0, 6: 1.0 };
-            const trials = data.totalGames;
-            const rel = calculateReliability(trials);
-            
-            [1, 2, 5, 6].forEach((set, i) => {
-                const bExp = trials / TARGETS.bellA[i], rExp = trials / TARGETS.rb[i];
-                if (data.bellACount > 0) s[set] *= (1 - rel) + (Math.exp(-Math.pow(data.bellACount - bExp, 2) / (2 * bExp)) * rel);
-                if (data.rbCount > 0) s[set] *= (1 - rel) + (Math.exp(-Math.pow(data.rbCount - rExp, 2) / (2 * rExp)) * rel);
-            });
+            let errorScores = { 1: 0, 2: 0, 5: 0, 6: 0 };
+            let paramCount = 0;
+            let detectedRbHazure = false;
 
-            if (data.rbHazure > 0) { s[1] = 0; s[2] = 0; }
-            if (data.bbHazure > 0) { s[1] *= (1/16384); s[2] *= (1/16384); s[5] *= (1/2048); s[6] *= (1/1489); }
-            if (data.bbCherryBellHazure > 0) { const c = data.bbCherryBellHazure; s[1] *= Math.pow(1/81.9, c); s[5] *= Math.pow(1/81.9, c); s[2] *= Math.pow(1/41.0, c); s[6] *= Math.pow(1/41.0, c); }
+            for (const [key, value] of Object.entries(data)) {
+                if (!value || value <= 0) continue;
+                if (!TARGET_DENOMINATORS[key]) continue;
 
-            const total = Object.values(s).reduce((a, b) => a + b) || 1;
-            return { 1: (s[1]/total*100).toFixed(1), 2: (s[2]/total*100).toFixed(1), 5: (s[5]/total*100).toFixed(1), 6: (s[6]/total*100).toFixed(1) };
-        }
+                if (key === 'rb_hazure') {
+                    log(`★ 神の啓示: RBハズレ検出(1/${value}) -> 設定1・2 消去`);
+                    detectedRbHazure = true;
+                    continue; 
+                }
 
-        const fileInput = document.getElementById('file-input');
-        const dropZone = document.getElementById('drop-zone');
-
-        document.getElementById('save-key').onclick = () => {
-            const val = document.getElementById('api-key').value;
-            if(!val) return alert("APIキーを入力してください");
-            localStorage.setItem('v_key', val);
-            updateKeyStatus(true);
-        };
-        const savedKey = localStorage.getItem('v_key');
-        if (savedKey) { document.getElementById('api-key').value = savedKey; updateKeyStatus(true); }
-        function updateKeyStatus(active) {
-            const el = document.getElementById('key-status');
-            el.innerText = active ? 'API KEY: READY' : 'API Key: Inactive';
-            el.style.color = active ? '#3b82f6' : '#6b7280';
-        }
-
-        dropZone.onclick = () => fileInput.click();
-        
-        fileInput.onchange = async (e) => {
-            const key = localStorage.getItem('v_key');
-            if (!key) return alert("APIキーが未設定です");
-            if (e.target.files.length === 0) return;
-
-            document.getElementById('debug-area').innerText = "";
-            const originalHTML = dropZone.innerHTML;
-            dropZone.innerHTML = `<p class="text-xl font-black text-blue-400 animate-pulse">解析中...</p>`;
-
-            let combinedData = { totalGames: 0, bellACount: 0, rbCount: 0, rbHazure: 0, bbHazure: 0, bbCherryBellHazure: 0 };
-
-            try {
-                const promises = Array.from(e.target.files).map(file => processImage(file, key));
-                const results = await Promise.all(promises);
-
-                results.forEach(res => {
-                    combinedData.totalGames += res.totalGames;
-                    combinedData.bellACount += res.bellACount;
-                    combinedData.rbCount += res.rbCount;
-                    combinedData.rbHazure += res.rbHazure;
-                    combinedData.bbHazure += res.bbHazure;
-                    combinedData.bbCherryBellHazure += res.bbCherryBellHazure;
+                paramCount++;
+                [1, 2, 5, 6].forEach(setting => {
+                    const target = TARGET_DENOMINATORS[key][setting];
+                    if (target) {
+                        const diff = Math.abs(value - target);
+                        errorScores[setting] += (diff / target);
+                    }
                 });
-
-                let report = "【抽出パラメータ】\n";
-                report += `総G: ${combinedData.totalGames}\n`;
-                report += `ベルA: ${combinedData.bellACount}\n`;
-                report += `RB: ${combinedData.rbCount}\n`;
-                report += `RB中ハズレ: ${combinedData.rbHazure}\n`;
-                report += `BB中ハズレ: ${combinedData.bbHazure}\n`;
-                report += `BBチェリベ: ${combinedData.bbCherryBellHazure}\n`;
-                log(report);
-
-                if (combinedData.totalGames === 0) alert("【失敗】総ゲーム数が読めません。");
-
-                const result = analyze(combinedData);
-                updateGraph(result);
-                dropZone.innerHTML = `<p class="text-xl font-black text-green-400">完了</p>`;
-                setTimeout(() => dropZone.innerHTML = originalHTML, 2000);
-
-            } catch (err) {
-                alert("エラー: " + err.message);
-                log("Err: " + err.message);
-                dropZone.innerHTML = originalHTML;
             }
-        };
 
-        function updateGraph(res) {
-            document.getElementById('p1').innerText = res[1] + "%"; document.getElementById('bar1').style.width = res[1] + "%";
-            document.getElementById('p2').innerText = res[2] + "%"; document.getElementById('bar2').style.width = res[2] + "%";
-            document.getElementById('p5').innerText = res[5] + "%"; document.getElementById('bar5').style.width = res[5] + "%";
-            document.getElementById('p6').innerText = res[6] + "%"; document.getElementById('bar6').style.width = res[6] + "%";
-        }
+            if (paramCount === 0 && !detectedRbHazure) return null;
 
-        async function processImage(file, key) {
-            return new Promise((resolve, reject) => {
-                const reader = new FileReader();
-                reader.readAsDataURL(file);
-                reader.onload = async () => {
-                    const base64 = reader.result.split(',')[1];
-                    try {
-                        const res = await fetch(`https://vision.googleapis.com/v1/images:annotate?key=${key}`, {
-                            method: 'POST', body: JSON.stringify({ requests: [{ image: { content: base64 }, features: [{ type: 'TEXT_DETECTION' }] }] }), headers: { 'Content-Type': 'application/json' }
-                        });
-                        const json = await res.json();
-                        if (json.error) return reject(new Error(json.error.message));
-                        if (!json.responses || !json.responses[0].fullTextAnnotation) {
-                            resolve({ totalGames: 0, bellACount: 0, rbCount: 0, rbHazure: 0, bbHazure: 0, bbCherryBellHazure: 0 });
-                        } else {
-                            const rawText = json.responses[0].fullTextAnnotation.text;
-                            log("【生データ一部】\n" + rawText.substring(0, 100) + "..."); 
-                            resolve(parseText(rawText));
-                        }
-                    } catch (e) { reject(e); }
-                };
+            let rawProbs = { 1: 0, 2: 0, 5: 0, 6: 0 };
+            let totalInverse = 0;
+
+            [1, 2, 5, 6].forEach(s => {
+                if (detectedRbHazure && (s === 1 || s === 2)) {
+                    rawProbs[s] = 0;
+                } else {
+                    const score = 1 / (errorScores[s] + 0.0001);
+                    rawProbs[s] = score;
+                    totalInverse += score;
+                }
             });
+
+            return {
+                1: totalInverse ? (rawProbs[1] / totalInverse * 100).toFixed(1) : 0,
+                2: totalInverse ? (rawProbs[2] / totalInverse * 100).toFixed(1) : 0,
+                5: totalInverse ? (rawProbs[5] / totalInverse * 100).toFixed(1) : 0,
+                6: totalInverse ? (rawProbs[6] / totalInverse * 100).toFixed(1) : 0
+            };
         }
 
+        // テキストパーサー (1/xx.x を探す)
         function parseText(text) {
-            const cleanText = text.replace(/,/g, ''); // カンマ削除
-            const data = { totalGames: 0, bellACount: 0, rbCount: 0, rbHazure: 0, bbHazure: 0, bbCherryBellHazure: 0 };
+            const cleanText = text.replace(/,/g, '');
+            // エリア分割
+            const idxRT = cleanText.indexOf("RT詳細");
+            const idxBB = cleanText.indexOf("BB中詳細") !== -1 ? cleanText.indexOf("BB中詳細") : cleanText.indexOf("BIG中詳細");
+            const idxRB = cleanText.indexOf("RB中詳細") !== -1 ? cleanText.indexOf("RB中詳細") : cleanText.indexOf("REG中詳細");
+
+            const header = cleanText.substring(0, idxRT > -1 ? idxRT : cleanText.length);
+            const rt = (idxRT > -1) ? cleanText.substring(idxRT, idxBB > -1 ? idxBB : cleanText.length) : "";
+            const bb = (idxBB > -1) ? cleanText.substring(idxBB, idxRB > -1 ? idxRB : cleanText.length) : "";
+            const rb = (idxRB > -1) ? cleanText.substring(idxRB) : "";
+
+            const getDenom = (str, keyword) => {
+                // キーワード ... 1/ (数値)
+                const regex = new RegExp(keyword + "[\\s\\S]*?1\\s*[\\/|]\\s*(\\d+\\.?\\d*)");
+                const match = str.match(regex);
+                return match ? parseFloat(match[1]) : 0;
+            };
+
+            const data = {};
+            // 通常時
+            data.bellA = getDenom(header, "ベルA");
+            data.bellB = getDenom(header, "ベルB");
+            data.suikaA = getDenom(header, "スイカA");
+            data.cherryB = getDenom(header, "チェリーB");
             
-            // 1. エリア分割（ヘッダー / BB / RB）
-            // "BB中" または "BIG中" を探す
-            let bbIndex = cleanText.search(/(?:BB|BIG)中/);
-            // "RB中" または "REG中" を探す
-            let rbIndex = cleanText.search(/(?:RB|REG)中/);
+            // ボーナス
+            data.bb_total = getDenom(header, "合算") || getDenom(header, "BB確率") || getDenom(header, "赤７BB");
+            data.rb = getDenom(header, "RB") || getDenom(header, "REG");
 
-            // 見つからない場合は末尾扱い
-            if (bbIndex === -1) bbIndex = cleanText.length;
-            if (rbIndex === -1) rbIndex = cleanText.length;
+            // RT
+            data.rt_vc_hazure = getDenom(rt, "VSチャンス中はずれ");
+            data.rt_vg_hazure = getDenom(rt, "VSGAME中はずれ");
 
-            // 文字列を切り出す
-            const headerText = cleanText.substring(0, Math.min(bbIndex, rbIndex));
-            // BBエリア: BB開始位置から、RB開始位置（もしBBより後ろなら）まで
-            let bbText = "";
-            if (bbIndex < cleanText.length) {
-                let end = (rbIndex > bbIndex) ? rbIndex : cleanText.length;
-                bbText = cleanText.substring(bbIndex, end);
-            }
-            // RBエリア: RB開始位置から最後まで
-            let rbText = "";
-            if (rbIndex < cleanText.length) {
-                rbText = cleanText.substring(rbIndex);
-            }
+            // BB
+            data.bb_cb_match = getDenom(bb, "チェリー＋ベル揃い");
+            data.bb_cb_hazure = getDenom(bb, "チェリー＋ベルはずれ");
+            data.bb_middleCherry = getDenom(bb, "中段チェリー");
 
-            // --- ヘッダー解析 ---
-            // 総G: 改行もスペースも無視して数字を探す
-            const matchG = headerText.match(/総プレイ数[^\d]*(\d+)/);
-            if (matchG) data.totalGames = parseInt(matchG[1]);
-
-            // ベルA: "ベルA"必須。他のベルは拾わない。
-            const matchBellA = headerText.match(/ベルA[^\d]*(\d+)/);
-            if (matchBellA) {
-                data.bellACount = parseInt(matchBellA[1]);
-            } 
-            // ベルAが見つからない場合、無理に拾わない（0のままにする）
-
-            // RB回数
-            const matchRB = headerText.match(/(?:RB|REG)[^\d]*(\d+)回/);
-            if (matchRB) data.rbCount = parseInt(matchRB[1]);
-
-            // --- BBエリア解析 ---
-            // チェリー+ベルはずれ
-            // [^\d]* で改行や文字をまたいで数字を探す
-            const matchCB = bbText.match(/(?:チェリー\+ベル|チェリ\+ベル)[^\d]*(\d+)/);
-            if (matchCB) data.bbCherryBellHazure = parseInt(matchCB[1]);
-
-            // BB中ハズレ
-            // "チェリー"を含まない "ハズレ" を探すのは難しいので、
-            // 単純に "ハズレ" を探すが、それが "チェリー+ベル" の一部でないか確認が必要。
-            // 簡易策: "ハズレ" の前に "ベル" がないものを探す...のは正規表現で難しい。
-            // なので、BBエリアから "チェリー+ベル..." の行を消してから "ハズレ" を探すのが確実。
-            let cleanBB = bbText.replace(/(?:チェリー\+ベル|チェリ\+ベル).*?(\d+)回?/g, "");
-            const matchBBHaze = cleanBB.match(/ハズレ[^\d]*(\d+)/);
-            if (matchBBHaze) data.bbHazure = parseInt(matchBBHaze[1]);
-
-            // --- RBエリア解析 ---
-            const matchRBHaze = rbText.match(/ハズレ[^\d]*(\d+)/);
-            if (matchRBHaze) data.rbHazure = parseInt(matchRBHaze[1]);
+            // RB
+            data.rb_hazure = getDenom(rb, "はずれ");
 
             return data;
         }
+
+        // --- メイン処理 ---
+        const fileInput = document.getElementById('file-input');
+        const dropZone = document.getElementById('drop-zone');
+        const saveBtn = document.getElementById('save-key');
+
+        const savedKey = localStorage.getItem('v_key');
+        if (savedKey) document.getElementById('api-key').value = savedKey;
+
+        saveBtn.onclick = () => {
+            const k = document.getElementById('api-key').value;
+            if(k) { localStorage.setItem('v_key', k); alert("Key保存完了"); }
+        };
+
+        dropZone.onclick = () => fileInput.click();
+
+        fileInput.onchange = async (e) => {
+            const key = localStorage.getItem('v_key');
+            if(!key) return alert("API KEYを設定してください");
+            if(e.target.files.length === 0) return;
+
+            const originalHTML = dropZone.innerHTML;
+            dropZone.innerHTML = `<p class="text-xl font-black text-blue-400 animate-pulse">解析中...</p>`;
+            log("--- 解析開始 ---");
+            
+            const reader = new FileReader();
+            reader.readAsDataURL(e.target.files[0]);
+            reader.onload = async () => {
+                try {
+                    const res = await fetch(`https://vision.googleapis.com/v1/images:annotate?key=${key}`, {
+                        method: 'POST',
+                        body: JSON.stringify({ requests: [{ image: { content: reader.result.split(',')[1] }, features: [{ type: 'TEXT_DETECTION' }] }] }),
+                        headers: { 'Content-Type': 'application/json' }
+                    });
+                    const json = await res.json();
+                    if (!json.responses || !json.responses[0].fullTextAnnotation) throw new Error("文字認識失敗");
+
+                    const text = json.responses[0].fullTextAnnotation.text;
+                    const data = parseText(text);
+
+                    // 読み取れた数値をログに出す
+                    log(`ベルA:1/${data.bellA||'?'} ベルB:1/${data.bellB||'?'}`);
+                    log(`スイカA:1/${data.suikaA||'?'} チェリーB:1/${data.cherryB||'?'}`);
+                    log(`BB合算:1/${data.bb_total||'?'} RB:1/${data.rb||'?'}`);
+                    log(`RTハズレ:VC 1/${data.rt_vc_hazure||'?'} VG 1/${data.rt_vg_hazure||'?'}`);
+                    log(`BB詳細:揃1/${data.bb_cb_match||'?'} 外1/${data.bb_cb_hazure||'?'}`);
+                    if (data.rb_hazure) log(`★RBハズレ:1/${data.rb_hazure}`);
+
+                    const result = analyze(data);
+
+                    if (result) {
+                        document.getElementById('p1').innerText = result[1] + "%"; document.getElementById('bar1').style.width = result[1] + "%";
+                        document.getElementById('p2').innerText = result[2] + "%"; document.getElementById('bar2').style.width = result[2] + "%";
+                        document.getElementById('p5').innerText = result[5] + "%"; document.getElementById('bar5').style.width = result[5] + "%";
+                        document.getElementById('p6').innerText = result[6] + "%"; document.getElementById('bar6').style.width = result[6] + "%";
+                        dropZone.innerHTML = `<p class="text-xl font-black text-green-400">完了</p>`;
+                    } else {
+                        log("エラー：有効な確率データが見つかりません");
+                        dropZone.innerHTML = `<p class="text-xl font-black text-red-400">失敗</p>`;
+                    }
+                } catch (err) {
+                    log("Error: " + err.message);
+                    dropZone.innerHTML = originalHTML;
+                }
+                setTimeout(() => dropZone.innerHTML = originalHTML, 2000);
+            };
+        };
     </script>
 </body>
 </html>
