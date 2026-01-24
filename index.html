@@ -11,7 +11,7 @@
         .app-container { height: 100%; display: flex; flex-direction: column; padding: 1.5rem; box-sizing: border-box; }
         img[src="VS.png"] { min-height: 50px; background-color: transparent; }
         
-        /* 緑色のデバッグログ（復活） */
+        /* 緑色のデバッグログ */
         #debug-area { 
             font-size: 10px; font-family: monospace; color: #86efac; 
             background: rgba(0, 0, 0, 0.9); border: 1px solid #4ade80; 
@@ -25,12 +25,11 @@
 
     <header class="text-center pt-2 pb-2 flex-none">
         <img src="VS.png" alt="VERSUS REVISE" class="mx-auto w-3/5 max-w-sm drop-shadow-[0_0_15px_rgba(59,130,246,0.6)]">
-        <p class="text-red-600 font-bold text-[10px] mt-2 tracking-[0.3em] opacity-90">みおちゃん専用 VER 5.1</p>
+        <p class="text-red-600 font-bold text-[10px] mt-2 tracking-[0.3em] opacity-90">みおちゃん専用 VER 5.2</p>
     </header>
 
-    <div id="drop-zone" class="flex-none border-4 border-blue-500/40 rounded-[2rem] py-4 text-center bg-blue-900/20 mb-2 active:scale-95 active:bg-blue-900/40 transition-all shadow-lg cursor-pointer">
+    <div id="drop-zone" class="flex-none border-4 border-blue-500/40 rounded-[2rem] py-6 text-center bg-blue-900/20 mb-2 active:scale-95 active:bg-blue-900/40 transition-all shadow-lg cursor-pointer">
         <p class="text-lg font-black text-white tracking-widest leading-none">ユニメモ画像を解析</p>
-        <p class="text-[10px] text-gray-400 mt-1">※確率(1/xx.x)を直接読み取ります</p>
         <input type="file" id="file-input" class="hidden" accept="image/*">
     </div>
 
@@ -42,7 +41,7 @@
             <div><div class="flex justify-between items-end mb-1 px-2"><span class="text-xs font-black text-red-600">設定６</span><span id="p6" class="font-mono text-xs text-red-500">0.0%</span></div><div class="w-full bg-slate-800 h-2 rounded-full overflow-hidden"><div id="bar6" class="setting-bar h-full bg-red-600"></div></div></div>
         </div>
         
-        <div id="debug-area">解析待機中...</div>
+        <div id="debug-area"></div>
     </main>
 
     <footer class="flex-none space-y-2">
@@ -85,6 +84,19 @@
         // UI連携
         const logArea = document.getElementById('debug-area');
         function log(msg) { logArea.innerText = msg + "\n" + logArea.innerText; }
+
+        // 初期化時に定義を表示
+        function initDisplay() {
+            let defLog = "【定義データ読込完了】\n";
+            for (const [key, val] of Object.entries(TARGET_DENOMINATORS)) {
+                defLog += `${key.padEnd(12)}: 1(${val[1]||'-'}) 2(${val[2]||'-'}) 5(${val[5]}) 6(${val[6]})\n`;
+            }
+            defLog += "----------------------------";
+            log(defLog);
+        }
+        // 実行
+        initDisplay();
+
 
         // 解析ロジック (距離判定)
         function analyze(data) {
@@ -203,7 +215,7 @@
 
             const originalHTML = dropZone.innerHTML;
             dropZone.innerHTML = `<p class="text-xl font-black text-blue-400 animate-pulse">解析中...</p>`;
-            log("--- 解析開始 ---");
+            log("\n--- 画像解析開始 ---");
             
             const reader = new FileReader();
             reader.readAsDataURL(e.target.files[0]);
@@ -221,6 +233,7 @@
                     const data = parseText(text);
 
                     // 読み取れた数値をログに出す
+                    log(`[読取値(分母)]`);
                     log(`ベルA:1/${data.bellA||'?'} ベルB:1/${data.bellB||'?'}`);
                     log(`スイカA:1/${data.suikaA||'?'} チェリーB:1/${data.cherryB||'?'}`);
                     log(`BB合算:1/${data.bb_total||'?'} RB:1/${data.rb||'?'}`);
