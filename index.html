@@ -3,12 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Versus Revise - Pro Analyzer v4.0</title>
+    <title>Versus Revise - Pro v4.1</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         body { background-color: #0f172a; color: #f8fafc; font-family: sans-serif; }
         .glass { background: rgba(30, 41, 59, 0.8); backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.1); }
-        .drop-zone { border: 2px dashed #334155; min-height: 140px; transition: 0.3s; display: flex; align-items: center; justify-content: center; }
+        .drop-zone { border: 2px dashed #334155; min-height: 140px; display: flex; align-items: center; justify-content: center; transition: 0.3s; }
         .drop-zone.dragover { border-color: #38bdf8; background: rgba(56, 189, 248, 0.1); }
         .bar-bg { background: #1e293b; height: 14px; border-radius: 7px; overflow: hidden; }
         .bar-fill { background: linear-gradient(90deg, #38bdf8, #818cf8); height: 100%; transition: width 0.8s cubic-bezier(0.16, 1, 0.3, 1); width: 0%; }
@@ -18,13 +18,13 @@
 
     <header class="w-full max-w-md my-6 text-center">
         <h1 class="text-3xl font-black text-sky-400 tracking-tighter uppercase">Versus Revise</h1>
-        <p class="text-[10px] text-slate-500 font-mono tracking-[0.3em]">SECURE STORAGE ENGINE v4.0</p>
+        <p class="text-[10px] text-slate-500 font-mono tracking-[0.3em]">DYNAMIC ANALYSIS ENGINE v4.1</p>
     </header>
 
     <main class="w-full max-w-md space-y-4">
         
         <div id="key-section" class="glass p-4 rounded-2xl border-l-4 border-orange-500">
-            <label class="text-[10px] text-slate-400 font-bold block mb-2 uppercase tracking-widest">API Key Setup (Browser Only)</label>
+            <label class="text-[10px] text-slate-400 font-bold block mb-2 uppercase">API Key Setup</label>
             <div class="flex gap-2">
                 <input type="password" id="api-key-input" placeholder="AIza..." class="flex-1 bg-slate-900 border border-slate-700 rounded p-2 text-xs text-sky-300">
                 <button onclick="saveKey()" class="bg-sky-600 hover:bg-sky-500 px-4 py-2 rounded text-[10px] font-bold transition">SAVE</button>
@@ -32,35 +32,35 @@
             <p id="key-status" class="text-[9px] text-slate-500 mt-2 italic font-mono uppercase text-center"></p>
         </div>
 
-        <div id="drop-zone" class="drop-zone glass rounded-3xl cursor-pointer shadow-xl border-2 border-dashed border-slate-700 hover:border-sky-500 transition-all">
+        <div id="drop-zone" class="drop-zone glass rounded-3xl cursor-pointer border-2 border-dashed border-slate-700 hover:border-sky-500">
             <div class="text-center">
                 <p class="text-xs font-bold text-slate-300">ユニメモ画像をドロップ</p>
-                <p id="file-name" class="text-[10px] font-mono text-sky-500 mt-1 uppercase tracking-widest">Ready</p>
+                <p id="file-name" class="text-[10px] font-mono text-sky-500 mt-1 uppercase">Ready</p>
             </div>
             <input type="file" id="file-input" class="hidden" accept="image/*">
         </div>
 
-        <div class="glass rounded-[2rem] p-8 shadow-2xl space-y-8">
+        <div class="glass rounded-[2rem] p-8 shadow-2xl space-y-6">
             <div class="flex justify-between items-center border-b border-slate-700/50 pb-4">
-                <span class="text-[11px] text-slate-400 font-bold uppercase tracking-widest">Estimation Result</span>
-                <span id="final-label" class="px-3 py-1 rounded bg-sky-950 text-sky-400 text-[10px] font-mono font-bold">STANDBY</span>
+                <span class="text-[11px] text-slate-400 font-bold uppercase tracking-widest">Estimation</span>
+                <span id="final-label" class="px-2 py-0.5 rounded bg-sky-950 text-sky-400 text-[10px] font-mono">STANDBY</span>
             </div>
             
-            <div class="space-y-7">
+            <div class="space-y-6">
                 <div id="row-1">
-                    <div class="flex justify-between text-xs font-bold mb-2 uppercase tracking-tighter"><span>設定 1</span><span id="pct-1" class="text-sky-400 text-sm">--%</span></div>
+                    <div class="flex justify-between text-xs font-bold mb-1.5 uppercase"><span>設定 1</span><span id="pct-1" class="text-sky-400">--%</span></div>
                     <div class="bar-bg"><div id="bar-1" class="bar-fill"></div></div>
                 </div>
                 <div id="row-2">
-                    <div class="flex justify-between text-xs font-bold mb-2 uppercase tracking-tighter"><span>設定 2</span><span id="pct-2" class="text-sky-400 text-sm">--%</span></div>
+                    <div class="flex justify-between text-xs font-bold mb-1.5 uppercase"><span>設定 2</span><span id="pct-2" class="text-sky-400">--%</span></div>
                     <div class="bar-bg"><div id="bar-2" class="bar-fill"></div></div>
                 </div>
                 <div id="row-5">
-                    <div class="flex justify-between text-xs font-bold mb-2 uppercase tracking-tighter"><span>設定 5</span><span id="pct-5" class="text-sky-400 text-sm">--%</span></div>
+                    <div class="flex justify-between text-xs font-bold mb-1.5 uppercase"><span>設定 5</span><span id="pct-5" class="text-sky-400">--%</span></div>
                     <div class="bar-bg"><div id="bar-5" class="bar-fill"></div></div>
                 </div>
                 <div id="row-6">
-                    <div class="flex justify-between text-xs font-bold mb-2 uppercase tracking-tighter"><span>設定 6</span><span id="pct-6" class="text-sky-400 text-sm">--%</span></div>
+                    <div class="flex justify-between text-xs font-bold mb-1.5 uppercase"><span>設定 6</span><span id="pct-6" class="text-sky-400">--%</span></div>
                     <div class="bar-bg"><div id="bar-6" class="bar-fill"></div></div>
                 </div>
             </div>
@@ -76,14 +76,9 @@
             rbIn: { 1:{h:100000}, 2:{h:100000}, 5:{h:376.6}, 6:{h:376.6} }
         };
 
-        const fileInput = document.getElementById('file-input');
-        const dropZone = document.getElementById('drop-zone');
-
-        // キーの初期読み込み
         window.onload = () => {
             if(localStorage.getItem('versus_api_key')) {
-                document.getElementById('key-status').innerText = 'KEY ALREADY STORED';
-                document.getElementById('key-status').classList.replace('text-slate-500', 'text-sky-500');
+                document.getElementById('key-status').innerText = 'KEY READY';
             }
         };
 
@@ -91,23 +86,18 @@
             const val = document.getElementById('api-key-input').value;
             if(!val) return alert("Keyを入力してください");
             localStorage.setItem('versus_api_key', val);
-            document.getElementById('key-status').innerText = 'KEY SAVED SUCCESSFULLY';
-            document.getElementById('key-status').classList.replace('text-slate-500', 'text-sky-500');
-            alert("ブラウザに保存しました。GitHub上のソースには鍵は含まれません。");
+            alert("ブラウザに保存完了。GitHubへアップしても安全です。");
         }
 
+        const fileInput = document.getElementById('file-input');
+        const dropZone = document.getElementById('drop-zone');
         dropZone.onclick = () => fileInput.click();
-        dropZone.ondragover = (e) => { e.preventDefault(); dropZone.classList.add('dragover'); };
-        dropZone.ondragleave = () => dropZone.classList.remove('dragover');
-        dropZone.ondrop = (e) => { e.preventDefault(); dropZone.classList.remove('dragover'); handleFile(e.dataTransfer.files[0]); };
         fileInput.onchange = e => handleFile(e.target.files[0]);
 
         async function handleFile(file) {
             const key = localStorage.getItem('versus_api_key');
-            if(!key) return alert("先にSAVEボタンでキーを保存してください");
-            if (!file) return;
+            if(!key) return alert("Keyを保存してください");
             document.getElementById('file-name').innerText = file.name;
-            document.getElementById('final-label').innerText = 'ANALYZING...';
 
             try {
                 const base64 = await toBase64(file);
@@ -118,8 +108,7 @@
                     })
                 });
                 const json = await response.json();
-                const text = json.responses[0]?.fullTextAnnotation?.text || "";
-                processAnalysis(extract(text));
+                processAnalysis(extract(json.responses[0]?.fullTextAnnotation?.text || ""));
             } catch (err) { alert(err.message); }
         }
 
@@ -153,8 +142,9 @@
                     settings.forEach(s => {
                         const target = MASTER[cat][s][key];
                         const trials = (cat === 'normal' || cat === 'bonus') ? games : (games * 0.1);
-                        // 収束力を考慮した統計的ペナルティ計算
-                        logScores[s] -= Math.pow((1/obs) - (1/target), 2) * trials * 10000;
+                        // スケーリングをマイルドにし、2000Gでのブレを許容
+                        const diff = Math.abs((1/obs) - (1/target)) / (1/target);
+                        logScores[s] -= diff * (trials / 400); 
                     });
                 });
             });
@@ -169,7 +159,7 @@
 
             settings.forEach(s => {
                 const final = (probs[s] / sum);
-                const pct = Math.round(final * 100);
+                const pct = (final * 100).toFixed(1);
                 document.getElementById(`pct-${s}`).innerText = pct + '%';
                 document.getElementById(`bar-${s}`).style.width = pct + '%';
             });
