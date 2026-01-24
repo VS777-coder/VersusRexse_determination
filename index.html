@@ -6,7 +6,7 @@
     <title>VERSUS REVISE - みおちゃん専用</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        body { background: #070b14; color: #fff; height: 100dvh; overflow: hidden; font-family: 'sans-serif'; }
+        body { background: #070b14; color: #fff; height: 100dvh; overflow: hidden; font-family: sans-serif; }
         .glass { background: rgba(15, 23, 42, 0.8); border: 1px solid rgba(56, 189, 248, 0.2); }
         .bar-bg { background: rgba(30, 41, 59, 0.7); height: 14px; border-radius: 7px; }
         .bar-fill { height: 100%; border-radius: 7px; transition: width 0.8s ease-in-out; }
@@ -21,15 +21,15 @@
     </header>
 
     <div class="flex justify-between items-center px-2 text-[10px] font-mono text-slate-500">
-        <span onclick="toggleKey()">KEY: <span id="key-label">LOADED</span></span>
+        <span onclick="toggleKey()" class="cursor-pointer">KEY: <span id="key-label">UNKNOWN</span></span>
         <span id="status">WAITING DATA...</span>
     </div>
     <div id="key-input-area" class="hidden glass p-2 rounded-lg flex gap-2">
-        <input type="password" id="api-key" class="flex-1 bg-black text-xs p-1 rounded">
-        <button onclick="saveKey()" class="bg-sky-600 px-2 rounded">SAVE</button>
+        <input type="password" id="api-key" class="flex-1 bg-black text-xs p-1 rounded" placeholder="Google Vision API Key">
+        <button onclick="saveKey()" class="bg-sky-600 px-2 rounded text-[10px]">SAVE</button>
     </div>
 
-    <div id="drop-zone" class="glass rounded-xl py-4 flex flex-col items-center justify-center border-2 border-dashed border-slate-700 active:scale-95 transition-transform">
+    <div id="drop-zone" class="glass rounded-xl py-4 flex flex-col items-center justify-center border-2 border-dashed border-slate-700 active:scale-95 transition-transform cursor-pointer">
         <p class="text-xs font-bold text-slate-400">画像を解析</p>
         <p class="text-[8px] text-slate-600 mt-1 uppercase">TAP OR DROP HERE</p>
         <input type="file" id="file-input" accept="image/*">
@@ -37,7 +37,6 @@
 
     <div class="glass rounded-2xl p-4 flex-1 flex flex-col justify-around">
         <div id="game-display" class="text-right text-[10px] font-mono text-sky-500 mb-1">---- G</div>
-        
         <div class="space-y-4">
             <div>
                 <div class="flex justify-between text-xs font-bold mb-1"><span>設定 1</span><span id="p1" class="text-slate-400">--%</span></div>
@@ -59,17 +58,68 @@
     </div>
 
     <script>
-        // ロジックは全て継承。UIの更新とイベント処理のみ
+        const MASTER = {
+            bonus: { 1:{bb:350.4, rb:438}, 2:{bb:334.3, rb:411.7}, 5:{bb:318.1, rb:378.8}, 6:{bb:297.8, rb:354.2} },
+            normal: { 1:{ba:10.9, sa:74.5}, 2:{ba:10.7, sa:70.6}, 5:{ba:10.5, sa:72.5}, 6:{ba:10.2, sa:68.8} },
+            rt: { 1:{vc:5.0, vg:10.1}, 2:{vc:4.9, vg:9.4}, 5:{vc:4.6, vg:8.7}, 6:{vc:4.5, vg:8.1} }
+        };
+
+        window.onload = () => { if(localStorage.getItem('v_key')) document.getElementById('key-label').innerText = 'LOADED'; };
+        function toggleKey() { document.getElementById('key-input-area').classList.toggle('hidden'); }
+        function saveKey() { const v = document.getElementById('api-key').value; if(v){localStorage.setItem('v_key', v); alert("KEY SAVED"); location.reload();} }
+
         const dz = document.getElementById('drop-zone');
         const fi = document.getElementById('file-input');
-        
         dz.onclick = () => fi.click();
         fi.onchange = e => handleFile(e.target.files[0]);
 
-        function toggleKey() { document.getElementById('key-input-area').classList.toggle('hidden'); }
-        function saveKey() { localStorage.setItem('v_key', document.getElementById('api-key').value); alert("KEY SAVED"); toggleKey(); }
+        async function handleFile(file) {
+            const key = localStorage.getItem('v_key');
+            if(!key) return alert("API KEYを入力してください");
+            document.getElementById('status').innerText = "ANALYZING...";
+            const base64 = await toBase64(file);
+            try {
+                const res = await fetch(`https://vision.googleapis.com/v1/images:annotate?key=${key}`, {
+                    method: 'POST',
+                    body: JSON.stringify({ requests: [{ image: { content: base64.split(',')[1] }, features: [{ type: 'TEXT_DETECTION' }] }] })
+                });
+                const json = await res.json();
+                const text = json.responses[0].fullTextAnnotation.text;
+                process(extract(text));
+            } catch (e) { alert("解析失敗"); document.getElementById('status').innerText = "ERROR"; }
+        }
 
-        // 解析実行後に呼ばれる表示更新関数
+        function toBase64(f) { return new Promise((res) => { const r = new FileReader(); r.onload = () => res(r.result); r.readAsDataURL(f); }); }
+
+        function extract(text) {
+            const clean = text.replace(/[lI]/g, '1').replace(/\s/g, '');
+            const find = (re) => { const m = clean.match(re); return m ? parseFloat(m[1].replace(/,/g, '')) : null; };
+            return {
+                games: find(/総プレイ数([\d,.]+)/) || 1000,
+                ba: find(/ベルA.*?1\/([\d,.]+)/),
+                rb: find(/RB.*?1\/([\d,.]+)/),
+                vg: find(/VSGAME中はずれ.*?1\/([\d,.]+)/),
+                cb: find(/チェリー\+ベル.*?1\/([\d,.]+)/)
+            };
+        }
+
+        function process(d) {
+            let s = { 1:1, 2:1, 5:1, 6:1 };
+            const g = d.games;
+            [1, 2, 5, 6].forEach(i => {
+                if(d.ba) s[i] *= Math.pow(MASTER.normal[i].ba / d.ba, (g < 2000 ? 1.2 : 2.5));
+                if(d.rb) s[i] *= Math.pow(MASTER.bonus[i].rb / d.rb, 2.0);
+                if(d.vg) s[i] *= Math.pow(MASTER.rt[i].vg / d.vg, 2.0);
+                // 奇数偶数：BB中チェリー+ベル (1/8.9なら偶数寄り、1/11.1なら奇数寄り)
+                if(d.cb) {
+                    const target = (i === 2 || i === 6) ? 8.9 : 11.1;
+                    s[i] *= Math.pow(target / d.cb, 1.5);
+                }
+            });
+            const total = s[1]+s[2]+s[5]+s[6];
+            updateUI({1:s[1]/total, 2:s[2]/total, 5:s[5]/total, 6:s[6]/total}, g);
+        }
+
         function updateUI(scores, games) {
             document.getElementById('game-display').innerText = games + " G";
             [1, 2, 5, 6].forEach(s => {
@@ -77,7 +127,7 @@
                 document.getElementById('p' + s).innerText = p + "%";
                 document.getElementById('b' + s).style.width = p + "%";
             });
-            document.getElementById('status').innerText = "ANALYSIS COMPLETE";
+            document.getElementById('status').innerText = "COMPLETE";
         }
     </script>
 </body>
