@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>VERSUS REVISE PRO</title>
+    <title>VERSUS REVISE FINAL</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         html, body { height: 100%; overflow: hidden; position: fixed; width: 100%; background-color: #0f172a; color: #f8fafc; font-family: 'Helvetica Neue', Arial, sans-serif; -webkit-tap-highlight-color: transparent; }
@@ -24,12 +24,12 @@
 
     <header class="text-center pt-2 pb-2 flex-none">
         <img src="VS.png" alt="VERSUS REVISE" class="mx-auto w-3/5 max-w-sm drop-shadow-[0_0_15px_rgba(59,130,246,0.6)]">
-        <p class="text-red-600 font-bold text-[10px] mt-2 tracking-[0.3em] opacity-90">みおちゃん専用 VER 6.1</p>
+        <p class="text-red-600 font-bold text-[10px] mt-2 tracking-[0.3em] opacity-90">みおちゃん専用 VER 7.0</p>
     </header>
 
     <div id="drop-zone" class="flex-none border-4 border-blue-500/40 rounded-[2rem] py-6 text-center bg-blue-900/20 mb-2 active:scale-95 active:bg-blue-900/40 transition-all shadow-lg cursor-pointer">
         <p class="text-lg font-black text-white tracking-widest leading-none">ユニメモ画像を解析</p>
-        <p class="text-[10px] text-gray-400 mt-2">※最近傍探索ロジック搭載</p>
+        <p class="text-[10px] text-gray-400 mt-2">※行再構築ロジック搭載</p>
         <input type="file" id="file-input" class="hidden" accept="image/*">
     </div>
 
@@ -74,142 +74,117 @@
         function log(msg) { logArea.innerText = msg + "\n" + logArea.innerText; }
 
         function initDisplay() {
-            log("【SYSTEM READY】\nVer 6.1 (Nearest Neighbor)\n待機中...");
+            log("【SYSTEM READY】\nVer 7.0 (Line Reconstruction)\n待機中...");
         }
         initDisplay();
 
         // ===============================================
-        //  【修正版】最近傍探索パーサー
-        //   厳しいピクセル一致ではなく、
-        //   「右側にあって」「Y座標が最も近い」数値を採用する
+        //  【新実装】行再構築パーサー (Line Reconstructor)
+        //   バラバラの文字をY座標でグルーピングし、
+        //   1行の文字列に復元してから解析する
         // ===============================================
-        function parseWithCoordinates(fullResponse) {
+        function parseWithLineReconstruction(fullResponse) {
             if (!fullResponse || !fullResponse.textAnnotations) return {};
 
-            // 0番目は全体テキストなので除外
-            const words = fullResponse.textAnnotations.slice(1);
+            // 1. 全単語を取得 (0番目は除外)
+            const rawWords = fullResponse.textAnnotations.slice(1);
+
+            // 2. Y座標でソート
+            rawWords.sort((a, b) => {
+                const yA = (a.boundingPoly.vertices[0].y + a.boundingPoly.vertices[3].y) / 2;
+                const yB = (b.boundingPoly.vertices[0].y + b.boundingPoly.vertices[3].y) / 2;
+                return yA - yB;
+            });
+
+            // 3. 行ごとにグルーピング (クラスタリング)
+            const lines = [];
+            let currentLine = [];
+            let lastY = -999;
+
+            rawWords.forEach(w => {
+                const y = (w.boundingPoly.vertices[0].y + w.boundingPoly.vertices[3].y) / 2;
+                const height = (w.boundingPoly.vertices[3].y - w.boundingPoly.vertices[0].y);
+                
+                // 同じ行とみなす閾値 (行の高さの半分くらい)
+                if (Math.abs(y - lastY) < (height * 0.6)) {
+                    currentLine.push(w);
+                } else {
+                    if (currentLine.length > 0) lines.push(currentLine);
+                    currentLine = [w];
+                    lastY = y;
+                }
+            });
+            if (currentLine.length > 0) lines.push(currentLine);
+
+            // 4. 各行内でX座標順にソートして結合
+            const reconstructedLines = lines.map(line => {
+                // X座標順に並べ替え
+                line.sort((a, b) => a.boundingPoly.vertices[0].x - b.boundingPoly.vertices[0].x);
+                // 文字列を結合
+                const text = line.map(w => w.description).join(''); 
+                // 生の単語オブジェクトも保持しておく(デバッグ用)
+                return text; 
+            });
+
+            // デバッグ: 認識した行をいくつか表示
+            // log("認識した行(一部): " + reconstructedLines.slice(0, 3).join(" | "));
+
             const result = {};
 
-            // 探索対象定義
+            // 5. ターゲット探索 (復元された行の中から探す)
             const searchTargets = [
                 { key: 'bellA', texts: ['ベルA', 'ベルＡ'] },
                 { key: 'bellB', texts: ['ベルB', 'ベルＢ'] },
                 { key: 'suikaA', texts: ['スイカA', 'スイカＡ'] },
                 { key: 'cherryB', texts: ['チェリーB', 'チェリーＢ'] },
-                { key: 'bb_total', texts: ['総ボーナス', '合算', '赤７BB', '赤7BB'] }, 
+                { key: 'bb_total', texts: ['総ボーナス', '合算', '赤７BB', '赤7BB', 'BB確率'] }, 
                 { key: 'rb', texts: ['RB', 'REG'] },
                 { key: 'rt_vc_hazure', texts: ['VSチャンス中はずれ', 'VSチャンス中'] },
                 { key: 'rt_vg_hazure', texts: ['VSGAME中はずれ', 'VSGAME中'] },
                 { key: 'bb_cb_match', texts: ['チェリー＋ベル揃い'] },
                 { key: 'bb_cb_hazure', texts: ['チェリー＋ベルはずれ'] },
                 { key: 'bb_mid_cherry', texts: ['中段チェリー'] },
-                { key: 'rb_hazure', texts: ['はずれ'] }
+                { key: 'rb_hazure', texts: ['はずれ'] } // RBエリア判定が必要
             ];
 
-            // 座標取得ヘルパー
-            const getY = (w) => (w.boundingPoly.vertices[0].y + w.boundingPoly.vertices[3].y) / 2;
-            const getLeftX = (w) => w.boundingPoly.vertices[0].x;
-            const getRightX = (w) => w.boundingPoly.vertices[1].x;
-
-            // 数値探索関数 (Nearest Neighbor Logic)
-            const findValueForLabel = (labelWord) => {
-                const labelY = getY(labelWord);
-                const labelRight = getRightX(labelWord);
-
-                let bestVal = 0;
-                let minDiff = 10000; // 初期値無限大
-
-                words.forEach(w => {
-                    // 数値パターン (1/xx.x または 1|xx.x)
-                    const match = w.description.match(/1[\/|]([0-9]+\.?[0-9]*)/);
-                    if (!match) return;
-
-                    const valY = getY(w);
-                    const valLeft = getLeftX(w);
-
-                    // 条件1: ラベルより「右側」にあること
-                    // (多少の重なりは考慮せず、ラベルの左端より右にあれば候補とする等の緩和も可能だが、基本はラベル右端 < 数値左端)
-                    // ここでは厳密に ラベル右端 < 数値左端 とする
-                    if (valLeft < labelRight) return;
-
-                    // 条件2: Y座標の距離を計算
-                    const diff = Math.abs(labelY - valY);
-
-                    // 条件3: 距離が離れすぎていないこと（誤爆防止のため50px以内とする）
-                    // 行の高さはおよそ30-40px程度なので50pxあれば十分
-                    if (diff > 50) return;
-
-                    // 条件4: 最小距離(最も近い行)のものを更新
-                    if (diff < minDiff) {
-                        minDiff = diff;
-                        bestVal = parseFloat(match[1]);
-                    }
-                });
-                return bestVal;
-            };
-
-            // メイン探索
             searchTargets.forEach(target => {
-                // 1. ラベルを探す (Y座標が下のほうにあるものを優先すべきか、上のものを優先すべきか？)
-                // 通常は上から走査されるが、誤検知を避けるため「完全一致」があればそれを優先する
-                let labelWord = null;
-                
-                // 完全一致検索を試みる
-                for (const t of target.texts) {
-                    const exact = words.find(w => w.description === t);
-                    if (exact) {
-                        labelWord = exact;
-                        break;
+                let bestVal = 0;
+
+                // RBハズレの場合、下のほうにある「はずれ」を採用する簡易ロジック
+                if (target.key === 'rb_hazure') {
+                    // 下から順に探す
+                    for (let i = reconstructedLines.length - 1; i >= 0; i--) {
+                        const lineStr = reconstructedLines[i];
+                        if (lineStr.includes('はずれ')) {
+                            const match = lineStr.match(/1[\/|]([0-9]+\.?[0-9]*)/);
+                            if (match) {
+                                bestVal = parseFloat(match[1]);
+                                break; // 一番下の「はずれ」を採用
+                            }
+                        }
                     }
-                }
-                
-                // 完全一致がなければ部分一致検索
-                if (!labelWord) {
-                    for (const w of words) {
-                        if (target.texts.some(t => w.description.includes(t))) {
-                            labelWord = w;
-                            break; 
+                } else {
+                    // 通常探索
+                    for (const lineStr of reconstructedLines) {
+                        // 行の中にターゲット文字列が含まれているか
+                        if (target.texts.some(t => lineStr.includes(t))) {
+                            // その行の中に "1/xx.x" があるか
+                            const match = lineStr.match(/1[\/|]([0-9]+\.?[0-9]*)/);
+                            if (match) {
+                                bestVal = parseFloat(match[1]);
+                                break; // 見つかったら終了（上から順）
+                            }
                         }
                     }
                 }
-
-                // 「はずれ」は複数箇所(RT中、BB中、RB中)に出てくるため、
-                // RB中の「はずれ」を特定するには工夫が必要。
-                // 「RB中詳細」というヘッダーより下にある「はずれ」を探すロジックを追加
-                if (target.key === 'rb_hazure') {
-                    // RBヘッダーを探す
-                    const rbHeader = words.find(w => w.description.includes('RB中詳細') || w.description.includes('REG中詳細'));
-                    if (rbHeader) {
-                        const rbY = getY(rbHeader);
-                        // RBヘッダーより下にあり、かつ一番近い「はずれ」を探す
-                        let bestHazure = null;
-                        let minHazureDiff = 10000;
-                        
-                        words.forEach(w => {
-                            if (w.description === 'はずれ' && getY(w) > rbY) {
-                                const diff = getY(w) - rbY;
-                                if (diff < minHazureDiff) {
-                                    minHazureDiff = diff;
-                                    bestHazure = w;
-                                }
-                            }
-                        });
-                        labelWord = bestHazure; // RBエリアの「はずれ」ラベルに置き換え
-                    }
-                }
-
-                if (labelWord) {
-                    result[target.key] = findValueForLabel(labelWord);
-                } else {
-                    result[target.key] = 0;
-                }
+                result[target.key] = bestVal;
             });
 
             return result;
         }
 
         // ===============================================
-        //  判定ロジック (変更なし)
+        //  判定ロジック
         // ===============================================
         function analyze(data) {
             let errorScores = { 1: 0, 2: 0, 5: 0, 6: 0 };
@@ -221,10 +196,6 @@
                 if (!TARGET_DENOMINATORS[key]) continue;
 
                 if (key === 'rb_hazure') {
-                    // RBハズレが検出された場合
-                    // 万が一の誤読(1/4.1などを拾った場合)を排除するため、
-                    // RBハズレの分母は通常300以上であることをチェックしてもいいが、
-                    // みおちゃん定義に従い、値があれば即反応させる
                     log(`★ 神の啓示: RBハズレ検出(1/${value}) -> 設定1・2 消去`);
                     detectedRbHazure = true;
                     continue; 
@@ -284,8 +255,8 @@
             if(e.target.files.length === 0) return;
 
             const originalHTML = dropZone.innerHTML;
-            dropZone.innerHTML = `<p class="text-xl font-black text-blue-400 animate-pulse">解析中(Ver 6.1)...</p>`;
-            log("\n--- 画像解析開始 (Ver 6.1 Logic) ---");
+            dropZone.innerHTML = `<p class="text-xl font-black text-blue-400 animate-pulse">解析中(Ver 7.0)...</p>`;
+            log("\n--- 画像解析開始 (Ver 7.0 Logic) ---");
             
             const reader = new FileReader();
             reader.readAsDataURL(e.target.files[0]);
@@ -301,8 +272,8 @@
                     if (!json.responses || !json.responses[0]) throw new Error("APIレスポンス異常");
                     if (!json.responses[0].textAnnotations) throw new Error("文字が見つかりませんでした");
 
-                    // ★Ver 6.1 新ロジック呼び出し
-                    const data = parseWithCoordinates(json.responses[0]);
+                    // ★Ver 7.0 新ロジック呼び出し
+                    const data = parseWithLineReconstruction(json.responses[0]);
 
                     // 結果ログ
                     log(`[読取結果]`);
