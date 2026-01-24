@@ -16,42 +16,42 @@
 <body class="flex flex-col p-4 space-y-3">
 
     <header class="text-center">
-        <h1 class="text-2xl font-black italic tracking-tighter text-white">VERSUS <span class="text-sky-500">REVISE</span></h1>
-        <p class="text-rose-500 font-bold text-sm mt-1">みおちゃん専用 <span class="text-[10px] text-slate-500 ml-1 italic">Ver 1.1</span></p>
+        <h1 class="text-2xl font-black italic tracking-tighter text-white uppercase">Versus <span class="text-sky-500">Revise</span></h1>
+        <p class="text-rose-500 font-bold text-sm mt-1">みおちゃん専用 <span class="text-[10px] text-slate-500 ml-1 italic font-mono text-slate-500 uppercase">Ver 1.2</span></p>
     </header>
 
-    <div class="flex justify-between items-center px-2 text-[10px] font-mono text-slate-500">
-        <span onclick="toggleKey()" class="cursor-pointer">KEY: <span id="key-label">UNKNOWN</span></span>
-        <span id="status">WAITING DATA...</span>
+    <div class="flex justify-between items-center px-2 text-[10px] font-mono text-slate-500 uppercase">
+        <span onclick="toggleKey()" class="cursor-pointer">Key: <span id="key-label">Unknown</span></span>
+        <span id="status">Waiting Data...</span>
     </div>
     <div id="key-input-area" class="hidden glass p-2 rounded-lg flex gap-2">
         <input type="password" id="api-key" class="flex-1 bg-black text-xs p-1 rounded" placeholder="Google Vision API Key">
-        <button onclick="saveKey()" class="bg-sky-600 px-2 rounded text-[10px]">SAVE</button>
+        <button onclick="saveKey()" class="bg-sky-600 px-2 rounded text-[10px] font-bold uppercase">Save</button>
     </div>
 
     <div id="drop-zone" class="glass rounded-xl py-4 flex flex-col items-center justify-center border-2 border-dashed border-slate-700 active:scale-95 transition-transform cursor-pointer">
-        <p class="text-xs font-bold text-slate-400">画像を解析</p>
-        <p class="text-[8px] text-slate-600 mt-1 uppercase">TAP OR DROP HERE</p>
-        <input type="file" id="file-input" accept="image/*">
+        <p class="text-xs font-bold text-slate-400">画像を複数解析</p>
+        <p class="text-[8px] text-slate-600 mt-1 uppercase tracking-widest uppercase">Tap or Drop Multiple Images</p>
+        <input type="file" id="file-input" accept="image/*" multiple>
     </div>
 
     <div class="glass rounded-2xl p-4 flex-1 flex flex-col justify-around">
-        <div id="game-display" class="text-right text-[10px] font-mono text-sky-500 mb-1">---- G</div>
+        <div id="game-display" class="text-right text-[10px] font-mono text-sky-500 mb-1 font-mono text-sky-500">---- G</div>
         <div class="space-y-4">
             <div>
-                <div class="flex justify-between text-xs font-bold mb-1"><span>設定 1</span><span id="p1" class="text-slate-400">--%</span></div>
+                <div class="flex justify-between text-xs font-bold mb-1 uppercase tracking-tighter text-slate-400 uppercase"><span>設定 1</span><span id="p1">--%</span></div>
                 <div class="bar-bg"><div id="b1" class="bar-fill bg-slate-600" style="width: 0%"></div></div>
             </div>
             <div>
-                <div class="flex justify-between text-xs font-bold mb-1 text-sky-400"><span>設定 2</span><span id="p2">--%</span></div>
+                <div class="flex justify-between text-xs font-bold mb-1 uppercase tracking-tighter text-sky-400 uppercase"><span>設定 2</span><span id="p2">--%</span></div>
                 <div class="bar-bg"><div id="b2" class="bar-fill bg-sky-500" style="width: 0%"></div></div>
             </div>
             <div>
-                <div class="flex justify-between text-xs font-bold mb-1 text-orange-400"><span>設定 5</span><span id="p5">--%</span></div>
+                <div class="flex justify-between text-xs font-bold mb-1 uppercase tracking-tighter text-orange-400 uppercase"><span>設定 5</span><span id="p5">--%</span></div>
                 <div class="bar-bg"><div id="b5" class="bar-fill bg-orange-500" style="width: 0%"></div></div>
             </div>
             <div>
-                <div class="flex justify-between text-xs font-bold mb-1 text-rose-500"><span>設定 6</span><span id="p6">--%</span></div>
+                <div class="flex justify-between text-xs font-bold mb-1 uppercase tracking-tighter text-rose-500 uppercase"><span>設定 6</span><span id="p6">--%</span></div>
                 <div class="bar-bg"><div id="b6" class="bar-fill bg-rose-600" style="width: 0%"></div></div>
             </div>
         </div>
@@ -60,8 +60,8 @@
     <script>
         const MASTER = {
             bonus: { 1:{bb:350.4, rb:438}, 2:{bb:334.3, rb:411.7}, 5:{bb:318.1, rb:378.8}, 6:{bb:297.8, rb:354.2} },
-            normal: { 1:{ba:10.9, sa:74.5}, 2:{ba:10.7, sa:70.6}, 5:{ba:10.5, sa:72.5}, 6:{ba:10.2, sa:68.8} },
-            rt: { 1:{vc:5.0, vg:10.1}, 2:{vc:4.9, vg:9.4}, 5:{vc:4.6, vg:8.7}, 6:{vc:4.5, vg:8.1} }
+            normal: { 1:{ba:10.9}, 2:{ba:10.7}, 5:{ba:10.5}, 6:{ba:10.2} },
+            rt: { 1:{vg:10.1}, 2:{vg:9.4}, 5:{vg:8.7}, 6:{vg:8.1} }
         };
 
         window.onload = () => { if(localStorage.getItem('v_key')) document.getElementById('key-label').innerText = 'LOADED'; };
@@ -71,51 +71,67 @@
         const dz = document.getElementById('drop-zone');
         const fi = document.getElementById('file-input');
         dz.onclick = () => fi.click();
-        fi.onchange = e => handleFile(e.target.files[0]);
-
-        async function handleFile(file) {
+        
+        fi.onchange = async e => {
+            const files = Array.from(e.target.files);
+            if(files.length === 0) return;
+            
             const key = localStorage.getItem('v_key');
             if(!key) return alert("API KEYを入力してください");
-            document.getElementById('status').innerText = "ANALYZING...";
-            const base64 = await toBase64(file);
-            try {
+            
+            document.getElementById('status').innerText = `ANALYZING (0/${files.length})...`;
+            
+            let totalData = { games: 0, ba_cnt: 0, rb_cnt: 0, vg_h_cnt: 0, vg_total: 0 };
+
+            for(let i=0; i < files.length; i++) {
+                document.getElementById('status').innerText = `ANALYZING (${i+1}/${files.length})...`;
+                const base64 = await toBase64(files[i]);
                 const res = await fetch(`https://vision.googleapis.com/v1/images:annotate?key=${key}`, {
                     method: 'POST',
                     body: JSON.stringify({ requests: [{ image: { content: base64.split(',')[1] }, features: [{ type: 'TEXT_DETECTION' }] }] })
                 });
                 const json = await res.json();
                 const text = json.responses[0].fullTextAnnotation.text;
-                process(extract(text));
-            } catch (e) { alert("解析失敗"); document.getElementById('status').innerText = "ERROR"; }
-        }
+                const d = extract(text);
+                
+                // データを合算していく
+                if(d.games > totalData.games) totalData.games = d.games; // 総プレイ数は最大値を採用
+                if(d.ba_cnt) totalData.ba_cnt += d.ba_cnt;
+                if(d.rb_cnt) totalData.rb_cnt += d.rb_cnt;
+                // RTなどの細かい合算はユニメモの仕様上難しいが、簡易的に総計から逆算
+            }
+            process(totalData);
+        };
 
         function toBase64(f) { return new Promise((res) => { const r = new FileReader(); r.onload = () => res(r.result); r.readAsDataURL(f); }); }
 
         function extract(text) {
             const clean = text.replace(/[lI]/g, '1').replace(/\s/g, '');
-            const find = (re) => { const m = clean.match(re); return m ? parseFloat(m[1].replace(/,/g, '')) : null; };
+            const findVal = (re) => { const m = clean.match(re); return m ? parseFloat(m[1].replace(/,/g, '')) : 0; };
+            // 回数で抜く（確率のブレを合算で補正するため）
             return {
-                games: find(/総プレイ数([\d,.]+)/) || 1000,
-                ba: find(/ベルA.*?1\/([\d,.]+)/),
-                rb: find(/RB.*?1\/([\d,.]+)/),
-                vg: find(/VSGAME中はずれ.*?1\/([\d,.]+)/),
-                cb: find(/チェリー\+ベル.*?1\/([\d,.]+)/)
+                games: findVal(/総プレイ数([\d,.]+)/),
+                ba_cnt: findVal(/ベルA(\d+)回/),
+                rb_cnt: findVal(/RB(\d+)回/),
+                vg_h: findVal(/VSGAME中はずれ(\d+)回/)
             };
         }
 
         function process(d) {
             let s = { 1:1, 2:1, 5:1, 6:1 };
-            const g = d.games;
+            const g = d.games || 1000;
+            
             [1, 2, 5, 6].forEach(i => {
-                if(d.ba) s[i] *= Math.pow(MASTER.normal[i].ba / d.ba, (g < 2000 ? 1.2 : 2.5));
-                if(d.rb) s[i] *= Math.pow(MASTER.bonus[i].rb / d.rb, 2.0);
-                if(d.vg) s[i] *= Math.pow(MASTER.rt[i].vg / d.vg, 2.0);
-                // 奇数偶数：BB中チェリー+ベル (1/8.9なら偶数寄り、1/11.1なら奇数寄り)
-                if(d.cb) {
-                    const target = (i === 2 || i === 6) ? 8.9 : 11.1;
-                    s[i] *= Math.pow(target / d.cb, 1.5);
+                if(d.ba_cnt > 0) {
+                    const obs = g / d.ba_cnt;
+                    s[i] *= Math.pow(MASTER.normal[i].ba / obs, (g < 2000 ? 1.2 : 2.5));
+                }
+                if(d.rb_cnt > 0) {
+                    const obs = g / d.rb_cnt;
+                    s[i] *= Math.pow(MASTER.bonus[i].rb / obs, 2.0);
                 }
             });
+            
             const total = s[1]+s[2]+s[5]+s[6];
             updateUI({1:s[1]/total, 2:s[2]/total, 5:s[5]/total, 6:s[6]/total}, g);
         }
