@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>VERSUS REVISE v2.4.1</title>
+    <title>VERSUS REVISE v2.4.2</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap');
@@ -21,7 +21,7 @@
 <body>
     <div class="text-center shrink-0 mb-2">
         <img src="VS.png" alt="VERSUS" class="mx-auto w-64 mb-1">
-        <p class="ver-text">よっちゃん専用 VER 2.4.1</p>
+        <p class="ver-text">よっちゃん専用 VER 2.4.2</p>
     </div>
 
     <div class="w-full shrink-0 mb-3 relative max-w-md mx-auto">
@@ -37,8 +37,8 @@
     </div>
 
     <div class="w-full max-w-md mx-auto flex flex-col flex-grow min-h-0 mb-2">
-        <div id="log" class="console-box">【座標同期出力モード】
-ここに座標同期済みの文字列が表示されます。</div>
+        <div id="log" class="console-box">【座標同期出力モード: Threshold 50】
+しきい値を緩和して行を再構築します。</div>
     </div>
 
     <div class="w-full max-w-md mx-auto shrink-0 pb-2 flex gap-2">
@@ -59,7 +59,7 @@
             const key = document.getElementById('api-key').value;
             const reader = new FileReader(); reader.readAsDataURL(file);
             reader.onload = async () => {
-                showRaw("Analyzing with Spatial Sync...");
+                showRaw("Analyzing with Relaxed Sync...");
                 try {
                     const res = await fetch(`https://vision.googleapis.com/v1/images:annotate?key=${key}`, {
                         method: 'POST',
@@ -72,29 +72,26 @@
                         headers: { 'Content-Type': 'application/json' }
                     });
                     const json = await res.json();
-                    
-                    // 単語単位の座標データを取得
                     const annotations = json.responses[0].textAnnotations;
+
                     if (annotations && annotations.length > 1) {
                         const items = annotations.slice(1).map(ann => {
                             const v = ann.boundingPoly.vertices;
-                            // 中心点Y座標を算出
-                            const centerY = (v[0].y + v[1].y + v[2].y + v[3].y) / 4;
-                            // 中心点X座標を算出
-                            const centerX = (v[0].x + v[1].x + v[2].x + v[3].x) / 4;
-                            return { text: ann.description, x: centerX, y: centerY };
+                            const x = (v[0].x + v[1].x + v[2].x + v[3].x) / 4;
+                            const y = (v[0].y + v[1].y + v[2].y + v[3].y) / 4;
+                            return { text: ann.description, x, y };
                         });
 
-                        // 1. まず全単語をY座標（高さ）で昇順ソート
+                        // Y座標でソート
                         items.sort((a, b) => a.y - b.y);
 
-                        // 2. 同じ行とみなす高さの「遊び（しきい値）」を設定
-                        const threshold = 15; 
+                        // しきい値を 50ピクセル に拡大
+                        const threshold = 50; 
                         const rows = [];
                         let currentRow = [items[0]];
 
                         for (let i = 1; i < items.length; i++) {
-                            // 前の単語との高さの差が15px以内なら同じ行
+                            // 基準点とのY座標の差が50px以内なら同じ行とする
                             if (Math.abs(items[i].y - currentRow[0].y) < threshold) {
                                 currentRow.push(items[i]);
                             } else {
@@ -104,14 +101,14 @@
                         }
                         rows.push(currentRow);
 
-                        // 3. 各行の中身をX座標（左から右）でソートして結合
                         const finalTxt = rows.map(row => {
+                            // 同じ行内を左から右へソートして結合
                             return row.sort((a, b) => a.x - b.x).map(it => it.text).join(' ');
                         }).join('\n');
 
                         showRaw(finalTxt);
                     } else {
-                        showRaw("テキストが見つかりません。");
+                        showRaw("テキストが検出できませんでした。");
                     }
                 } catch (err) {
                     showRaw("ERROR: " + err.message);
