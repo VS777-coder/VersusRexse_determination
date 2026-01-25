@@ -3,160 +3,175 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>VERSUS REVISE v1.0.0</title>
+    <title>VERSUS REVISE v2.1.0</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap');
-        body { background-color: #0f172a; color: #f8fafc; font-family: 'Inter', sans-serif; padding: 20px; }
         
-        /* UI Components from Ver 5.2 (Fixed) */
-        .glass-panel {
-            background: rgba(30, 41, 59, 0.7);
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-            border-radius: 16px;
+        body { 
+            background-color: #0f1219; /* 画像に近い濃紺 */
+            color: #ffffff; 
+            font-family: 'Inter', sans-serif; 
+            padding: 20px;
+            min-height: 100vh;
         }
-        .neon-text {
-            text-shadow: 0 0 10px rgba(59, 130, 246, 0.5);
-        }
-        .bar-bg { background-color: #334155; height: 10px; border-radius: 99px; overflow: hidden; margin-bottom: 12px; }
-        .bar-fill { height: 100%; transition: width 1s cubic-bezier(0.4, 0, 0.2, 1); }
-        
-        /* Debug Terminal */
-        .terminal {
-            background-color: #050505;
-            color: #22c55e;
-            font-family: 'Courier New', monospace;
+
+        /* 赤いバージョン表記 */
+        .ver-text {
+            color: #ef4444;
+            text-shadow: 0 0 10px rgba(239, 68, 68, 0.6);
+            font-weight: bold;
+            letter-spacing: 0.1em;
             font-size: 10px;
-            padding: 12px;
+            margin-top: -5px;
+        }
+
+        /* メインボタン */
+        .main-btn {
+            background-color: #1e3a8a; /* 濃い青 */
+            border-radius: 9999px; /* 丸く */
+            box-shadow: 0 4px 15px rgba(30, 58, 138, 0.5);
+            transition: all 0.2s;
+            border: 2px solid #2563eb;
+        }
+        .main-btn:active { transform: scale(0.98); }
+
+        /* 結果バーエリア */
+        .result-card {
+            background-color: #131722;
+            border-radius: 16px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+        }
+        .bar-bg { background-color: #1f2937; height: 10px; border-radius: 4px; overflow: hidden; margin-top: 4px; }
+        .bar-fill { height: 100%; transition: width 0.8s ease-out; }
+
+        /* コンソール画面（緑枠・黒背景） */
+        .console-box {
+            background-color: #000000;
+            border: 1px solid #22c55e;
             border-radius: 8px;
-            border: 1px solid #15803d;
-            height: 300px;
+            padding: 12px;
+            font-family: 'Courier New', monospace;
+            font-size: 11px;
+            color: #4ade80;
+            height: 250px;
             overflow-y: auto;
             white-space: pre-wrap;
-            line-height: 1.4;
+            box-shadow: 0 0 10px rgba(34, 197, 94, 0.2);
         }
-        .cmd-input {
-            background: #1e293b; border: 1px solid #475569; color: white;
-            padding: 8px; border-radius: 6px; font-size: 12px; width: 100%;
+
+        /* API KEY 入力欄 */
+        .api-input-dots {
+            background-color: #1e293b;
+            color: white;
+            border: none;
+            border-radius: 99px;
+            padding: 8px 16px;
+            letter-spacing: 2px;
+            font-size: 20px;
+            outline: none;
+            text-align: center;
         }
-        .btn-primary {
-            background: linear-gradient(135deg, #2563eb, #1d4ed8);
-            color: white; font-weight: bold; padding: 10px 20px;
-            border-radius: 8px; box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
-            transition: transform 0.1s;
-        }
-        .btn-primary:active { transform: scale(0.98); }
-        
-        .log-def { color: #94a3b8; } /* 定義 */
-        .log-val { color: #facc15; font-weight: bold; } /* 値 */
-        .log-ok  { color: #4ade80; } /* 成功 */
-        .log-err { color: #f87171; } /* エラー/警告 */
     </style>
 </head>
 <body>
-    <div class="max-w-md mx-auto">
-        <div class="text-center mb-6">
-            <h1 class="text-3xl font-black italic tracking-tighter text-white neon-text">VERSUS <span class="text-blue-500">REVISE</span></h1>
-            <p class="text-[10px] text-gray-400 tracking-[0.4em] font-bold mt-1">FINAL FIXED v1.0.0</p>
+    <div class="max-w-md mx-auto flex flex-col items-center">
+        
+        <div class="mb-6 text-center w-full">
+            <img src="vs.png" alt="VERSUS REVISE" class="mx-auto w-full max-w-[280px] object-contain drop-shadow-[0_0_15px_rgba(37,99,235,0.6)]">
+            <p class="ver-text mt-2">みおちゃん専用 VER 2.1.0</p>
         </div>
 
-        <div class="glass-panel p-6 mb-4">
-            <div class="text-center mb-6 cursor-pointer group" id="drop-zone">
-                <div class="border-2 border-dashed border-blue-500/30 rounded-xl p-6 transition group-hover:bg-blue-500/10 group-active:scale-95">
-                    <p class="text-blue-400 font-bold text-sm">画像をタップして解析</p>
-                    <p class="text-[10px] text-gray-500 mt-1">ユニメモ画像 (フルスペック/短縮 対応)</p>
-                </div>
-                <input type="file" id="file-input" class="hidden" accept="image/*">
-            </div>
+        <div class="w-full mb-6 relative">
+            <button id="drop-zone" class="main-btn w-full py-4 text-white font-bold text-lg tracking-wider">
+                ユニメモ画像を解析
+            </button>
+            <input type="file" id="file-input" class="hidden" accept="image/*">
+        </div>
 
-            <div class="space-y-1">
-                <div class="flex justify-between text-xs font-bold text-gray-400"><span>設定1</span><span id="p1">0.0%</span></div>
-                <div class="bar-bg"><div id="b1" class="bar-fill bg-gray-500" style="width:0%"></div></div>
-                
-                <div class="flex justify-between text-xs font-bold text-blue-400"><span>設定2</span><span id="p2">0.0%</span></div>
-                <div class="bar-bg"><div id="b2" class="bar-fill bg-blue-500" style="width:0%"></div></div>
-                
-                <div class="flex justify-between text-xs font-bold text-orange-400"><span>設定5</span><span id="p5">0.0%</span></div>
+        <div class="w-full result-card">
+            <div class="mb-3">
+                <div class="flex justify-between text-xs font-bold text-gray-400">
+                    <span>設定1</span><span id="p1">0.0%</span>
+                </div>
+                <div class="bar-bg"><div id="b1" class="bar-fill bg-gray-600" style="width:0%"></div></div>
+            </div>
+            <div class="mb-3">
+                <div class="flex justify-between text-xs font-bold text-blue-400">
+                    <span>設定2</span><span id="p2">0.0%</span>
+                </div>
+                <div class="bar-bg"><div id="b2" class="bar-fill bg-blue-600" style="width:0%"></div></div>
+            </div>
+            <div class="mb-3">
+                <div class="flex justify-between text-xs font-bold text-orange-400">
+                    <span>設定5</span><span id="p5">0.0%</span>
+                </div>
                 <div class="bar-bg"><div id="b5" class="bar-fill bg-orange-500" style="width:0%"></div></div>
-                
-                <div class="flex justify-between text-xs font-bold text-red-500"><span>設定6</span><span id="p6">0.0%</span></div>
+            </div>
+            <div class="mb-1">
+                <div class="flex justify-between text-xs font-bold text-red-500">
+                    <span>設定6</span><span id="p6">0.0%</span>
+                </div>
                 <div class="bar-bg"><div id="b6" class="bar-fill bg-red-600" style="width:0%"></div></div>
             </div>
         </div>
 
-        <div class="mb-2 text-[10px] text-gray-500 font-mono">SYSTEM LOG & DEFINITION CHECK</div>
-        <div id="log" class="terminal">
-            [SYSTEM] READY (v1.0.0)
-            [SYSTEM] WAITING FOR IMAGE...
-        </div>
-
-        <div class="mt-4 p-4 glass-panel">
-            <p class="text-[10px] text-gray-400 mb-2">Google Cloud Vision API Key</p>
-            <div class="flex gap-2">
-                <input type="password" id="api-key" class="cmd-input" placeholder="Enter Key Here">
-                <button id="save-key" class="bg-blue-600 text-white text-xs font-bold px-4 rounded hover:bg-blue-500">SET</button>
+        <div class="w-full mb-4">
+            <div id="log" class="console-box">
+【抽出パラメータ確認】
+待機中...
             </div>
         </div>
+
+        <div class="w-full flex flex-col items-center gap-2">
+            <div class="flex w-full gap-2 justify-center">
+                <input type="password" id="api-key" class="api-input-dots flex-grow" placeholder="•••••••••••••••">
+                <button id="save-key" class="bg-blue-600 hover:bg-blue-500 text-white font-bold py-2 px-6 rounded-lg text-xs shadow-lg transition">
+                    SET
+                </button>
+            </div>
+            <p id="key-status" class="text-[10px] font-bold text-blue-500 tracking-widest">API KEY: CHECKING</p>
+        </div>
+
     </div>
 
     <script>
         // ==========================================
-        //  VERSUS REVISE LOGIC DEFINITION (v1.0.0)
+        //  LOGIC: VER 1.0.0 FIXED (固定ストリーム+可変検索)
         // ==========================================
-        
-        // 判定に使用するパラメータ定義
         const TARGETS = {
-            // [Key] : { type: 'fixed'/'search', index/keyword, vals:{1,2,5,6}, weight }
-            
-            // --- 第1エリア：固定ストリーム (Index 0-13) ---
+            // 第1エリア：固定ストリーム (Index 0-13)
             bb:      { type: 'fixed', idx: 1,  name: 'BB確率',       vals: {1: 273.1, 2: 268.6, 5: 264.3, 6: 256.0}, w: 1.0 },
             rb:      { type: 'fixed', idx: 4,  name: 'RB確率',       vals: {1: 374.5, 2: 341.3, 5: 319.7, 6: 292.6}, w: 1.2 },
-            bellA:   { type: 'fixed', idx: 6,  name: 'ベルA',        vals: {1: 10.9,  2: 10.7,  5: 10.5,  6: 10.2},  w: 0.3 }, // 微差
-            bellB:   { type: 'fixed', idx: 7,  name: 'ベルB',        vals: {1: 20.9,  2: 19.0,  5: 20.3,  6: 18.8},  w: 0.3 }, // 微差(偶数優遇)
-            suikaA:  { type: 'fixed', idx: 9,  name: 'スイカA',      vals: {1: 74.5,  2: 70.6,  5: 72.5,  6: 68.8},  w: 0.2 }, // 微差
-            cherryB: { type: 'fixed', idx: 13, name: 'チェリーB',    vals: {1: 56.2,  2: 57.7,  5: 53.1,  6: 54.4},  w: 0.2 }, // 微差
+            bellA:   { type: 'fixed', idx: 6,  name: 'ベルA',        vals: {1: 10.9,  2: 10.7,  5: 10.5,  6: 10.2},  w: 0.3 }, 
+            bellB:   { type: 'fixed', idx: 7,  name: 'ベルB',        vals: {1: 20.9,  2: 19.0,  5: 20.3,  6: 18.8},  w: 0.3 }, 
+            suikaA:  { type: 'fixed', idx: 9,  name: 'スイカA',      vals: {1: 74.5,  2: 70.6,  5: 72.5,  6: 68.8},  w: 0.2 },
+            cherryB: { type: 'fixed', idx: 13, name: 'チェリーB',    vals: {1: 56.2,  2: 57.7,  5: 53.1,  6: 54.4},  w: 0.2 },
 
-            // --- 第2エリア：可変キーワード検索 ---
+            // 第2エリア：可変キーワード検索
             vc_miss: { type: 'search', keys: ['VSチャンス中はずれ'],       name: 'VC中ハズレ', vals: {1: 5.0,  2: 4.9,  5: 4.6,  6: 4.5}, w: 0.8 },
             vg_miss: { type: 'search', keys: ['VSGAME中はずれ'],           name: 'VG中ハズレ', vals: {1: 10.1, 2: 9.4,  5: 8.7,  6: 8.1}, w: 0.8 },
-            cb_match:{ type: 'search', keys: ['チェリー+ベル揃い','チェリー＋ベル揃い'], name: 'CB揃い',     vals: {1: 12.0, 2: 10.5, 5: 12.0, 6: 10.5}, w: 0.5 }, // 偶数優遇
-            cb_miss: { type: 'search', keys: ['チェリー+ベルはずれ','チェリー＋ベルはずれ'], name: 'CBハズレ',   vals: {1: 256.0, 2: 128.0, 5: 256.0, 6: 128.0}, w: 2.0 }, // 偶数優遇(強)
+            cb_match:{ type: 'search', keys: ['チェリー+ベル揃い','チェリー＋ベル揃い'], name: 'CB揃い',     vals: {1: 12.0, 2: 10.5, 5: 12.0, 6: 10.5}, w: 0.5 },
+            cb_miss: { type: 'search', keys: ['チェリー+ベルはずれ','チェリー＋ベルはずれ'], name: 'CBハズレ',   vals: {1: 256.0, 2: 128.0, 5: 256.0, 6: 128.0}, w: 2.0 },
             
-            // --- 特殊フラグ ---
+            // 特殊フラグ
             rb_miss: { type: 'special_rb', name: 'RBハズレ', desc: '出現で設定1・2否定' }
         };
 
         const logArea = document.getElementById('log');
-        function log(msg, className = '') {
-            const el = document.createElement('div');
-            el.innerHTML = msg;
-            if(className) el.className = className;
-            logArea.appendChild(el);
+        
+        // ログ出力（コンソールの緑文字を再現）
+        function log(msg) {
+            logArea.innerHTML += msg + "\n";
             logArea.scrollTop = logArea.scrollHeight;
         }
+        function clearLog() { logArea.innerHTML = "【抽出パラメータ確認】\n"; }
 
-        function logDefinition() {
-            log("--- [DEBUG] DEFINITION MAP ---", "log-def");
-            Object.keys(TARGETS).forEach(key => {
-                const t = TARGETS[key];
-                if(t.type === 'fixed') {
-                    log(`[FIXED] Idx:${t.idx.toString().padStart(2, '0')} | ${t.name}`, "log-def");
-                } else if(t.type === 'search') {
-                    log(`[SEARCH] Key:"${t.keys[0]}" | ${t.name}`, "log-def");
-                } else {
-                    log(`[SPECIAL] ${t.name} (${t.desc})`, "log-def");
-                }
-            });
-            log("------------------------------", "log-def");
-        }
-
-        // --- 解析処理 ---
+        // --- PARSER ---
         function parseData(text) {
-            logDefinition(); // 解析開始時に定義を表示
-            log("\n[SYSTEM] STARTING PARSE...", "log-ok");
-
+            clearLog();
             const lines = text.split(/\n/).map(l => l.trim()).filter(l => l);
             const data = {};
 
@@ -171,33 +186,26 @@
                     stream.push(v);
                 }
             });
-            log(`[INFO] 確率ストリーム検出数: ${stream.length}`, "log-def");
 
-            // 2. マッピング実行 & デバッグ出力
+            // 2. マッピング & コンソール表示
             Object.keys(TARGETS).forEach(key => {
                 const t = TARGETS[key];
                 let val = null;
 
                 if (t.type === 'fixed') {
-                    // 固定インデックス
                     if (stream.length > t.idx) {
                         val = stream[t.idx];
                         data[key] = val;
-                        log(`[FIXED] ${t.name.padEnd(8)}: MAP[${t.idx}] => <span class="log-val">1/${val}</span>`);
-                    } else {
-                        log(`[FIXED] ${t.name}: 範囲外 (Stream不足)`, "log-err");
+                        log(`${t.name}: [ 1/${val} ]`);
                     }
                 } 
                 else if (t.type === 'search') {
-                    // キーワード検索
                     let foundLineIdx = -1;
                     for (const k of t.keys) {
                         foundLineIdx = lines.findIndex(l => l.includes(k));
                         if (foundLineIdx !== -1) break;
                     }
-
                     if (foundLineIdx !== -1) {
-                        // 見つけた行以降、近隣の確率を探す
                         let foundVal = null;
                         for (let i = foundLineIdx; i < Math.min(foundLineIdx + 3, lines.length); i++) {
                             const m = lines[i].match(probRegex);
@@ -208,23 +216,20 @@
                             }
                         }
                         if (foundVal !== null) {
-                            val = foundVal;
-                            data[key] = val;
-                            log(`[SEARCH] ${t.name.padEnd(8)}: FOUND => <span class="log-val">1/${val}</span>`);
+                            data[key] = foundVal;
+                            log(`${t.name}: [ 1/${foundVal} ]`);
                         } else {
-                            log(`[SEARCH] ${t.name}: ラベルあり/数値なし (0扱い)`, "log-def");
+                            log(`${t.name}: [ 0 (なし) ]`);
                             data[key] = 0;
                         }
                     } else {
-                        log(`[SEARCH] ${t.name}: 未検出 (0扱い)`, "log-def");
+                        log(`${t.name}: [ 0 (なし) ]`);
                         data[key] = 0;
                     }
                 }
                 else if (t.type === 'special_rb') {
-                    // RBハズレ専用ロジック
                     const rbAreaIdx = lines.findIndex(l => l.includes('RB中詳細'));
                     if (rbAreaIdx !== -1) {
-                        // エリア内の確率を収集
                         const rbProbs = [];
                         for(let i = rbAreaIdx; i < lines.length; i++){
                             const m = lines[i].match(probRegex);
@@ -234,70 +239,57 @@
                                 rbProbs.push(v);
                             }
                         }
-                        // 末尾をハズレとする (1枚役、Xベル、ハズレの順)
                         if (rbProbs.length > 0) {
                             val = rbProbs[rbProbs.length - 1];
                             data[key] = val;
-                            log(`[SPECIAL] ${t.name.padEnd(8)}: END_OF_AREA => <span class="log-val">1/${val}</span>`);
-                        } else {
-                            data[key] = 0;
-                        }
-                    } else {
-                        log(`[SPECIAL] ${t.name}: エリア未検出`, "log-def");
-                        data[key] = 0;
-                    }
+                            log(`${t.name}: [ 1/${val} ]`);
+                        } else { data[key] = 0; }
+                    } else { data[key] = 0; }
                 }
             });
 
+            log("\n【Google OCR 生データ】\n------------------");
             return data;
         }
 
-        // --- 判定計算 ---
+        // --- CALCULATE ---
         function calculate(data) {
             let points = { 1: 0, 2: 0, 5: 0, 6: 0 };
             let validItems = 0;
             let denied12 = false;
 
-            // RBハズレ (設定1・2否定)
             if (data.rb_miss && data.rb_miss > 0) {
-                log("★ RBハズレ検出 (1/2否定)", "log-err");
+                log("★ RBハズレ検出 (1/2否定)");
                 denied12 = true;
             }
 
             Object.keys(TARGETS).forEach(key => {
                 const t = TARGETS[key];
                 const val = data[key];
-                
                 if (t.type === 'special_rb') return;
-                if (!val || val <= 0) return; // 0は除外
+                if (!val || val <= 0) return;
 
                 validItems++;
-                
-                // 誤差計算
                 [1, 2, 5, 6].forEach(s => {
-                    const target = t.vals[s];
-                    const diff = Math.abs(val - target);
-                    const score = (diff / target) * t.w; 
+                    const diff = Math.abs(val - t.vals[s]);
+                    const score = (diff / t.vals[s]) * t.w; 
                     points[s] += score;
                 });
             });
 
             if (validItems === 0 && !denied12) return null;
 
-            // スコア→確率変換 (誤差が小さいほど高確率)
             let probs = {};
             let totalInv = 0;
             [1, 2, 5, 6].forEach(s => {
-                if (denied12 && (s === 1 || s === 2)) {
-                    probs[s] = 0;
-                } else {
+                if (denied12 && (s === 1 || s === 2)) probs[s] = 0;
+                else {
                     probs[s] = 1 / (points[s] + 0.1);
                     totalInv += probs[s];
                 }
             });
 
             if (totalInv === 0) return {1:0, 2:0, 5:0, 6:0};
-
             return {
                 1: (probs[1] / totalInv * 100).toFixed(1),
                 2: (probs[2] / totalInv * 100).toFixed(1),
@@ -309,12 +301,19 @@
         // --- UI Events ---
         const fileInput = document.getElementById('file-input');
         const dropZone = document.getElementById('drop-zone');
+        const statusText = document.getElementById('key-status');
         
         // Key Manager
-        if(localStorage.getItem('v_key')) document.getElementById('api-key').value = localStorage.getItem('v_key');
+        if(localStorage.getItem('v_key')) {
+            document.getElementById('api-key').value = localStorage.getItem('v_key');
+            statusText.innerText = "API KEY: READY";
+        }
+
         document.getElementById('save-key').onclick = () => {
-            localStorage.setItem('v_key', document.getElementById('api-key').value);
-            alert('API KEY SAVED');
+            const key = document.getElementById('api-key').value;
+            localStorage.setItem('v_key', key);
+            statusText.innerText = key ? "API KEY: READY" : "API KEY: EMPTY";
+            alert('API KEY を保存しました');
         };
 
         dropZone.onclick = () => fileInput.click();
@@ -323,10 +322,9 @@
             const file = e.target.files[0];
             if (!file) return;
             const key = document.getElementById('api-key').value;
-            if (!key) { alert('API KEY REQUIRED'); return; }
+            if (!key) { alert('API KEY を設定してください'); return; }
 
-            logArea.innerHTML = ""; // Clear log
-            log("[SYSTEM] PROCESSING IMAGE...", "log-ok");
+            logArea.innerHTML = "【抽出パラメータ確認】\n解析中...";
             
             const reader = new FileReader();
             reader.readAsDataURL(file);
@@ -339,7 +337,7 @@
                     const json = await res.json();
                     
                     if (!json.responses || !json.responses[0].fullTextAnnotation) {
-                        log("ERROR: OCR FAILED / NO TEXT", "log-err");
+                        log("エラー: 文字認識に失敗しました");
                         return;
                     }
 
@@ -352,13 +350,13 @@
                         document.getElementById('p2').innerText = result[2] + "%"; document.getElementById('b2').style.width = result[2] + "%";
                         document.getElementById('p5').innerText = result[5] + "%"; document.getElementById('b5').style.width = result[5] + "%";
                         document.getElementById('p6').innerText = result[6] + "%"; document.getElementById('b6').style.width = result[6] + "%";
-                        log("\n[SUCCESS] CALCULATION COMPLETE", "log-ok");
+                        log("解析完了");
                     } else {
-                        log("\n[WARN] NO USABLE DATA FOUND", "log-err");
+                        log("データが見つかりませんでした");
                     }
 
                 } catch (e) {
-                    log("SYSTEM ERROR: " + e.message, "log-err");
+                    log("システムエラー: " + e.message);
                 }
             };
         };
