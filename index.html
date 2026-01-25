@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>VERSUS REVISE v2.5.1</title>
+    <title>VERSUS REVISE v2.5.2</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap');
@@ -21,7 +21,7 @@
 <body>
     <div class="text-center shrink-0 mb-2">
         <img src="VS.png" alt="VERSUS" class="mx-auto w-64 mb-1">
-        <p class="ver-text">よっちゃん専用 VER 2.5.1</p>
+        <p class="ver-text">よっちゃん専用 VER 2.5.2</p>
     </div>
 
     <div class="w-full shrink-0 mb-3 relative max-w-md mx-auto">
@@ -37,8 +37,8 @@
     </div>
 
     <div class="w-full max-w-md mx-auto flex flex-col flex-grow min-h-0 mb-2">
-        <div id="log" class="console-box">【座標同期 v2.5.1】
-解析準備完了。画像をアップしてください。</div>
+        <div id="log" class="console-box">【座標同期 v2.5.2】
+しきい値30pxで最適化済み。</div>
     </div>
 
     <div class="w-full max-w-md mx-auto shrink-0 pb-2 flex gap-2">
@@ -47,7 +47,6 @@
     </div>
 
     <script>
-        // 設定期待値（index - コピー (5).html 等に基づく）
         const EXPECTED_VALUES = {
             bb:      { label: 'BB',  vals: {1: 273.1, 2: 268.6, 5: 264.3, 6: 256.0}, w: 1.0 },
             rb:      { label: 'RB',  vals: {1: 374.5, 2: 341.3, 5: 319.7, 6: 292.6}, w: 1.2 },
@@ -61,13 +60,11 @@
         const logArea = document.getElementById('log');
         const log = (msg) => { logArea.innerText += msg + "\n"; logArea.scrollTop = logArea.scrollHeight; };
 
-        // スペース耐性を強化した正規表現抽出
         function extractFromCleanText(text) {
-            log("\n--- データ抽出 (スペース許容モード) ---");
+            log("\n--- データ抽出 (Threshold 30) ---");
             
-            // キーワードの各文字間に \s* を挟み、数字部分のゴミを除去する設計
             const patterns = {
-                bb: /総\s*B\s*B[\s\S]*?1\s*[\/／]\s*([\d\s,.]+)/,
+                bb: /(?:総|#)?\s*B\s*B[\s\S]*?1\s*[\/／]\s*([\d\s,.]+)/,
                 rb: /R\s*B[\s\S]*?1\s*[\/／]\s*([\d\s,.]+)/,
                 bellA: /ベル\s*A[\s\S]*?1\s*[\/／]\s*([\d\s,.]+)/,
                 suikaA: /スイカ\s*A[\s\S]*?1\s*[\/／]\s*([\d\s,.]+)/,
@@ -80,7 +77,6 @@
             for (let key in patterns) {
                 const match = text.match(patterns[key]);
                 if (match) {
-                    // 数字部分のスペースやカンマを除去
                     let valStr = match[1].replace(/[\s,]/g, '');
                     results[key] = parseFloat(valStr);
                     log(`${EXPECTED_VALUES[key].label}: 1/${results[key]}`);
@@ -92,11 +88,9 @@
             return results;
         }
 
-        // 判別計算処理
         function runSettingEstimation(data) {
             let pts = { 1: 0, 2: 0, 5: 0, 6: 0 };
             let validCount = 0;
-
             for (let key in EXPECTED_VALUES) {
                 const val = data[key];
                 if (!val || val <= 0) continue;
@@ -106,25 +100,19 @@
                     pts[s] += Math.pow(Math.abs(val - target.vals[s]) / target.vals[s], 2) * target.w;
                 });
             }
-
-            if (validCount === 0) {
-                log("\n有効なデータが不足しています。");
-                return;
-            }
-
+            if (validCount === 0) return;
             let total = 0;
             let probs = {};
             [1, 2, 5, 6].forEach(s => {
-                probs[s] = 1 / (pts[s] + 0.05); // 安定化定数
+                probs[s] = 1 / (pts[s] + 0.05);
                 total += probs[s];
             });
-
             [1, 2, 5, 6].forEach(s => {
                 const p = (probs[s] / total * 100).toFixed(1);
                 document.getElementById(`p${s}`).innerText = p + "%";
                 document.getElementById(`b${s}`).style.width = p + "%";
             });
-            log("\n解析完了。バーに反映しました。");
+            log("\n解析完了。");
         }
 
         const fileInput = document.getElementById('file-input');
@@ -136,7 +124,7 @@
             const key = document.getElementById('api-key').value;
             const reader = new FileReader(); reader.readAsDataURL(file);
             reader.onload = async () => {
-                logArea.innerText = "Analyzing with Coordinate Sync...";
+                logArea.innerText = "Analyzing...";
                 try {
                     const res = await fetch(`https://vision.googleapis.com/v1/images:annotate?key=${key}`, {
                         method: 'POST',
@@ -150,7 +138,6 @@
                     });
                     const json = await res.json();
                     const annotations = json.responses[0].textAnnotations;
-
                     if (annotations && annotations.length > 1) {
                         const items = annotations.slice(1).map(ann => {
                             const v = ann.boundingPoly.vertices;
@@ -158,12 +145,12 @@
                             const y = (v[0].y + v[1].y + v[2].y + v[3].y) / 4;
                             return { text: ann.description, x, y };
                         });
-
                         items.sort((a, b) => a.y - b.y);
-                        const threshold = 50; 
+                        
+                        // しきい値を 30 に調整
+                        const threshold = 30; 
                         const rows = [];
                         let currentRow = [items[0]];
-
                         for (let i = 1; i < items.length; i++) {
                             if (Math.abs(items[i].y - currentRow[0].y) < threshold) {
                                 currentRow.push(items[i]);
@@ -173,14 +160,11 @@
                             }
                         }
                         rows.push(currentRow);
-
                         const cleanTxt = rows.map(row => {
                             return row.sort((a, b) => a.x - b.x).map(it => it.text).join(' ');
                         }).join('\n');
 
-                        // 座標同期したテキストから抽出と計算を実行
-                        const extractedData = extractFromCleanText(cleanTxt);
-                        runSettingEstimation(extractedData);
+                        runSettingEstimation(extractFromCleanText(cleanTxt));
                     }
                 } catch (err) { log("ERROR: " + err.message); }
             };
