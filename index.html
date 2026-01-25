@@ -3,10 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>VERSUS REVISE v2.1.0</title>
+    <title>VERSUS REVISE v2.2.0</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        /* UI BLOCK (FIXED v2.1.0) */
+        /* ==========================================
+           UI BLOCK (FIXED v2.1.0-v2.2.0) - 一切の変更を禁止
+           ========================================== */
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap');
         body { background-color: #0f1219; color: #ffffff; font-family: 'Inter', sans-serif; height: 100dvh; width: 100vw; padding: 12px; overflow: hidden; display: flex; flex-direction: column; box-sizing: border-box; }
         .ver-text { color: #ef4444; text-shadow: 0 0 10px rgba(239, 68, 68, 0.6); font-weight: bold; letter-spacing: 0.1em; font-size: 10px; margin-top: 4px; }
@@ -24,7 +26,7 @@
     
     <div class="text-center shrink-0 mb-2">
         <img src="VS.png" alt="VERSUS" class="mx-auto w-64 mb-1">
-        <p class="ver-text">みおちゃん専用 VER 2.1.0</p>
+        <p class="ver-text">みおちゃん専用 VER 2.2.0 (RAW MODE)</p>
     </div>
 
     <div class="w-full shrink-0 mb-3 relative max-w-md mx-auto">
@@ -55,8 +57,8 @@
 
     <div class="w-full max-w-md mx-auto flex flex-col flex-grow min-h-0">
         <div id="log" class="console-box">
-【抽出パラメータ確認】
-待機中...
+【Google OCR 生データ出力モード】
+画像をアップロードしてください。
         </div>
     </div>
 
@@ -71,101 +73,63 @@
     </div>
 
     <script>
-        const TARGET_DEFINITIONS = [
-            { id: 'bb',      label: 'ビッグ確率',       vals: {1: 273.1, 2: 268.6, 5: 264.3, 6: 256.0}, w: 0.8 },
-            { id: 'rb',      label: 'レギュラー確率',   vals: {1: 374.5, 2: 341.3, 5: 319.7, 6: 292.6}, w: 1.0 },
-            { id: 'bellA',   label: 'ベルA',           vals: {1: 10.9,  2: 10.7,  5: 10.5,  6: 10.2},  w: 0.3 }, 
-            { id: 'bellB',   label: 'ベルB',           vals: {1: 20.9,  2: 19.0,  5: 20.3,  6: 18.8},  w: 0.3 }, 
-            { id: 'suikaA',  label: 'スイカA',         vals: {1: 74.5,  2: 70.6,  5: 72.5,  6: 68.8},  w: 0.2 },
-            { id: 'cherryB', label: 'チェリーB',       vals: {1: 56.2,  2: 57.7,  5: 53.1,  6: 54.4},  w: 0.2 },
-            { id: 'vc_miss', label: 'VSチャンス中はずれ', vals: {1: 5.0,  2: 4.9,  5: 4.6,  6: 4.5}, w: 2.0 },
-            { id: 'vg_miss', label: 'VSGAME中はずれ',     vals: {1: 10.1, 2: 9.4,  5: 8.7,  6: 8.1}, w: 2.0 },
-            { id: 'cb_match',label: 'チェリー+ベル揃い', vals: {1: 12.0, 2: 10.5, 5: 12.0, 6: 10.5}, w: 0.5 },
-            { id: 'cb_miss', label: 'チェリー+ベルはずれ', vals: {1: 256.0, 2: 128.0, 5: 256.0, 6: 128.0}, w: 4.0 },
-            { id: 'mid_ch',  label: '中段チェリー',     special: 'denial_high' },
-            { id: 'rb_miss', label: 'Reg中はずれ',       special: 'denial_all' }
-        ];
-
         const logArea = document.getElementById('log');
-        const log = (msg) => { logArea.innerHTML += msg + "\n"; logArea.scrollTop = logArea.scrollHeight; };
-
-        function extractByLabel(lines) {
-            logArea.innerHTML = "【抽出パラメータ確認】\n";
-            const data = {};
-            // 1/x パターン（OCRミス対応で / の前後の空白を許容）
-            const probRegex = /[1lI]\s*\/\s*([0-9,]+\.?[0-9]*)/i;
-
-            TARGET_DEFINITIONS.forEach(target => {
-                let foundValue = 0;
-                // 下から上にスキャン（当日データを優先的に拾うため）
-                for (let i = lines.length - 1; i >= 0; i--) {
-                    if (lines[i].includes(target.label)) {
-                        const searchRange = [lines[i], lines[i-1] || "", lines[i+1] || ""];
-                        for (let line of searchRange) {
-                            const match = line.match(probRegex);
-                            if (match) {
-                                foundValue = parseFloat(match[1].replace(/,/g, ''));
-                                break;
-                            }
-                        }
-                        if (foundValue) break; // 数字が見つかったらそのラベルで確定
-                    }
-                }
-                data[target.id] = foundValue;
-                if (!target.special) {
-                    log(`${target.label}: [ ${foundValue ? '1/' + foundValue : '0'} ]`);
-                } else if (foundValue > 0) {
-                    log(`${target.label}: [ 検出！設定5・6濃厚 ]`);
-                }
-            });
-            return data;
-        }
-
-        function calculate(data) {
-            let pts = { 1: 0, 2: 0, 5: 0, 6: 0 };
-            let valid = 0;
-            let denied12 = (data.rb_miss > 0 || data.mid_ch > 0);
-
-            TARGET_DEFINITIONS.forEach(t => {
-                if (t.special || !data[t.id] || data[t.id] <= 0) return;
-                valid++;
-                [1, 2, 5, 6].forEach(s => {
-                    // 2乗ロジックで異常値のペナルティを強化
-                    let error = Math.abs(data[t.id] - t.vals[s]) / t.vals[s];
-                    if (error > 0.5) error = 0.5; // 暴れすぎ防止
-                    pts[s] += error * t.w;
-                });
-            });
-
-            if (!valid && !denied12) return null;
-
-            let probs = {}; let total = 0;
-            [1, 2, 5, 6].forEach(s => {
-                if (denied12 && (s === 1 || s === 2)) probs[s] = 0;
-                else { probs[s] = 1 / (pts[s] + 0.1); total += probs[s]; }
-            });
-            return { 1: (probs[1]/total*100).toFixed(1), 2: (probs[2]/total*100).toFixed(1), 5: (probs[5]/total*100).toFixed(1), 6: (probs[6]/total*100).toFixed(1) };
-        }
 
         const fileInput = document.getElementById('file-input');
         const dropZone = document.getElementById('drop-zone');
-        if(localStorage.getItem('v_key')) document.getElementById('api-key').value = localStorage.getItem('v_key');
-        document.getElementById('save-key').onclick = () => { localStorage.setItem('v_key', document.getElementById('api-key').value); alert('API KEY SAVED'); };
+        
+        if(localStorage.getItem('v_key')) {
+            document.getElementById('api-key').value = localStorage.getItem('v_key');
+        }
+
+        document.getElementById('save-key').onclick = () => {
+            localStorage.setItem('v_key', document.getElementById('api-key').value);
+            alert('API KEY SAVED');
+        };
+        
         dropZone.onclick = () => fileInput.click();
+
         fileInput.onchange = (e) => {
-            const file = e.target.files[0]; if (!file) return;
+            const file = e.target.files[0];
+            if (!file) return;
+            
             const key = document.getElementById('api-key').value;
-            const reader = new FileReader(); reader.readAsDataURL(file);
+            if (!key) {
+                alert('API KEYを設定してください。');
+                return;
+            }
+
+            logArea.innerHTML = "【通信中】Google Vision APIに送信しています...\n";
+            
+            const reader = new FileReader();
+            reader.readAsDataURL(file);
             reader.onload = async () => {
                 try {
                     const res = await fetch(`https://vision.googleapis.com/v1/images:annotate?key=${key}`, {
-                        method: 'POST', body: JSON.stringify({ requests: [{ image: { content: reader.result.split(',')[1] }, features: [{ type: 'TEXT_DETECTION' }] }] }), headers: { 'Content-Type': 'application/json' }
+                        method: 'POST',
+                        body: JSON.stringify({
+                            requests: [{
+                                image: { content: reader.result.split(',')[1] },
+                                features: [{ type: 'TEXT_DETECTION' }]
+                            }]
+                        }),
+                        headers: { 'Content-Type': 'application/json' }
                     });
+                    
                     const json = await res.json();
-                    const rawText = json.responses[0].fullTextAnnotation.text;
-                    const result = calculate(extractByLabel(rawText.split(/\n/)));
-                    if (result) { [1, 2, 5, 6].forEach(s => { document.getElementById(`p${s}`).innerText = result[s] + "%"; document.getElementById(`b${s}`).style.width = result[s] + "%"; }); log("\n解析完了"); }
-                } catch (err) { log("ERROR: " + err.message); }
+                    
+                    if (json.responses && json.responses[0].fullTextAnnotation) {
+                        const rawText = json.responses[0].fullTextAnnotation.text;
+                        // 生データをそのままコンソールに流し込む
+                        logArea.innerHTML = "【Google OCR 生データ】\n------------------\n" + rawText;
+                        console.log(rawText); // ブラウザのコンソールにもバックアップ
+                    } else {
+                        logArea.innerHTML = "【エラー】テキストが検出されませんでした。";
+                    }
+
+                } catch (err) {
+                    logArea.innerHTML = "【システムエラー】\n" + err.message;
+                }
             };
         };
     </script>
