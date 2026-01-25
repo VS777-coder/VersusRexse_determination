@@ -6,83 +6,130 @@
     <title>VERSUS REVISE v2.1.0</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        /* UIデザインは維持（固定） */
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap');
         body { background-color: #0f1219; color: #ffffff; font-family: 'Inter', sans-serif; height: 100dvh; width: 100vw; padding: 12px; overflow: hidden; display: flex; flex-direction: column; box-sizing: border-box; }
-        .ver-text { color: #ef4444; text-shadow: 0 0 10px rgba(239, 68, 68, 0.6); font-weight: bold; letter-spacing: 0.1em; font-size: 10px; margin-top: 4px; }
-        .main-btn { background-color: #1e3a8a; border-radius: 9999px; box-shadow: 0 4px 10px rgba(30, 58, 138, 0.5); transition: all 0.2s; border: 2px solid #2563eb; display: block; text-align: center; cursor: pointer; }
-        .main-btn:active { transform: scale(0.98); opacity: 0.9; }
-        .result-card { background-color: #131722; border-radius: 12px; padding: 12px 16px; margin-bottom: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.3); flex-shrink: 0; }
-        .console-box { background-color: #000000; border: 1px solid #22c55e; border-radius: 8px; padding: 8px; font-family: 'Courier New', monospace; font-size: 10px; color: #4ade80; flex-grow: 1; min-height: 0; overflow-y: auto; white-space: pre-wrap; box-shadow: 0 0 10px rgba(34, 197, 94, 0.2); margin-bottom: 8px; }
-        .api-input-dots { background-color: #1e293b; color: white; border: none; border-radius: 99px; padding: 6px 12px; letter-spacing: 2px; font-size: 16px; outline: none; text-align: center; width: 100%; }
+        .ver-text { color: #ef4444; text-shadow: 0 0 10px rgba(239, 68, 68, 0.6); font-weight: bold; font-size: 10px; margin-top: 4px; }
+        .main-btn { background-color: #1e3a8a; border-radius: 9999px; box-shadow: 0 4px 10px rgba(30,58,138,0.5); transition: all 0.2s; border: 2px solid #2563eb; display: block; text-align: center; cursor: pointer; }
+        .main-btn:active { transform: scale(0.98); }
+        .result-card { background-color: #131722; border-radius: 12px; padding: 12px 16px; margin-bottom: 8px; flex-shrink: 0; }
+        .bar-bg { background-color: #1f2937; height: 8px; border-radius: 4px; overflow: hidden; margin-top: 2px; }
+        .bar-fill { height: 100%; transition: width 0.8s ease-out; }
+        .console-box { background-color: #000000; border: 1px solid #22c55e; border-radius: 8px; padding: 8px; font-family: 'Courier New', monospace; font-size: 10px; color: #4ade80; flex-grow: 1; min-height: 0; overflow-y: auto; white-space: pre-wrap; }
+        .api-input-dots { background-color: #1e293b; color: white; border: none; border-radius: 99px; padding: 6px 12px; font-size: 14px; text-align: center; width: 100%; }
     </style>
 </head>
 <body>
-    
     <div class="text-center shrink-0 mb-2">
         <img src="VS.png" alt="VERSUS" class="mx-auto w-64 mb-1">
-        <p class="ver-text">みおちゃん専用 VER 2.1.0</p>
+        <p class="ver-text">よっちゃん専用 VER 2.1.0</p>
     </div>
 
     <div class="w-full shrink-0 mb-3 relative max-w-md mx-auto">
-        <label for="file-input" class="main-btn w-full py-3 text-white font-bold text-sm tracking-wider uppercase">
-            画像を読み込んで生データを確認
-        </label>
+        <label for="file-input" class="main-btn w-full py-3 text-white font-bold text-sm uppercase">ユニメモ画像を解析</label>
         <input type="file" id="file-input" class="hidden" accept="image/*">
     </div>
 
     <div class="w-full max-w-md mx-auto result-card">
-        <div class="text-[10px] text-gray-500 text-center mb-1 uppercase tracking-widest">--- OCR RAW DUMP MODE ---</div>
-        <p class="text-[9px] text-gray-400 text-center">※ここには判別結果ではなく、読み取り順のテキストが出力されます。</p>
+        <div class="mb-2"><div class="flex justify-between text-[10px] font-bold text-gray-400"><span>設定1</span><span id="p1">0.0%</span></div><div class="bar-bg"><div id="b1" class="bar-fill bg-gray-600" style="width:0%"></div></div></div>
+        <div class="mb-2"><div class="flex justify-between text-[10px] font-bold text-blue-400"><span>設定2</span><span id="p2">0.0%</span></div><div class="bar-bg"><div id="b2" class="bar-fill bg-blue-600" style="width:0%"></div></div></div>
+        <div class="mb-2"><div class="flex justify-between text-[10px] font-bold text-orange-400"><span>設定5</span><span id="p5">0.0%</span></div><div class="bar-bg"><div id="b5" class="bar-fill bg-orange-500" style="width:0%"></div></div></div>
+        <div><div class="flex justify-between text-[10px] font-bold text-red-500"><span>設定6</span><span id="p6">0.0%</span></div><div class="bar-bg"><div id="b6" class="bar-fill bg-red-600" style="width:0%"></div></div></div>
     </div>
 
-    <div class="w-full max-w-md mx-auto flex flex-col flex-grow min-h-0">
-        <div id="log" class="console-box">【待機中】
-画像をアップロードすると、[インデックス]：文字列 の形式で全データを表示します。</div>
+    <div class="w-full max-w-md mx-auto flex flex-col flex-grow min-h-0 mb-3">
+        <div id="log" class="console-box">【抽出パラメータ確認】待機中...</div>
     </div>
 
     <div class="w-full max-w-md mx-auto shrink-0 pb-2">
-        <div class="flex w-full gap-2 justify-center items-center">
-            <input type="password" id="api-key" class="api-input-dots flex-grow" placeholder="••••••••">
-            <button id="save-key" class="bg-blue-600 hover:bg-blue-500 text-white font-bold py-2 px-4 rounded-full text-[10px] shadow-lg transition whitespace-nowrap uppercase">
-                SET
-            </button>
+        <div class="flex gap-2 justify-center items-center">
+            <input type="password" id="api-key" class="api-input-dots" placeholder="API KEY">
+            <button id="save-key" class="bg-blue-600 text-white font-bold py-2 px-6 rounded-full text-[10px]">SET</button>
         </div>
     </div>
 
     <script>
+        const SQM_MAP = [
+            { id: 'bb',      key: /#BB/,        label: 'ビッグ確率',       vals: {1: 273.1, 2: 268.6, 5: 264.3, 6: 256.0}, w: 1.0 },
+            { id: 'rb',      key: /RB/,         label: 'レギュラー確率',   vals: {1: 374.5, 2: 341.3, 5: 319.7, 6: 292.6}, w: 1.2 },
+            { id: 'bellA',   key: /ベルA/,      label: 'ベルA',           vals: {1: 10.9,  2: 10.7,  5: 10.5,  6: 10.2},  w: 0.5 },
+            { id: 'bellB',   key: /ベルB/,      label: 'ベルB',           vals: {1: 20.9,  2: 19.0,  5: 20.3,  6: 18.8},  w: 0.5 },
+            { id: 'suikaA',  key: /スイカA/,     label: 'スイカA',         vals: {1: 74.5,  2: 70.6,  5: 72.5,  6: 68.8},  w: 0.3 },
+            { id: 'vc_miss', key: /VSチャンス中はずれ/, label: 'VC中はずれ', vals: {1: 5.0,  2: 4.9,  5: 4.6,  6: 4.5},   w: 2.0 },
+            { id: 'vg_miss', key: /VSGAME中はずれ/,     label: 'VG中はずれ',     vals: {1: 10.1, 2: 9.4,  5: 8.7,  6: 8.1},   w: 2.0 },
+            { id: 'cb_match',key: /チェリー\+ベル揃い/,  label: 'チェリベル揃い', vals: {1: 12.0, 2: 10.5, 5: 12.0, 6: 10.5},  w: 0.5 },
+            { id: 'bb_haz',  key: /中段チェリー|ビッグ中\s*はずれ/, label: 'BB中ハズレ', special: 'denial' }
+        ];
+
         const logArea = document.getElementById('log');
         const log = (msg) => { logArea.innerHTML += msg + "\n"; logArea.scrollTop = logArea.scrollHeight; };
+
+        function calculate(lines) {
+            logArea.innerHTML = "【マッピング証拠ログ】\n";
+            const data = {};
+            const probRegex = /[1lI!]\s*[\/／]\s*([0-9,]+\.?[0-9]*)/i;
+
+            SQM_MAP.forEach(target => {
+                let val = 0;
+                let foundLabelIdx = -1;
+                let foundValueIdx = -1;
+
+                for (let i = 0; i < lines.length; i++) {
+                    if (target.key.test(lines[i])) {
+                        foundLabelIdx = i;
+                        // ラベルから下方向12行以内にある数値を採用
+                        for (let j = i; j < i + 12 && j < lines.length; j++) {
+                            const m = lines[j].match(probRegex);
+                            if (m) {
+                                val = parseFloat(m[1].replace(/,/g, ''));
+                                foundValueIdx = j;
+                                break;
+                            }
+                        }
+                        if (val) break;
+                    }
+                }
+                data[target.id] = val;
+                if (foundLabelIdx !== -1) {
+                    if (target.special && val > 0) log(`[${foundLabelIdx}] ${target.label} 検出！ (否定フラグ作動)`);
+                    else log(`[${foundLabelIdx}] ${target.label} → [${foundValueIdx}] 1/${val}`);
+                } else {
+                    log(`[--] ${target.label} 検出なし`);
+                }
+            });
+
+            // 判別ロジック省略（前回のものを使用）
+            let pts = { 1: 0, 2: 0, 5: 0, 6: 0 }; let valid = 0;
+            SQM_MAP.forEach(t => { if (!t.special && data[t.id]) { valid++; [1, 2, 5, 6].forEach(s => pts[s] += Math.pow(Math.abs(data[t.id] - t.vals[s]) / t.vals[s], 2) * t.w); } });
+            if (valid || data.bb_haz) {
+                let total = 0; let probs = {};
+                [1, 2, 5, 6].forEach(s => {
+                    if (data.bb_haz && (s === 1 || s === 2)) probs[s] = 0;
+                    else probs[s] = 1 / (pts[s] + 0.05);
+                    total += probs[s];
+                });
+                [1, 2, 5, 6].forEach(s => {
+                    const p = (probs[s] / total * 100).toFixed(1);
+                    document.getElementById(`p${s}`).innerText = p + "%";
+                    document.getElementById(`b${s}`).style.width = p + "%";
+                });
+                log("\n解析結果を表示しました。");
+            }
+        }
+
         const fileInput = document.getElementById('file-input');
-
         if(localStorage.getItem('v_key')) document.getElementById('api-key').value = localStorage.getItem('v_key');
-        document.getElementById('save-key').onclick = () => { localStorage.setItem('v_key', document.getElementById('api-key').value); alert('API KEY SAVED'); };
-
+        document.getElementById('save-key').onclick = () => { localStorage.setItem('v_key', document.getElementById('api-key').value); alert('SAVED'); };
         fileInput.onchange = (e) => {
             const file = e.target.files[0]; if (!file) return;
             const key = document.getElementById('api-key').value;
             const reader = new FileReader(); reader.readAsDataURL(file);
             reader.onload = async () => {
-                logArea.innerHTML = "【OCR RAW DUMP START】\n";
                 try {
                     const res = await fetch(`https://vision.googleapis.com/v1/images:annotate?key=${key}`, {
                         method: 'POST', body: JSON.stringify({ requests: [{ image: { content: reader.result.split(',')[1] }, features: [{ type: 'DOCUMENT_TEXT_DETECTION' }] }] }), headers: { 'Content-Type': 'application/json' }
                     });
                     const json = await res.json();
-                    
-                    if (!json.responses || !json.responses[0].fullTextAnnotation) {
-                        log("ERROR: テキストを検出できませんでした。JSONを確認：");
-                        log(JSON.stringify(json, null, 2));
-                        return;
-                    }
-                    
-                    // 生のテキストを行ごとに分割して出力
-                    const rawLines = json.responses[0].fullTextAnnotation.text.split(/\n/);
-                    rawLines.forEach((line, index) => {
-                        log(`[${index}] : ${line.trim()}`);
-                    });
-                    
-                    log("\n【DUMP END】");
+                    calculate(json.responses[0].fullTextAnnotation.text.split(/\n/).map(l => l.trim()));
                 } catch (err) { log("ERROR: " + err.message); }
             };
         };
