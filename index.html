@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>VERSUS REVISE v2.1.6</title>
+    <title>VERSUS REVISE v2.1.7</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap');
@@ -21,7 +21,7 @@
 <body>
     <div class="text-center shrink-0 mb-2">
         <p class="text-xl font-black tracking-tighter">VERSUS REVISE</p>
-        <p class="ver-text">よっちゃん専用 VER 2.1.6 (完全合体版)</p>
+        <p class="ver-text">よっちゃん専用 VER 2.1.7 (精密射撃版)</p>
     </div>
 
     <div class="w-full shrink-0 mb-3 relative max-w-md mx-auto">
@@ -45,33 +45,32 @@
 
     <script>
         const TARGET_MAP = [
-            { id: 'bb',      key: /#BB|赤7BB|XBB/, label: 'ビッグ確率',       vals: {1: 273.1, 2: 268.6, 5: 264.3, 6: 256.0}, w: 1.0 },
+            { id: 'bb',      key: /#BB|XBB/, label: 'ビッグ確率',       vals: {1: 273.1, 2: 268.6, 5: 264.3, 6: 256.0}, w: 1.0 },
             { id: 'rb',      key: /RB|レギュラー/, label: 'レギュラー確率',   vals: {1: 374.5, 2: 341.3, 5: 319.7, 6: 292.6}, w: 1.2 },
             { id: 'bellA',   key: /ベルA/,      label: 'ベルA',           vals: {1: 10.9,  2: 10.7,  5: 10.5,  6: 10.2},  w: 0.5 },
             { id: 'bellB',   key: /ベルB/,      label: 'ベルB',           vals: {1: 20.9,  2: 19.0,  5: 20.3,  6: 18.8},  w: 0.5 },
             { id: 'suikaA',  key: /スイカA/,     label: 'スイカA',         vals: {1: 74.5,  2: 70.6,  5: 72.5,  6: 68.8},  w: 0.3 },
-            { id: 'vc_miss', key: /VSチャンス中はずれ/, label: 'VC中はずれ', vals: {1: 5.0,  2: 4.9,  5: 4.6,  6: 4.5},   w: 2.0 },
-            { id: 'vg_miss', key: /VSGAME中はずれ/,     label: 'VG中はずれ',     vals: {1: 10.1, 2: 9.4,  5: 8.7,  6: 8.1},   w: 2.0 },
-            { id: 'cb_match',key: /チェリー\+ベル揃い/,  label: 'チェリベル揃い', vals: {1: 12.0, 2: 10.5, 5: 12.0, 6: 10.5},  w: 0.5 },
-            { id: 'bb_haz',  key: /中段チェリー/,        label: 'ビッグ中 はずれ', special: 'denial' },
-            { id: 'rb_haz',  key: /はずれ/,              label: 'レギュラー中 はずれ', special: 'denial' }
+            { id: 'vc_miss', key: /VS.*チャンス.*はずれ/, label: 'VC中はずれ', vals: {1: 5.0,  2: 4.9,  5: 4.6,  6: 4.5},   w: 2.0 },
+            { id: 'vg_miss', key: /VS.*GAME.*はずれ/,     label: 'VG中はずれ',     vals: {1: 10.1, 2: 9.4,  5: 8.7,  6: 8.1},   w: 2.0 },
+            { id: 'cb_match',key: /チェリー.*ベル.*揃い/,  label: 'チェリベル揃い', vals: {1: 12.0, 2: 10.5, 5: 12.0, 6: 10.5},  w: 0.5 },
+            { id: 'bb_haz',  key: /中段チェリー|32230/,   label: 'ビッグ中 はずれ', special: 'denial' },
+            { id: 'rb_haz',  key: /はずれ|9756/,          label: 'レギュラー中 はずれ', special: 'denial' }
         ];
 
         const logArea = document.getElementById('log');
         const log = (msg) => { logArea.innerHTML += msg + "\n"; logArea.scrollTop = logArea.scrollHeight; };
 
         function parseImage(json) {
-            logArea.innerHTML = "【解析ログ：スキャン開始】\n";
+            logArea.innerHTML = "【解析ログ：同期開始】\n";
             const data = {};
             const annotations = json.responses[0].textAnnotations;
             if (!annotations) return;
 
-            // 1. 全ての単語を高さ(Y座標)でグループ化して一行の文字列にする
             const rows = [];
             annotations.slice(1).forEach(ann => {
                 const y = ann.boundingPoly.vertices[0].y;
                 const text = ann.description;
-                let row = rows.find(r => Math.abs(r.y - y) < 20); // 20px以内は同一行
+                let row = rows.find(r => Math.abs(r.y - y) < 18);
                 if (!row) {
                     row = { y, words: [] };
                     rows.push(row);
@@ -79,24 +78,21 @@
                 row.words.push({ text, x: ann.boundingPoly.vertices[0].x });
             });
 
-            // 横位置(X)順にソートして結合
             const combinedRows = rows.map(r => {
                 r.words.sort((a, b) => a.x - b.x);
-                return { y: r.y, fullText: r.words.map(w => w.text).join('') };
+                // 単語間にスペースを入れ、数字の癒着を防ぐ
+                return { y: r.y, fullText: r.words.map(w => w.text).join(' ') };
             });
 
-            // 2. 項目名と同じ行から数値を抽出
             TARGET_MAP.forEach(t => {
                 let foundVal = 0;
                 for (let row of combinedRows) {
                     if (t.key.test(row.fullText)) {
-                        // 分数を探す正規表現（バラバラでも結合済みなのでヒットする）
-                        const match = row.fullText.match(/([0-9,]+\.?[0-9]*)\s*[\/／]\s*([0-9,]+\.?[0-9]*)/) || 
-                                      row.fullText.match(/1[\/／]([0-9,]+\.?[0-9]*)/);
+                        // スペース区切りを考慮した分数抽出
+                        const match = row.fullText.match(/[1I!]\s*[\/／]\s*([0-9,]+\.?[0-9]*)/);
                         if (match) {
-                            foundVal = parseFloat((match[2] || match[1]).replace(/,/g, ''));
-                            // 特殊フィルタ：レギュラー中のはずれは画面下部
-                            if (t.id === 'rb_haz' && row.y < 1500) { foundVal = 0; continue; }
+                            foundVal = parseFloat(match[1].replace(/,/g, ''));
+                            if (t.id === 'rb_haz' && row.y < 1200) { foundVal = 0; continue; }
                         }
                     }
                     if (foundVal) break;
@@ -127,7 +123,7 @@
                 document.getElementById(`p${s}`).innerText = p + "%";
                 document.getElementById(`b${s}`).style.width = p + "%";
             });
-            log("\n解析完了。これが本物の同期。");
+            log("\n同期解析完了。36万Gの真実をどうぞ。");
         }
 
         const fileInput = document.getElementById('file-input');
@@ -146,7 +142,7 @@
                     const json = await res.json();
                     if (json.responses && json.responses[0].textAnnotations) {
                         calculate(parseImage(json));
-                    } else { log("テキスト検出失敗"); }
+                    }
                 } catch (err) { log("ERROR: " + err.message); }
             };
         };
