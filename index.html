@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>VERSUS REVISE v1.0.2</title>
+    <title>VERSUS REVISE v1.0.3</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap');
@@ -21,7 +21,7 @@
 <body>
     <div class="text-center shrink-0 mb-2">
         <img src="https://example.com/VS.png" alt="VERSUS" class="mx-auto w-64 mb-1">
-        <p class="ver-text">よっちゃん専用 Ver 1.0.2</p>
+        <p class="ver-text">よっちゃん専用 Ver 1.0.3</p>
     </div>
 
     <div class="w-full shrink-0 mb-3 relative max-w-md mx-auto">
@@ -30,14 +30,15 @@
     </div>
 
     <div class="w-full max-w-md mx-auto result-card">
-        <div class="mb-2"><div class="flex justify-between text-[10px] font-bold text-gray-400"><span>設定1</span><span id="p1">65.0%</span></div><div class="bar-bg"><div id="b1" class="bar-fill bg-gray-600" style="width:65%"></div></div></div>
-        <div class="mb-2"><div class="flex justify-between text-[10px] font-bold text-blue-400"><span>設定2</span><span id="p2">20.0%</span></div><div class="bar-bg"><div id="b2" class="bar-fill bg-blue-600" style="width:20%"></div></div></div>
-        <div class="mb-2"><div class="flex justify-between text-[10px] font-bold text-orange-400"><span>設定5</span><span id="p5">10.0%</span></div><div class="bar-bg"><div id="b5" class="bar-fill bg-orange-500" style="width:10%"></div></div></div>
-        <div><div class="flex justify-between text-[10px] font-bold text-red-500"><span>設定6</span><span id="p6">5.0%</span></div><div class="bar-bg"><div id="b6" class="bar-fill bg-red-600" style="width:5%"></div></div></div>
+        <div class="mb-2"><div class="flex justify-between text-[10px] font-bold text-gray-400"><span>設定1</span><span id="p1">0.0%</span></div><div class="bar-bg"><div id="b1" class="bar-fill bg-gray-600" style="width:0%"></div></div></div>
+        <div class="mb-2"><div class="flex justify-between text-[10px] font-bold text-blue-400"><span>設定2</span><span id="p2">0.0%</span></div><div class="bar-bg"><div id="b2" class="bar-fill bg-blue-600" style="width:0%"></div></div></div>
+        <div class="mb-2"><div class="flex justify-between text-[10px] font-bold text-orange-400"><span>設定5</span><span id="p5">0.0%</span></div><div class="bar-bg"><div id="b5" class="bar-fill bg-orange-500" style="width:0%"></div></div></div>
+        <div><div class="flex justify-between text-[10px] font-bold text-red-500"><span>設定6</span><span id="p6">0.0%</span></div><div class="bar-bg"><div id="b6" class="bar-fill bg-red-600" style="width:0%"></div></div></div>
     </div>
 
     <div class="w-full max-w-md mx-auto flex flex-col flex-grow min-h-0 mb-2">
-        <div id="log" class="console-box">【v1.0.2】UI復元版。解析待機中...</div>
+        <div id="log" class="console-box">【v1.0.3】計算エンジン安定化。
+画像をアップロードしてください。</div>
     </div>
 
     <div class="w-full max-w-md mx-auto shrink-0 pb-2 flex gap-2">
@@ -46,7 +47,8 @@
     </div>
 
     <script>
-        const PRIOR_PROBS = { 1: 13/20, 2: 4/20, 5: 2/20, 6: 1/20 };
+        // 島構成（事前確率）
+        const PRIOR_DIST = { 1: 13/20, 2: 4/20, 5: 2/20, 6: 1/20 };
 
         const EXPECTED_MAP = {
             bb:  { label: 'ビッグボーナス', type: 'bayesian', vals: {1: 273.1, 2: 268.6, 5: 264.3, 6: 256.0} },
@@ -70,8 +72,8 @@
             const totalG = gMatch ? parseInt(gMatch[1].replace(/,/g, '')) : 0;
             log(`総プレイ数: ${totalG}G`);
 
-            const bbMatch = text.match(/(?:総|#)?\s*B\s*B[\s\S]{0,100}?([\d,]+)回/);
-            const bbCount = bbMatch ? parseInt(bbMatch[1].replace(/,/g, '')) : 0;
+            const bbCountMatch = text.match(/(?:総|#)?\s*B\s*B[\s\S]{0,100}?([\d,]+)回/);
+            const bbCount = bbCountMatch ? parseInt(bbCountMatch[1].replace(/,/g, '')) : 0;
 
             const patterns = {
                 bb:  /(?:総|#)?\s*B\s*B[\s\S]{0,100}?[1I!ｌ]\s*[\/／]\s*([\d,.]+)/,
@@ -86,57 +88,74 @@
                 rbh: /R\s*B\s*中\s*詳\s*細[\s\S]*?は\s*ず\s*れ[\s\S]{0,100}?[1I!ｌ]\s*[\/／]\s*([\d,.]+|--?)/
             };
 
-            let results = { totalG: totalG, bbCount: bbCount };
+            let data = { totalG: totalG, bbCount: bbCount };
             for (let key in patterns) {
                 const match = text.match(patterns[key]);
                 if (match && match[1]) {
                     let valStr = match[1].replace(/[\s,]/g, '');
-                    results[key] = (valStr === '-' || valStr === '--') ? 0 : parseFloat(valStr);
-                    log(`${EXPECTED_MAP[key].label}: 1/${results[key] || '-'}`);
+                    data[key] = (valStr === '-' || valStr === '--') ? 0 : parseFloat(valStr);
+                    log(`${EXPECTED_MAP[key].label}: 1/${data[key] || '-'}`);
                 } else {
-                    results[key] = 0;
+                    data[key] = 0;
                     log(`${EXPECTED_MAP[key].label}: 未検出`);
                 }
             }
-            return results;
+            return data;
         }
 
         function runBayesian(data) {
-            let likelihoods = { 1: PRIOR_PROBS[1], 2: PRIOR_PROBS[2], 5: PRIOR_PROBS[5], 6: PRIOR_PROBS[6] };
+            // 対数尤度(log-likelihood)で初期化（事前確率の対数）
+            let logLikelihoods = {
+                1: Math.log(PRIOR_DIST[1]),
+                2: Math.log(PRIOR_DIST[2]),
+                5: Math.log(PRIOR_DIST[5]),
+                6: Math.log(PRIOR_DIST[6])
+            };
+
             const weightG = 1.0 + (data.totalG / 2000);
             const weightBB = 1.0 + (data.bbCount / 10);
 
             for (let key in EXPECTED_MAP) {
                 const config = EXPECTED_MAP[key];
                 const obsVal = data[key];
+                // valsが存在しない、または無効なデータはスキップ
                 if (!obsVal || obsVal <= 0 || !config.vals) continue;
 
                 [1, 2, 5, 6].forEach(s => {
                     const pExp = 1 / config.vals[s];
-                    let L = 1.0;
+                    let logL = 0;
+
                     if (config.type === 'bayesian' && data.totalG > 0) {
                         const N = data.totalG; const k = N / obsVal;
-                        L = Math.pow(pExp / (1/obsVal), k) * Math.pow((1-pExp) / (1-1/obsVal), Math.max(0, N-k));
-                        if (key === 'ba' || key === 'sa') L = Math.pow(L, weightG);
+                        // 対数二項尤度近似
+                        logL = k * Math.log(pExp / (1/obsVal)) + (N - k) * Math.log((1 - pExp) / (1 - 1/obsVal));
+                        if (key === 'ba' || key === 'sa') logL *= weightG;
                     } else if (config.type === 'prob') {
-                        L = Math.pow(pExp / (1/obsVal), (config.w || 1.0) * weightBB);
+                        logL = Math.log(pExp / (1/obsVal)) * (config.w || 1.0) * weightBB;
                     } else if (config.type === 'special') {
-                        L = (pExp / (1/obsVal)) * 100;
+                        logL = Math.log(pExp / (1/obsVal)) + Math.log(100000);
                     }
-                    likelihoods[s] *= L;
+                    logLikelihoods[s] += logL;
                 });
             }
 
-            if (data.rbh > 0) { likelihoods[1] = 0; likelihoods[2] = 0; log("! RBハズレ検出: 設定1･2除外"); }
-            if (data.bbh > 0) { likelihoods[1] *= 0.01; likelihoods[2] *= 0.01; log("! BBハズレ検出: 設定6期待度上昇"); }
+            // 特殊フィルタ
+            if (data.rbh > 0) { logLikelihoods[1] = -Infinity; logLikelihoods[2] = -Infinity; log("! RBハズレ検出: 設定1･2除外"); }
+            if (data.bbh > 0) { logLikelihoods[6] += Math.log(100); log("! BBハズレ検出: 設定6期待度上昇"); }
 
-            const total = likelihoods[1] + likelihoods[2] + likelihoods[5] + likelihoods[6];
-            if (total === 0) return;
+            // 対数から確率に戻す（アンダーフロー防止のため最大値で引く）
+            const maxLog = Math.max(logLikelihoods[1], logLikelihoods[2], logLikelihoods[5], logLikelihoods[6]);
+            let total = 0;
+            let probs = {};
+            [1, 2, 5, 6].forEach(s => {
+                probs[s] = (logLikelihoods[s] === -Infinity) ? 0 : Math.exp(logLikelihoods[s] - maxLog);
+                total += probs[s];
+            });
 
             [1, 2, 5, 6].forEach(s => {
-                const prob = (likelihoods[s] / total * 100).toFixed(1);
-                document.getElementById(`p${s}`).innerText = prob + "%";
-                document.getElementById(`b${s}`).style.width = prob + "%";
+                const finalP = (probs[s] / total * 100).toFixed(1);
+                document.getElementById(`p${s}`).innerText = finalP + "%";
+                document.getElementById(`b${s}`).style.width = finalP + "%";
             });
             log("\nベイズ推論完了。");
         }
