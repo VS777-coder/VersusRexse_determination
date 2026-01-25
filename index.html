@@ -25,7 +25,7 @@
     </div>
 
     <div class="w-full shrink-0 mb-3 relative max-w-md mx-auto">
-        <label for="file-input" class="main-btn w-full py-3 text-white font-bold text-sm tracking-widest">ユニメモ画像を解析</label>
+        <label for="file-input" class="main-btn w-full py-3 text-white font-bold text-sm tracking-widest uppercase">ユニメモ画像を解析</label>
         <input type="file" id="file-input" class="hidden" accept="image/*">
     </div>
 
@@ -40,21 +40,18 @@
         <div id="log" class="console-box">【解析準備完了】画像をアップしてください。</div>
     </div>
 
-    <div class="w-full max-w-md mx-auto shrink-0 pb-2">
-        <div class="flex gap-2">
-            <input type="password" id="api-key" class="api-input-dots" placeholder="••••••••">
-            <button id="save-key" class="bg-blue-600 text-white font-bold py-2 px-6 rounded-full text-[10px] whitespace-nowrap">SET</button>
-        </div>
+    <div class="w-full max-w-md mx-auto shrink-0 pb-2 flex gap-2">
+        <input type="password" id="api-key" class="api-input-dots flex-grow" placeholder="••••••••">
+        <button id="save-key" class="bg-blue-600 text-white font-bold py-2 px-6 rounded-full text-[10px]">SET</button>
     </div>
 
     <script>
-        // 調査に基づく「出現順(rank)」を考慮した定義
         const SQM_MAP = [
-            { id: 'bb',      key: /#BB/,        rank: 1, label: 'ビッグ確率',       vals: {1: 273.1, 2: 268.6, 5: 264.3, 6: 256.0}, w: 1.0 },
-            { id: 'rb',      key: /RB/,         rank: 1, label: 'レギュラー確率',   vals: {1: 374.5, 2: 341.3, 5: 319.7, 6: 292.6}, w: 1.2 },
+            { id: 'bb',      key: /#BB/,        rank: 2, label: 'ビッグ確率',       vals: {1: 273.1, 2: 268.6, 5: 264.3, 6: 256.0}, w: 1.0 },
+            { id: 'rb',      key: /RB/,         rank: 2, label: 'レギュラー確率',   vals: {1: 374.5, 2: 341.3, 5: 319.7, 6: 292.6}, w: 1.2 },
             { id: 'bellA',   key: /ベルA/,      rank: 2, label: 'ベルA',           vals: {1: 10.9,  2: 10.7,  5: 10.5,  6: 10.2},  w: 0.5 },
-            { id: 'bellB',   key: /ベルB/,      rank: 2, label: 'ベルB',           vals: {1: 20.9,  2: 19.0,  5: 20.3,  6: 18.8},  w: 0.5 },
-            { id: 'suikaA',  key: /スイカA/,     rank: 2, label: 'スイカA',         vals: {1: 74.5,  2: 70.6,  5: 72.5,  6: 68.8},  w: 0.3 },
+            { id: 'bellB',   key: /ベルB/,      rank: 3, label: 'ベルB',           vals: {1: 20.9,  2: 19.0,  5: 20.3,  6: 18.8},  w: 0.5 },
+            { id: 'suikaA',  key: /スイカA/,     rank: 5, label: 'スイカA',         vals: {1: 74.5,  2: 70.6,  5: 72.5,  6: 68.8},  w: 0.3 },
             { id: 'vc_miss', key: /VSチャンス中はずれ/, rank: 1, label: 'VC中はずれ', vals: {1: 5.0,  2: 4.9,  5: 4.6,  6: 4.5},   w: 2.0 },
             { id: 'vg_miss', key: /VSGAME中はずれ/,     rank: 1, label: 'VG中はずれ', vals: {1: 10.1, 2: 9.4,  5: 8.7,  6: 8.1},   w: 2.0 },
             { id: 'cb_match',key: /チェリー\+ベル揃い/,  rank: 1, label: 'チェリベル揃い', vals: {1: 12.0, 2: 10.5, 5: 12.0, 6: 10.5},  w: 0.5 },
@@ -79,12 +76,12 @@
                 for (let i = 0; i < lines.length; i++) {
                     if (target.key.test(lines[i])) {
                         foundLabelIdx = i;
-                        // ラベル発見。その後の「n番目の分数」を探す
-                        for (let j = i; j < i + 20 && j < lines.length; j++) {
+                        // ラベル発見後の「rank番目」の分数を射抜く
+                        for (let j = i; j < i + 30 && j < lines.length; j++) {
                             const m = lines[j].match(probRegex);
                             if (m) {
                                 matchCount++;
-                                if (matchCount === (target.rank || 1)) {
+                                if (matchCount === target.rank) {
                                     foundVal = parseFloat(m[1].replace(/,/g, ''));
                                     foundValueIdx = j;
                                     break;
@@ -97,12 +94,9 @@
                 data[target.id] = foundVal;
                 
                 if (target.special) {
-                    const status = foundVal > 0 ? "発生！" : "未検出";
-                    log(`[${foundLabelIdx !== -1 ? foundLabelIdx : '--'}] ${target.label} → ${status}`);
-                } else if (foundLabelIdx !== -1) {
-                    log(`[${foundLabelIdx}] ${target.label} → [${foundValueIdx}] 1/${foundVal.toFixed(1)}`);
+                    log(`[${foundLabelIdx !== -1 ? foundLabelIdx : '--'}] ${target.label} → ${foundVal > 0 ? "発生！" : "未検出"}`);
                 } else {
-                    log(`[--] ${target.label} 検出なし`);
+                    log(`[${foundLabelIdx !== -1 ? foundLabelIdx : '--'}] ${target.label} → [${foundValueIdx !== -1 ? foundValueIdx : '??'}] 1/${foundVal > 0 ? foundVal.toFixed(1) : '0'}`);
                 }
             });
             return data;
@@ -119,18 +113,19 @@
                 [1, 2, 5, 6].forEach(s => pts[s] += Math.pow(Math.abs(data[t.id] - t.vals[s]) / t.vals[s], 2) * t.w);
             });
 
-            if (!valid && !denied12) return;
-            let probs = {}; let total = 0;
-            [1, 2, 5, 6].forEach(s => {
-                if (denied12 && (s === 1 || s === 2)) probs[s] = 0;
-                else { probs[s] = 1 / (pts[s] + 0.05); total += probs[s]; }
-            });
-            [1, 2, 5, 6].forEach(s => {
-                const p = (probs[s] / total * 100).toFixed(1);
-                document.getElementById(`p${s}`).innerText = p + "%";
-                document.getElementById(`b${s}`).style.width = p + "%";
-            });
-            log("\n解析を完了しました。");
+            if (valid || denied12) {
+                let total = 0; let probs = {};
+                [1, 2, 5, 6].forEach(s => {
+                    if (denied12 && (s === 1 || s === 2)) probs[s] = 0;
+                    else { probs[s] = 1 / (pts[s] + 0.05); total += probs[s]; }
+                });
+                [1, 2, 5, 6].forEach(s => {
+                    const p = (probs[s] / total * 100).toFixed(1);
+                    document.getElementById(`p${s}`).innerText = p + "%";
+                    document.getElementById(`b${s}`).style.width = p + "%";
+                });
+                log("\n解析を完了しました。");
+            }
         }
 
         const fileInput = document.getElementById('file-input');
