@@ -6,98 +6,29 @@
     <title>VERSUS REVISE v2.1.0</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
+        /* UI BLOCK (FIXED v2.1.0) */
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap');
-        
-        body { 
-            background-color: #0f1219; 
-            color: #ffffff; 
-            font-family: 'Inter', sans-serif; 
-            height: 100dvh; 
-            width: 100vw;
-            padding: 12px;
-            overflow: hidden;
-            display: flex;
-            flex-direction: column;
-            box-sizing: border-box;
-        }
-
-        .logo-text {
-            font-family: 'Arial Black', sans-serif;
-            background: linear-gradient(180deg, #00bfff, #1e3a8a);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            filter: drop-shadow(0 0 5px rgba(0, 191, 255, 0.5));
-            font-style: italic;
-        }
-
-        .ver-text {
-            color: #ef4444;
-            text-shadow: 0 0 10px rgba(239, 68, 68, 0.6);
-            font-weight: bold;
-            letter-spacing: 0.1em;
-            font-size: 10px;
-        }
-
-        .main-btn {
-            background-color: #1e3a8a;
-            border-radius: 9999px;
-            box-shadow: 0 4px 10px rgba(30, 58, 138, 0.5);
-            transition: all 0.2s;
-            border: 2px solid #2563eb;
-        }
+        body { background-color: #0f1219; color: #ffffff; font-family: 'Inter', sans-serif; height: 100dvh; width: 100vw; padding: 12px; overflow: hidden; display: flex; flex-direction: column; box-sizing: border-box; }
+        .ver-text { color: #ef4444; text-shadow: 0 0 10px rgba(239, 68, 68, 0.6); font-weight: bold; letter-spacing: 0.1em; font-size: 10px; margin-top: 4px; }
+        .main-btn { background-color: #1e3a8a; border-radius: 9999px; box-shadow: 0 4px 10px rgba(30, 58, 138, 0.5); transition: all 0.2s; border: 2px solid #2563eb; }
         .main-btn:active { transform: scale(0.98); }
-
-        .result-card {
-            background-color: #131722;
-            border-radius: 12px;
-            padding: 12px 16px;
-            margin-bottom: 8px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
-            flex-shrink: 0;
-        }
+        .result-card { background-color: #131722; border-radius: 12px; padding: 12px 16px; margin-bottom: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.3); flex-shrink: 0; }
         .bar-row { margin-bottom: 8px; }
         .bar-bg { background-color: #1f2937; height: 8px; border-radius: 4px; overflow: hidden; margin-top: 2px; }
         .bar-fill { height: 100%; transition: width 0.8s ease-out; }
-
-        .console-box {
-            background-color: #000000;
-            border: 1px solid #22c55e;
-            border-radius: 8px;
-            padding: 8px;
-            font-family: 'Courier New', monospace;
-            font-size: 10px;
-            color: #4ade80;
-            flex-grow: 1;
-            min-height: 0;
-            overflow-y: auto;
-            white-space: pre-wrap;
-            box-shadow: 0 0 10px rgba(34, 197, 94, 0.2);
-            margin-bottom: 8px;
-        }
-
-        .api-input-dots {
-            background-color: #1e293b;
-            color: white;
-            border: none;
-            border-radius: 99px;
-            padding: 6px 12px;
-            letter-spacing: 2px;
-            font-size: 16px;
-            outline: none;
-            text-align: center;
-            width: 100%;
-        }
+        .console-box { background-color: #000000; border: 1px solid #22c55e; border-radius: 8px; padding: 8px; font-family: 'Courier New', monospace; font-size: 10px; color: #4ade80; flex-grow: 1; min-height: 0; overflow-y: auto; white-space: pre-wrap; box-shadow: 0 0 10px rgba(34, 197, 94, 0.2); margin-bottom: 8px; }
+        .api-input-dots { background-color: #1e293b; color: white; border: none; border-radius: 99px; padding: 6px 12px; letter-spacing: 2px; font-size: 16px; outline: none; text-align: center; width: 100%; }
     </style>
 </head>
 <body>
     
     <div class="text-center shrink-0 mb-2">
-        <h1 class="text-3xl font-black italic logo-text">VERSUS <span class="text-white">REVISE</span></h1>
+        <img src="VS.png" alt="VERSUS" class="mx-auto w-64 mb-1">
         <p class="ver-text">みおちゃん専用 VER 2.1.0</p>
     </div>
 
     <div class="w-full shrink-0 mb-3 relative max-w-md mx-auto">
-        <button id="drop-zone" class="main-btn w-full py-3 text-white font-bold text-sm tracking-wider">
+        <button id="drop-zone" class="main-btn w-full py-3 text-white font-bold text-sm tracking-wider uppercase">
             ユニメモ画像を解析
         </button>
         <input type="file" id="file-input" class="hidden" accept="image/*">
@@ -132,159 +63,111 @@
     <div class="w-full max-w-md mx-auto shrink-0 flex flex-col items-center gap-1">
         <div class="flex w-full gap-2 justify-center items-center">
             <input type="password" id="api-key" class="api-input-dots flex-grow" placeholder="••••••••">
-            <button id="save-key" class="bg-blue-600 hover:bg-blue-500 text-white font-bold py-2 px-4 rounded-full text-[10px] shadow-lg transition whitespace-nowrap">
+            <button id="save-key" class="bg-blue-600 hover:bg-blue-500 text-white font-bold py-2 px-4 rounded-full text-[10px] shadow-lg transition whitespace-nowrap uppercase">
                 SET
             </button>
         </div>
-        <p id="key-status" class="text-[9px] font-bold text-blue-500 tracking-widest">API KEY: READY</p>
+        <p id="key-status" class="text-[9px] font-bold text-blue-500 tracking-widest uppercase">API KEY: READY</p>
     </div>
 
     <script>
-        // ==========================================
-        //  TARGETS: 当日画面（セッション結果）専用マップ
-        // ==========================================
-        const TARGETS = {
-            bb:      { type: 'fixed', idx: 1,  name: 'BB確率',       vals: {1: 273.1, 2: 268.6, 5: 264.3, 6: 256.0}, w: 1.0 },
-            rb:      { type: 'fixed', idx: 2,  name: 'RB確率',       vals: {1: 374.5, 2: 341.3, 5: 319.7, 6: 292.6}, w: 1.2 },
-            bellA:   { type: 'fixed', idx: 4,  name: 'ベルA',        vals: {1: 10.9,  2: 10.7,  5: 10.5,  6: 10.2},  w: 0.3 }, 
-            bellB:   { type: 'fixed', idx: 5,  name: 'ベルB',        vals: {1: 20.9,  2: 19.0,  5: 20.3,  6: 18.8},  w: 0.3 }, 
-            suikaA:  { type: 'fixed', idx: 7,  name: 'スイカA',      vals: {1: 74.5,  2: 70.6,  5: 72.5,  6: 68.8},  w: 0.2 },
-            cherryB: { type: 'fixed', idx: 11, name: 'チェリーB',    vals: {1: 56.2,  2: 57.7,  5: 53.1,  6: 54.4},  w: 0.2 },
-            
-            // RT・特殊系は文字検索で維持
-            vc_miss: { type: 'search', keys: ['VSチャンス中はずれ'],       name: 'VC中ハズレ', vals: {1: 5.0,  2: 4.9,  5: 4.6,  6: 4.5}, w: 0.8 },
-            vg_miss: { type: 'search', keys: ['VSGAME中はずれ'],           name: 'VG中ハズレ', vals: {1: 10.1, 2: 9.4,  5: 8.7,  6: 8.1}, w: 0.8 },
-            cb_match:{ type: 'search', keys: ['チェリー+ベル揃い'], name: 'CB揃い',     vals: {1: 12.0, 2: 10.5, 5: 12.0, 6: 10.5}, w: 0.5 },
-            cb_miss: { type: 'search', keys: ['チェリー+ベルはずれ'], name: 'CBハズレ',   vals: {1: 256.0, 2: 128.0, 5: 256.0, 6: 128.0}, w: 2.0 },
-            rb_miss: { type: 'special_rb', name: 'RBハズレ' }
-        };
+        /* ==========================================
+           LABEL-BASED LOGIC (SEARCH METHOD)
+           ========================================== */
+        const TARGET_DEFINITIONS = [
+            { id: 'bb',      label: 'ビッグ確率',       vals: {1: 273.1, 2: 268.6, 5: 264.3, 6: 256.0}, w: 1.0 },
+            { id: 'rb',      label: 'レギュラー確率',   vals: {1: 374.5, 2: 341.3, 5: 319.7, 6: 292.6}, w: 1.2 },
+            { id: 'bellA',   label: 'ベルA',           vals: {1: 10.9,  2: 10.7,  5: 10.5,  6: 10.2},  w: 0.3 }, 
+            { id: 'bellB',   label: 'ベルB',           vals: {1: 20.9,  2: 19.0,  5: 20.3,  6: 18.8},  w: 0.3 }, 
+            { id: 'suikaA',  label: 'スイカA',         vals: {1: 74.5,  2: 70.6,  5: 72.5,  6: 68.8},  w: 0.2 },
+            { id: 'cherryB', label: 'チェリーB',       vals: {1: 56.2,  2: 57.7,  5: 53.1,  6: 54.4},  w: 0.2 },
+            { id: 'vc_miss', label: 'VSチャンス中はずれ', vals: {1: 5.0,  2: 4.9,  5: 4.6,  6: 4.5}, w: 0.8 },
+            { id: 'vg_miss', label: 'VSGAME中はずれ',     vals: {1: 10.1, 2: 9.4,  5: 8.7,  6: 8.1}, w: 0.8 },
+            { id: 'cb_match',label: 'チェリー+ベル揃い', vals: {1: 12.0, 2: 10.5, 5: 12.0, 6: 10.5}, w: 0.5 },
+            { id: 'cb_miss', label: 'チェリー+ベルはずれ', vals: {1: 256.0, 2: 128.0, 5: 256.0, 6: 128.0}, w: 2.0 },
+            { id: 'rb_miss', label: 'Reg中はずれ',       special: 'denial' }
+        ];
 
         const logArea = document.getElementById('log');
-        function log(msg) {
-            logArea.innerHTML += msg + "\n";
-            logArea.scrollTop = logArea.scrollHeight;
-        }
+        const log = (msg) => { logArea.innerHTML += msg + "\n"; logArea.scrollTop = logArea.scrollHeight; };
 
-        function parseData(text) {
+        // ラベルに基づいて数値を抽出する関数
+        function extractByLabel(lines) {
             logArea.innerHTML = "【抽出パラメータ確認】\n";
-            const lines = text.split(/\n/).map(l => l.trim()).filter(l => l);
             const data = {};
-            const probRegex = /1\/([0-9,]+\.?[0-9]*|\-)/;
-            const stream = [];
-            
-            lines.forEach(l => {
-                const m = l.match(probRegex);
-                if (m) {
-                    let v = m[1].replace(/,/g, '');
-                    v = (v === '-') ? 0 : parseFloat(v);
-                    stream.push(v);
-                }
-            });
+            const probRegex = /1\/([0-9,]+\.?[0-9]*)/;
 
-            Object.keys(TARGETS).forEach(key => {
-                const t = TARGETS[key];
-                if (t.type === 'fixed') {
-                    if (stream.length > t.idx) {
-                        data[key] = stream[t.idx];
-                        log(`${t.name}: [ 1/${data[key]} ]`);
-                    }
-                } else if (t.type === 'search') {
-                    let foundLineIdx = lines.findIndex(l => t.keys.some(k => l.includes(k)));
-                    if (foundLineIdx !== -1) {
-                        for (let i = foundLineIdx; i < Math.min(foundLineIdx + 3, lines.length); i++) {
-                            const m = lines[i].match(probRegex);
-                            if (m) {
-                                data[key] = parseFloat(m[1].replace(/,/g, ''));
-                                log(`${t.name}: [ 1/${data[key]} ]`);
+            TARGET_DEFINITIONS.forEach(target => {
+                let foundValue = 0;
+                // 全行をスキャンしてラベルを探す
+                for (let i = 0; i < lines.length; i++) {
+                    if (lines[i].includes(target.label)) {
+                        // 同一行、または前後1行から確率パターン(1/x)を探す
+                        const searchRange = [lines[i], lines[i-1] || "", lines[i+1] || ""];
+                        for (let line of searchRange) {
+                            const match = line.match(probRegex);
+                            if (match) {
+                                foundValue = parseFloat(match[1].replace(/,/g, ''));
                                 break;
                             }
                         }
-                    } else { data[key] = 0; log(`${t.name}: [ 0 ]`); }
-                } else if (t.type === 'special_rb') {
-                    const rbAreaIdx = lines.findIndex(l => l.includes('RB中詳細'));
-                    if (rbAreaIdx !== -1) {
-                        const rbProbs = [];
-                        for(let i = rbAreaIdx; i < lines.length; i++){
-                            const m = lines[i].match(probRegex);
-                            if(m) rbProbs.push(parseFloat(m[1].replace(/,/g, '')));
-                        }
-                        data[key] = rbProbs.length > 0 ? rbProbs[rbProbs.length - 1] : 0;
-                        log(`${t.name}: [ 1/${data[key]} ]`);
+                        if (foundValue) break;
                     }
+                }
+                data[target.id] = foundValue;
+                if (target.special !== 'denial') {
+                    log(`${target.label}: [ ${foundValue ? '1/' + foundValue : '0'} ]`);
+                } else if (foundValue > 0) {
+                    log(`${target.label}: [ 検出！(1/2否定) ]`);
                 }
             });
             return data;
         }
 
         function calculate(data) {
-            let points = { 1: 0, 2: 0, 5: 0, 6: 0 };
-            let validItems = 0;
+            let pts = { 1: 0, 2: 0, 5: 0, 6: 0 };
+            let valid = 0;
             let denied12 = (data.rb_miss > 0);
 
-            Object.keys(TARGETS).forEach(key => {
-                const t = TARGETS[key];
-                const val = data[key];
-                if (t.type === 'special_rb' || !val || val <= 0) return;
-                validItems++;
+            TARGET_DEFINITIONS.forEach(t => {
+                if (t.special || !data[t.id] || data[t.id] <= 0) return;
+                valid++;
                 [1, 2, 5, 6].forEach(s => {
-                    points[s] += (Math.abs(val - t.vals[s]) / t.vals[s]) * t.w;
+                    pts[s] += (Math.abs(data[t.id] - t.vals[s]) / t.vals[s]) * t.w;
                 });
             });
 
-            if (validItems === 0 && !denied12) return null;
+            if (!valid && !denied12) return null;
 
-            let probs = {};
-            let totalInv = 0;
+            let probs = {}; let total = 0;
             [1, 2, 5, 6].forEach(s => {
                 if (denied12 && (s === 1 || s === 2)) probs[s] = 0;
-                else {
-                    probs[s] = 1 / (points[s] + 0.1);
-                    totalInv += probs[s];
-                }
+                else { probs[s] = 1 / (pts[s] + 0.1); total += probs[s]; }
             });
-
-            return {
-                1: (probs[1] / totalInv * 100).toFixed(1),
-                2: (probs[2] / totalInv * 100).toFixed(1),
-                5: (probs[5] / totalInv * 100).toFixed(1),
-                6: (probs[6] / totalInv * 100).toFixed(1)
-            };
+            return { 1: (probs[1]/total*100).toFixed(1), 2: (probs[2]/total*100).toFixed(1), 5: (probs[5]/total*100).toFixed(1), 6: (probs[6]/total*100).toFixed(1) };
         }
 
+        // UI Logic
         const fileInput = document.getElementById('file-input');
         const dropZone = document.getElementById('drop-zone');
         if(localStorage.getItem('v_key')) document.getElementById('api-key').value = localStorage.getItem('v_key');
-        
-        document.getElementById('save-key').onclick = () => {
-            localStorage.setItem('v_key', document.getElementById('api-key').value);
-            alert('SAVED');
-        };
-
+        document.getElementById('save-key').onclick = () => { localStorage.setItem('v_key', document.getElementById('api-key').value); alert('API KEY SAVED'); };
         dropZone.onclick = () => fileInput.click();
         fileInput.onchange = (e) => {
-            const file = e.target.files[0];
-            if (!file) return;
+            const file = e.target.files[0]; if (!file) return;
             const key = document.getElementById('api-key').value;
-            const reader = new FileReader();
-            reader.readAsDataURL(file);
+            const reader = new FileReader(); reader.readAsDataURL(file);
             reader.onload = async () => {
                 try {
-                    const body = { requests: [{ image: { content: reader.result.split(',')[1] }, features: [{ type: 'TEXT_DETECTION' }] }] };
                     const res = await fetch(`https://vision.googleapis.com/v1/images:annotate?key=${key}`, {
-                        method: 'POST', body: JSON.stringify(body), headers: { 'Content-Type': 'application/json' }
+                        method: 'POST', body: JSON.stringify({ requests: [{ image: { content: reader.result.split(',')[1] }, features: [{ type: 'TEXT_DETECTION' }] }] }), headers: { 'Content-Type': 'application/json' }
                     });
                     const json = await res.json();
-                    const text = json.responses[0].fullTextAnnotation.text;
-                    const data = parseData(text);
-                    const result = calculate(data);
-                    if (result) {
-                        [1, 2, 5, 6].forEach(s => {
-                            document.getElementById(`p${s}`).innerText = result[s] + "%";
-                            document.getElementById(`b${s}`).style.width = result[s] + "%";
-                        });
-                        log("\n解析完了");
-                    }
-                } catch (e) { log("ERROR: " + e.message); }
+                    const rawText = json.responses[0].fullTextAnnotation.text;
+                    const lines = rawText.split(/\n/).map(l => l.trim()).filter(l => l);
+                    const result = calculate(extractByLabel(lines));
+                    if (result) { [1, 2, 5, 6].forEach(s => { document.getElementById(`p${s}`).innerText = result[s] + "%"; document.getElementById(`b${s}`).style.width = result[s] + "%"; }); log("\n解析完了"); }
+                } catch (err) { log("ERROR: " + err.message); }
             };
         };
     </script>
