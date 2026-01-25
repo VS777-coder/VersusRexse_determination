@@ -3,11 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>VERSUS REVISE v2.1.3</title>
+    <title>VERSUS REVISE v2.1.0</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         /* ==========================================
-           UI BLOCK (FIXED v2.1.0) - 不変デザイン
+           UI BLOCK (FIXED v2.1.0)
            ========================================== */
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap');
         body { background-color: #0f1219; color: #ffffff; font-family: 'Inter', sans-serif; height: 100dvh; width: 100vw; padding: 12px; overflow: hidden; display: flex; flex-direction: column; box-sizing: border-box; }
@@ -26,7 +26,7 @@
     
     <div class="text-center shrink-0 mb-2">
         <img src="VS.png" alt="VERSUS" class="mx-auto w-64 mb-1">
-        <p class="ver-text">よっちゃん専用 VER 2.1.3</p>
+        <p class="ver-text">みおちゃん専用 VER 2.1.0</p>
     </div>
 
     <div class="w-full shrink-0 mb-3 relative max-w-md mx-auto">
@@ -74,84 +74,92 @@
 
     <script>
         /* ==========================================
-           LOGIC: SECTION HUNTER ENGINE
+           LOGIC: INDEX-BASED + SPECIAL SEARCH
            ========================================== */
-        const TARGET_DEFS = [
-            { id: 'bb',      label: '#BB',              vals: {1: 273.1, 2: 268.6, 5: 264.3, 6: 256.0}, w: 1.0 },
-            { id: 'rb',      label: 'RB',               vals: {1: 374.5, 2: 341.3, 5: 319.7, 6: 292.6}, w: 1.2 },
-            { id: 'bellA',   label: 'ベルA',            vals: {1: 10.9,  2: 10.7,  5: 10.5,  6: 10.2},  w: 0.3 },
-            { id: 'bellB',   label: 'ベルB',            vals: {1: 20.9,  2: 19.0,  5: 20.3,  6: 18.8},  w: 0.3 },
-            { id: 'suikaA',  label: 'スイカA',          vals: {1: 74.5,  2: 70.6,  5: 72.5,  6: 68.8},  w: 0.2 },
-            { id: 'cherryB', label: 'チェリーB',        vals: {1: 56.2,  2: 57.7,  5: 53.1,  6: 54.4},  w: 0.2 },
-            { id: 'vc_miss', label: 'VSチャンス中はずれ', vals: {1: 5.0,  2: 4.9,  5: 4.6,  6: 4.5}, w: 1.5 },
-            { id: 'vg_miss', label: 'VSGAME中はずれ',     vals: {1: 10.1, 2: 9.4,  5: 8.7,  6: 8.1}, w: 1.5 },
-            { id: 'cb_match',label: 'チェリー+ベル揃い', vals: {1: 12.0, 2: 10.5, 5: 12.0, 6: 10.5}, w: 0.8 },
-            { id: 'mid_ch',  label: '中段チェリー',     section: 'BB中詳細', special: 'denial' },
-            { id: 'rb_miss', label: 'はずれ',           section: 'RB中詳細 (小役)', special: 'denial' }
-        ];
+        
+        // あなたの提供したダンプに基づく絶対インデックス定義
+        const ABSOLUTE_INDEX = {
+            bb:      22, // #BB (1/350.4)
+            rb:      24, // RB (1/438.0)
+            bellA:   36, // ベルA (1/10.8)
+            bellB:   38, // ベルB (1/16.7)
+            cherryB: 54, // チェリーB (1/53.1)
+            vc_miss: 56, // VSチャンス中はずれ (1/4.1)
+            vg_miss: 58, // VSGAME中はずれ (1/8.3)
+            cb_match:66, // チェリー+ベル揃い (1/6.0)
+            cb_miss: 68  // チェリー+ベルはずれ (1/-)
+        };
+
+        const SETTING_VALS = {
+            bb:      {1: 273.1, 2: 268.6, 5: 264.3, 6: 256.0, w: 1.0},
+            rb:      {1: 374.5, 2: 341.3, 5: 319.7, 6: 292.6, w: 1.2},
+            bellA:   {1: 10.9,  2: 10.7,  5: 10.5,  6: 10.2,  w: 0.3},
+            bellB:   {1: 20.9,  2: 19.0,  5: 20.3,  6: 18.8,  w: 0.3},
+            cherryB: {1: 56.2,  2: 57.7,  5: 53.1,  6: 54.4,  w: 0.2},
+            vc_miss: {1: 5.0,   2: 4.9,   5: 4.6,   6: 4.5,   w: 2.0},
+            vg_miss: {1: 10.1,  2: 9.4,   5: 8.7,   6: 8.1,   w: 2.0},
+            cb_match:{1: 12.0,  2: 10.5,  5: 12.0,  6: 10.5,  w: 0.5},
+            cb_miss: {1: 256.0, 2: 128.0, 5: 256.0, 6: 128.0, w: 4.0}
+        };
 
         const logArea = document.getElementById('log');
         const log = (msg) => { logArea.innerHTML += msg + "\n"; logArea.scrollTop = logArea.scrollHeight; };
 
-        function hunter(lines) {
+        function extractData(lines) {
             logArea.innerHTML = "【抽出パラメータ確認】\n";
             const data = {};
             const probRegex = /[1lI]\s*[\/／]\s*([0-9,]+\s*[\.\s]*\s*[0-9]*)/i;
 
-            TARGET_DEFS.forEach(target => {
-                let foundValue = 0;
-                let inSection = !target.section;
-
-                for (let i = 0; i < lines.length; i++) {
-                    const line = lines[i];
-                    if (target.section && line.includes(target.section)) {
-                        inSection = true;
-                        continue;
-                    }
-                    if (target.section && inSection && line.includes('詳細') && !line.includes(target.section)) {
-                        break;
-                    }
-                    if (inSection && line.includes(target.label)) {
-                        for (let j = i - 2; j <= i + 2; j++) {
-                            if (!lines[j]) continue;
-                            const m = lines[j].match(probRegex);
-                            if (m) {
-                                foundValue = parseFloat(m[1].replace(/[\s,]/g, ''));
-                                break;
-                            }
-                        }
-                        if (foundValue) break;
-                    }
+            // 1. 絶対インデックスによる取得
+            Object.keys(ABSOLUTE_INDEX).forEach(key => {
+                const idx = ABSOLUTE_INDEX[key];
+                const line = lines[idx] || "";
+                const match = line.match(probRegex);
+                if (match) {
+                    data[key] = parseFloat(match[1].replace(/[\s,]/g, ''));
+                } else {
+                    data[key] = 0;
                 }
-                data[target.id] = foundValue;
-                if (!target.special) {
-                    log(`${target.label}: [ ${foundValue ? '1/' + foundValue : '0'} ]`);
-                } else if (foundValue > 0) {
-                    log(`${target.section} -> ${target.label}: [ 検出！設定5・6濃厚 ]`);
-                }
+                log(`${key.toUpperCase()}: [ ${data[key] ? '1/' + data[key] : '0'} ]`);
             });
+
+            // 2. 特別ロジック（名称検索）
+            let mid_ch = false;
+            let rb_miss = false;
+            
+            lines.forEach(line => {
+                if (line.includes("中段チェリー") && !line.includes("0回")) mid_ch = true;
+                if (line.includes("はずれ") && line.includes("Reg中")) rb_miss = true;
+            });
+
+            if (mid_ch) log("中段チェリー: [ 検出！設定5・6濃厚 ]");
+            if (rb_miss) log("Reg中はずれ: [ 検出！設定5・6濃厚 ]");
+
+            data.denied12 = (mid_ch || rb_miss);
             return data;
         }
 
         function calculate(data) {
             let pts = { 1: 0, 2: 0, 5: 0, 6: 0 };
             let valid = 0;
-            let highSettingFlag = (data.rb_miss > 0 || data.mid_ch > 0);
 
-            TARGET_DEFS.forEach(t => {
-                if (t.special || !data[t.id] || data[t.id] <= 0) return;
+            Object.keys(SETTING_VALS).forEach(key => {
+                const val = data[key];
+                if (!val || val <= 0) return;
                 valid++;
+                const sVal = SETTING_VALS[key];
                 [1, 2, 5, 6].forEach(s => {
-                    let diff = Math.abs(data[t.id] - t.vals[s]) / t.vals[s];
-                    pts[s] += Math.pow(diff, 2) * t.w;
+                    let diff = Math.abs(val - sVal[s]) / sVal[s];
+                    if (diff > 0.5) diff = 0.5;
+                    pts[s] += Math.pow(diff, 2) * sVal.w;
                 });
             });
 
-            if (!valid && !highSettingFlag) return null;
+            if (!valid && !data.denied12) return null;
 
             let probs = {}; let total = 0;
             [1, 2, 5, 6].forEach(s => {
-                if (highSettingFlag && (s === 1 || s === 2)) probs[s] = 0;
+                if (data.denied12 && (s === 1 || s === 2)) probs[s] = 0;
                 else { probs[s] = 1 / (pts[s] + 0.05); total += probs[s]; }
             });
             return { 1: (probs[1]/total*100).toFixed(1), 2: (probs[2]/total*100).toFixed(1), 5: (probs[5]/total*100).toFixed(1), 6: (probs[6]/total*100).toFixed(1) };
@@ -174,13 +182,14 @@
                     });
                     const json = await res.json();
                     const rawText = json.responses[0].fullTextAnnotation.text;
-                    const result = calculate(hunter(rawText.split(/\n/)));
+                    const lines = rawText.split(/\n/).map(l => l.trim());
+                    const result = calculate(extractData(lines));
                     if (result) {
                         [1, 2, 5, 6].forEach(s => {
                             document.getElementById(`p${s}`).innerText = result[s] + "%";
                             document.getElementById(`b${s}`).style.width = result[s] + "%";
                         });
-                        log("\n解析完了しました。");
+                        log("\n解析を完了いたしました。");
                     }
                 } catch (err) { log("ERROR: " + err.message); }
             };
