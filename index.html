@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>VERSUS REVISE v2.5.3</title>
+    <title>VERSUS REVISE v2.5.4</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap');
@@ -21,7 +21,7 @@
 <body>
     <div class="text-center shrink-0 mb-2">
         <img src="VS.png" alt="VERSUS" class="mx-auto w-64 mb-1">
-        <p class="ver-text">よっちゃん専用 VER 2.5.3</p>
+        <p class="ver-text">よっちゃん専用 VER 2.5.4</p>
     </div>
 
     <div class="w-full shrink-0 mb-3 relative max-w-md mx-auto">
@@ -37,7 +37,8 @@
     </div>
 
     <div class="w-full max-w-md mx-auto flex flex-col flex-grow min-h-0 mb-2">
-        <div id="log" class="console-box">【v2.5.3 統合版】しきい値 20px 最適化完了。</div>
+        <div id="log" class="console-box">【v2.5.4 統合版】
+待機中...</div>
     </div>
 
     <div class="w-full max-w-md mx-auto shrink-0 pb-2 flex gap-2">
@@ -46,33 +47,34 @@
     </div>
 
     <script>
-        // index - コピー.html と index - コピー (5).html の整合性を取った期待値マップ
+        // 期待値とラベルの定義
         const EXPECTED_VALUES = {
-            bb:      { label: 'BB',     vals: {1: 273.1, 2: 268.6, 5: 264.3, 6: 256.0}, w: 1.0 },
-            rb:      { label: 'RB',     vals: {1: 374.5, 2: 341.3, 5: 319.7, 6: 292.6}, w: 1.2 },
-            ba:      { label: 'ベルA',  vals: {1: 10.9,  2: 10.7,  5: 10.5,  6: 10.2},  w: 0.5 },
-            sa:      { label: 'スイA',  vals: {1: 74.5,  2: 70.6,  5: 72.5,  6: 68.8},  w: 0.3 },
-            vc:      { label: 'VCハズレ',vals: {1: 5.0,   2: 4.9,   5: 4.6,   6: 4.5},   w: 2.0 },
-            vg:      { label: 'VGハズレ',vals: {1: 10.1,  2: 9.4,   5: 8.7,   6: 8.1},   w: 2.0 },
-            cbs:     { label: 'CB揃い', vals: {1: 12.0,  2: 10.5,  5: 12.0,  6: 10.5},  w: 0.5 },
-            cbh:     { label: 'CBハズレ',vals: {1: 256.0, 2: 128.0, 5: 256.0, 6: 128.0}, w: 1.0 }
+            bb:  { label: 'ビッグボーナス', vals: {1: 273.1, 2: 268.6, 5: 264.3, 6: 256.0}, w: 1.0 },
+            rb:  { label: 'レギュラーボーナス', vals: {1: 374.5, 2: 341.3, 5: 319.7, 6: 292.6}, w: 1.2 },
+            ba:  { label: 'ベルＡ', vals: {1: 10.9, 2: 10.7, 5: 10.5, 6: 10.2}, w: 0.5 },
+            sa:  { label: 'スイカＡ', vals: {1: 74.5, 2: 70.6, 5: 72.5, 6: 68.8}, w: 0.3 },
+            vc:  { label: 'バーサスチャンス　ハズレ', vals: {1: 5.0, 2: 4.9, 5: 4.6, 6: 4.5}, w: 2.0 },
+            vg:  { label: 'バーサスゲーム　', vals: {1: 10.1, 2: 9.4, 5: 8.7, 6: 8.1}, w: 2.0 },
+            cbs: { label: 'ビッグボーナス　チェリーベル揃い', vals: {1: 12.0, 2: 10.5, 5: 12.0, 6: 10.5}, w: 0.5 },
+            cbh: { label: 'ビッグボーナス　ハズレ', vals: {1: 256.0, 2: 128.0, 5: 256.0, 6: 128.0}, w: 1.0 },
+            rbh: { label: 'レギュラーボーナス　ハズレ', special: 'denial' }
         };
 
         const logArea = document.getElementById('log');
         const log = (msg) => { logArea.innerText += msg + "\n"; logArea.scrollTop = logArea.scrollHeight; };
 
-        // 「正解」とされる正規表現定義を完全移植
         function extractFromCleanText(text) {
-            log("\n--- データ抽出 (Threshold 20) ---");
+            logArea.innerText = "--- データ抽出 (Threshold 20) ---\n";
             const patterns = {
                 bb: /(?:総|#)?\s*B\s*B[\s\S]*?1\s*[\/／]\s*([\d,.]+)/,
                 rb: /R\s*B[\s\S]*?1\s*[\/／]\s*([\d,.]+)/,
                 ba: /ベル\s*A[\s\S]*?1\s*[\/／]\s*([\d,.]+)/,
                 sa: /スイカ\s*A[\s\S]*?1\s*[\/／]\s*([\d,.]+)/,
-                vc: /VSチャンス中はずれ.*?1\/([\d,.]+)/s,
-                vg: /VSGAME中はずれ.*?1\/([\d,.]+)/s,
-                cbs: /チェリー[+＋]ベル揃い.*?1\/([\d,.]+)/s,
-                cbh: /チェリー[+＋]ベルはずれ.*?1\/([\d,.]+)/s
+                vc: /V\s*S\s*チャンス\s*中\s*はずれ[\s\S]*?1\s*[\/／]\s*([\d,.]+)/,
+                vg: /V\s*S\s*G\s*A\s*M\s*E\s*中\s*はずれ[\s\S]*?1\s*[\/／]\s*([\d,.]+)/,
+                cbs: /チェリー\s*[+＋]\s*ベル\s*揃い[\s\S]*?1\s*[\/／]\s*([\d,.]+)/,
+                cbh: /チェリー\s*[+＋]\s*ベル\s*はずれ[\s\S]*?1\s*[\/／]\s*([\d,.]+)/,
+                rbh: /R\s*B\s*中\s*詳\s*細[\s\S]*?は\s*ず\s*れ[\s\S]*?1\s*[\/／]\s*([\d,.]+)/
             };
 
             let results = {};
@@ -92,21 +94,31 @@
         function runSettingEstimation(data) {
             let pts = { 1: 0, 2: 0, 5: 0, 6: 0 };
             let validCount = 0;
+            // RBハズレ等の「高設定確定/低設定否定」ロジック
+            let denied12 = (data.rbh > 0);
+
             for (let key in EXPECTED_VALUES) {
                 const val = data[key];
-                if (!val || val <= 0) continue;
+                if (!val || val <= 0 || EXPECTED_VALUES[key].special) continue;
                 validCount++;
                 const target = EXPECTED_VALUES[key];
                 [1, 2, 5, 6].forEach(s => {
                     pts[s] += Math.pow(Math.abs(val - target.vals[s]) / target.vals[s], 2) * target.w;
                 });
             }
-            if (validCount === 0) return;
+
+            if (validCount === 0 && !denied12) return;
+
             let total = 0; let probs = {};
             [1, 2, 5, 6].forEach(s => {
-                probs[s] = 1 / (pts[s] + 0.05);
-                total += probs[s];
+                if (denied12 && (s === 1 || s === 2)) {
+                    probs[s] = 0;
+                } else {
+                    probs[s] = 1 / (pts[s] + 0.05);
+                    total += probs[s];
+                }
             });
+
             [1, 2, 5, 6].forEach(s => {
                 const p = (probs[s] / total * 100).toFixed(1);
                 document.getElementById(`p${s}`).innerText = p + "%";
@@ -124,7 +136,7 @@
             const key = document.getElementById('api-key').value;
             const reader = new FileReader(); reader.readAsDataURL(file);
             reader.onload = async () => {
-                logArea.innerText = "Analyzing with 20px Threshold...";
+                logArea.innerText = "Analyzing...";
                 try {
                     const res = await fetch(`https://vision.googleapis.com/v1/images:annotate?key=${key}`, {
                         method: 'POST',
@@ -147,7 +159,7 @@
                         });
                         items.sort((a, b) => a.y - b.y);
                         
-                        const threshold = 20; // 30から20へ下方調整
+                        const threshold = 20; 
                         const rows = [];
                         let currentRow = [items[0]];
                         for (let i = 1; i < items.length; i++) {
