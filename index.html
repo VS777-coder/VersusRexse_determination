@@ -71,38 +71,35 @@
     </div>
 
     <script>
-        /* ==========================================
-           LABEL-BASED LOGIC (SEARCH METHOD)
-           ========================================== */
         const TARGET_DEFINITIONS = [
-            { id: 'bb',      label: 'ビッグ確率',       vals: {1: 273.1, 2: 268.6, 5: 264.3, 6: 256.0}, w: 1.0 },
-            { id: 'rb',      label: 'レギュラー確率',   vals: {1: 374.5, 2: 341.3, 5: 319.7, 6: 292.6}, w: 1.2 },
+            { id: 'bb',      label: 'ビッグ確率',       vals: {1: 273.1, 2: 268.6, 5: 264.3, 6: 256.0}, w: 0.8 },
+            { id: 'rb',      label: 'レギュラー確率',   vals: {1: 374.5, 2: 341.3, 5: 319.7, 6: 292.6}, w: 1.0 },
             { id: 'bellA',   label: 'ベルA',           vals: {1: 10.9,  2: 10.7,  5: 10.5,  6: 10.2},  w: 0.3 }, 
             { id: 'bellB',   label: 'ベルB',           vals: {1: 20.9,  2: 19.0,  5: 20.3,  6: 18.8},  w: 0.3 }, 
             { id: 'suikaA',  label: 'スイカA',         vals: {1: 74.5,  2: 70.6,  5: 72.5,  6: 68.8},  w: 0.2 },
             { id: 'cherryB', label: 'チェリーB',       vals: {1: 56.2,  2: 57.7,  5: 53.1,  6: 54.4},  w: 0.2 },
-            { id: 'vc_miss', label: 'VSチャンス中はずれ', vals: {1: 5.0,  2: 4.9,  5: 4.6,  6: 4.5}, w: 0.8 },
-            { id: 'vg_miss', label: 'VSGAME中はずれ',     vals: {1: 10.1, 2: 9.4,  5: 8.7,  6: 8.1}, w: 0.8 },
+            { id: 'vc_miss', label: 'VSチャンス中はずれ', vals: {1: 5.0,  2: 4.9,  5: 4.6,  6: 4.5}, w: 2.0 },
+            { id: 'vg_miss', label: 'VSGAME中はずれ',     vals: {1: 10.1, 2: 9.4,  5: 8.7,  6: 8.1}, w: 2.0 },
             { id: 'cb_match',label: 'チェリー+ベル揃い', vals: {1: 12.0, 2: 10.5, 5: 12.0, 6: 10.5}, w: 0.5 },
-            { id: 'cb_miss', label: 'チェリー+ベルはずれ', vals: {1: 256.0, 2: 128.0, 5: 256.0, 6: 128.0}, w: 2.0 },
-            { id: 'rb_miss', label: 'Reg中はずれ',       special: 'denial' }
+            { id: 'cb_miss', label: 'チェリー+ベルはずれ', vals: {1: 256.0, 2: 128.0, 5: 256.0, 6: 128.0}, w: 4.0 },
+            { id: 'mid_ch',  label: '中段チェリー',     special: 'denial_high' },
+            { id: 'rb_miss', label: 'Reg中はずれ',       special: 'denial_all' }
         ];
 
         const logArea = document.getElementById('log');
         const log = (msg) => { logArea.innerHTML += msg + "\n"; logArea.scrollTop = logArea.scrollHeight; };
 
-        // ラベルに基づいて数値を抽出する関数
         function extractByLabel(lines) {
             logArea.innerHTML = "【抽出パラメータ確認】\n";
             const data = {};
-            const probRegex = /1\/([0-9,]+\.?[0-9]*)/;
+            // 1/x パターン（OCRミス対応で / の前後の空白を許容）
+            const probRegex = /[1lI]\s*\/\s*([0-9,]+\.?[0-9]*)/i;
 
             TARGET_DEFINITIONS.forEach(target => {
                 let foundValue = 0;
-                // 全行をスキャンしてラベルを探す
-                for (let i = 0; i < lines.length; i++) {
+                // 下から上にスキャン（当日データを優先的に拾うため）
+                for (let i = lines.length - 1; i >= 0; i--) {
                     if (lines[i].includes(target.label)) {
-                        // 同一行、または前後1行から確率パターン(1/x)を探す
                         const searchRange = [lines[i], lines[i-1] || "", lines[i+1] || ""];
                         for (let line of searchRange) {
                             const match = line.match(probRegex);
@@ -111,14 +108,14 @@
                                 break;
                             }
                         }
-                        if (foundValue) break;
+                        if (foundValue) break; // 数字が見つかったらそのラベルで確定
                     }
                 }
                 data[target.id] = foundValue;
-                if (target.special !== 'denial') {
+                if (!target.special) {
                     log(`${target.label}: [ ${foundValue ? '1/' + foundValue : '0'} ]`);
                 } else if (foundValue > 0) {
-                    log(`${target.label}: [ 検出！(1/2否定) ]`);
+                    log(`${target.label}: [ 検出！設定5・6濃厚 ]`);
                 }
             });
             return data;
@@ -127,13 +124,16 @@
         function calculate(data) {
             let pts = { 1: 0, 2: 0, 5: 0, 6: 0 };
             let valid = 0;
-            let denied12 = (data.rb_miss > 0);
+            let denied12 = (data.rb_miss > 0 || data.mid_ch > 0);
 
             TARGET_DEFINITIONS.forEach(t => {
                 if (t.special || !data[t.id] || data[t.id] <= 0) return;
                 valid++;
                 [1, 2, 5, 6].forEach(s => {
-                    pts[s] += (Math.abs(data[t.id] - t.vals[s]) / t.vals[s]) * t.w;
+                    // 2乗ロジックで異常値のペナルティを強化
+                    let error = Math.abs(data[t.id] - t.vals[s]) / t.vals[s];
+                    if (error > 0.5) error = 0.5; // 暴れすぎ防止
+                    pts[s] += error * t.w;
                 });
             });
 
@@ -147,7 +147,6 @@
             return { 1: (probs[1]/total*100).toFixed(1), 2: (probs[2]/total*100).toFixed(1), 5: (probs[5]/total*100).toFixed(1), 6: (probs[6]/total*100).toFixed(1) };
         }
 
-        // UI Logic
         const fileInput = document.getElementById('file-input');
         const dropZone = document.getElementById('drop-zone');
         if(localStorage.getItem('v_key')) document.getElementById('api-key').value = localStorage.getItem('v_key');
@@ -164,8 +163,7 @@
                     });
                     const json = await res.json();
                     const rawText = json.responses[0].fullTextAnnotation.text;
-                    const lines = rawText.split(/\n/).map(l => l.trim()).filter(l => l);
-                    const result = calculate(extractByLabel(lines));
+                    const result = calculate(extractByLabel(rawText.split(/\n/)));
                     if (result) { [1, 2, 5, 6].forEach(s => { document.getElementById(`p${s}`).innerText = result[s] + "%"; document.getElementById(`b${s}`).style.width = result[s] + "%"; }); log("\n解析完了"); }
                 } catch (err) { log("ERROR: " + err.message); }
             };
