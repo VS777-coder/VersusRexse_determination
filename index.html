@@ -12,8 +12,8 @@
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap');
         body { background-color: #0f1219; color: #ffffff; font-family: 'Inter', sans-serif; height: 100dvh; width: 100vw; padding: 12px; overflow: hidden; display: flex; flex-direction: column; box-sizing: border-box; }
         .ver-text { color: #ef4444; text-shadow: 0 0 10px rgba(239, 68, 68, 0.6); font-weight: bold; letter-spacing: 0.1em; font-size: 10px; margin-top: 4px; }
-        .main-btn { background-color: #1e3a8a; border-radius: 9999px; box-shadow: 0 4px 10px rgba(30, 58, 138, 0.5); transition: all 0.2s; border: 2px solid #2563eb; }
-        .main-btn:active { transform: scale(0.98); }
+        .main-btn { background-color: #1e3a8a; border-radius: 9999px; box-shadow: 0 4px 10px rgba(30, 58, 138, 0.5); transition: all 0.2s; border: 2px solid #2563eb; display: block; text-align: center; cursor: pointer; }
+        .main-btn:active { transform: scale(0.98); opacity: 0.9; }
         .result-card { background-color: #131722; border-radius: 12px; padding: 12px 16px; margin-bottom: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.3); flex-shrink: 0; }
         .bar-row { margin-bottom: 8px; }
         .bar-bg { background-color: #1f2937; height: 8px; border-radius: 4px; overflow: hidden; margin-top: 2px; }
@@ -30,9 +30,9 @@
     </div>
 
     <div class="w-full shrink-0 mb-3 relative max-w-md mx-auto">
-        <button id="drop-zone" class="main-btn w-full py-3 text-white font-bold text-sm tracking-wider uppercase">
+        <label for="file-input" class="main-btn w-full py-3 text-white font-bold text-sm tracking-wider uppercase">
             ユニメモ画像を解析
-        </button>
+        </label>
         <input type="file" id="file-input" class="hidden" accept="image/*">
     </div>
 
@@ -75,7 +75,6 @@
     <script>
         /* ==========================================
            SQM (Structured Query Mapping) 
-           中段チェリー = ビッグ中 はずれ マッピング済み
            ========================================== */
         const SQM_MAP = [
             { id: 'bb',      label: 'ビッグ確率',       vals: {1: 273.1, 2: 268.6, 5: 264.3, 6: 256.0}, w: 1.0 },
@@ -95,7 +94,6 @@
         const logArea = document.getElementById('log');
         const log = (msg) => { logArea.innerHTML += msg + "\n"; logArea.scrollTop = logArea.scrollHeight; };
 
-        /* 前方一致・後方一致の両方に対応したSQMエンジン */
         function extractBySQM(lines) {
             logArea.innerHTML = "【抽出パラメータ確認】\n";
             const extracted = {};
@@ -105,7 +103,6 @@
                 let foundVal = 0;
                 for (let i = lines.length - 1; i >= 0; i--) {
                     if (lines[i].includes(target.label)) {
-                        // ラベルの【前】【同じ行】【後】をすべて確認
                         const searchRange = [lines[i], lines[i-1] || "", lines[i+1] || ""];
                         for (let line of searchRange) {
                             const match = line.match(probRegex);
@@ -149,11 +146,19 @@
         }
 
         const fileInput = document.getElementById('file-input');
-        const dropZone = document.getElementById('drop-zone');
-        if(localStorage.getItem('v_key')) document.getElementById('api-key').value = localStorage.getItem('v_key');
-        document.getElementById('save-key').onclick = () => { localStorage.setItem('v_key', document.getElementById('api-key').value); alert('API KEY SAVED'); };
         
-        dropZone.onclick = () => fileInput.click();
+        // localStorageの例外処理を追加
+        try {
+            if(localStorage.getItem('v_key')) document.getElementById('api-key').value = localStorage.getItem('v_key');
+        } catch(e) {}
+
+        document.getElementById('save-key').onclick = () => { 
+            try {
+                localStorage.setItem('v_key', document.getElementById('api-key').value); 
+                alert('API KEY SAVED'); 
+            } catch(e) { alert('LocalStorage Error'); }
+        };
+        
         fileInput.onchange = (e) => {
             const file = e.target.files[0]; if (!file) return;
             const key = document.getElementById('api-key').value;
@@ -164,6 +169,7 @@
                         method: 'POST', body: JSON.stringify({ requests: [{ image: { content: reader.result.split(',')[1] }, features: [{ type: 'TEXT_DETECTION' }] }] }), headers: { 'Content-Type': 'application/json' }
                     });
                     const json = await res.json();
+                    if (!json.responses || !json.responses[0].fullTextAnnotation) throw new Error("解析に失敗しました。API KEYを確認してください。");
                     const rawText = json.responses[0].fullTextAnnotation.text;
                     const lines = rawText.split(/\n/).map(l => l.trim());
                     const result = calculate(extractBySQM(lines));
@@ -177,3 +183,6 @@
                 } catch (err) { log("ERROR: " + err.message); }
             };
         };
+    </script>
+</body>
+</html>
