@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>VERSUS REVISE v2.5.2</title>
+    <title>VERSUS REVISE v2.5.3</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap');
@@ -21,7 +21,7 @@
 <body>
     <div class="text-center shrink-0 mb-2">
         <img src="VS.png" alt="VERSUS" class="mx-auto w-64 mb-1">
-        <p class="ver-text">よっちゃん専用 VER 2.5.2</p>
+        <p class="ver-text">よっちゃん専用 VER 2.5.3</p>
     </div>
 
     <div class="w-full shrink-0 mb-3 relative max-w-md mx-auto">
@@ -37,8 +37,7 @@
     </div>
 
     <div class="w-full max-w-md mx-auto flex flex-col flex-grow min-h-0 mb-2">
-        <div id="log" class="console-box">【座標同期 v2.5.2】
-しきい値30pxで最適化済み。</div>
+        <div id="log" class="console-box">【v2.5.3 統合版】しきい値 20px 最適化完了。</div>
     </div>
 
     <div class="w-full max-w-md mx-auto shrink-0 pb-2 flex gap-2">
@@ -47,38 +46,40 @@
     </div>
 
     <script>
+        // index - コピー.html と index - コピー (5).html の整合性を取った期待値マップ
         const EXPECTED_VALUES = {
-            bb:      { label: 'BB',  vals: {1: 273.1, 2: 268.6, 5: 264.3, 6: 256.0}, w: 1.0 },
-            rb:      { label: 'RB',  vals: {1: 374.5, 2: 341.3, 5: 319.7, 6: 292.6}, w: 1.2 },
-            bellA:   { label: 'ベルA', vals: {1: 10.9,  2: 10.7,  5: 10.5,  6: 10.2},  w: 0.5 },
-            suikaA:  { label: 'スイA', vals: {1: 74.5,  2: 70.6,  5: 72.5,  6: 68.8},  w: 0.3 },
-            vc_haz:  { label: 'VCハズレ', vals: {1: 5.0,  2: 4.9,  5: 4.6,  6: 4.5},   w: 2.0 },
-            vg_haz:  { label: 'VGハズレ', vals: {1: 10.1, 2: 9.4,  5: 8.7,  6: 8.1},   w: 2.0 },
-            cb_match:{ label: 'CB揃い', vals: {1: 12.0, 2: 10.5, 5: 12.0, 6: 10.5},  w: 0.5 }
+            bb:      { label: 'BB',     vals: {1: 273.1, 2: 268.6, 5: 264.3, 6: 256.0}, w: 1.0 },
+            rb:      { label: 'RB',     vals: {1: 374.5, 2: 341.3, 5: 319.7, 6: 292.6}, w: 1.2 },
+            ba:      { label: 'ベルA',  vals: {1: 10.9,  2: 10.7,  5: 10.5,  6: 10.2},  w: 0.5 },
+            sa:      { label: 'スイA',  vals: {1: 74.5,  2: 70.6,  5: 72.5,  6: 68.8},  w: 0.3 },
+            vc:      { label: 'VCハズレ',vals: {1: 5.0,   2: 4.9,   5: 4.6,   6: 4.5},   w: 2.0 },
+            vg:      { label: 'VGハズレ',vals: {1: 10.1,  2: 9.4,   5: 8.7,   6: 8.1},   w: 2.0 },
+            cbs:     { label: 'CB揃い', vals: {1: 12.0,  2: 10.5,  5: 12.0,  6: 10.5},  w: 0.5 },
+            cbh:     { label: 'CBハズレ',vals: {1: 256.0, 2: 128.0, 5: 256.0, 6: 128.0}, w: 1.0 }
         };
 
         const logArea = document.getElementById('log');
         const log = (msg) => { logArea.innerText += msg + "\n"; logArea.scrollTop = logArea.scrollHeight; };
 
+        // 「正解」とされる正規表現定義を完全移植
         function extractFromCleanText(text) {
-            log("\n--- データ抽出 (Threshold 30) ---");
-            
+            log("\n--- データ抽出 (Threshold 20) ---");
             const patterns = {
-                bb: /(?:総|#)?\s*B\s*B[\s\S]*?1\s*[\/／]\s*([\d\s,.]+)/,
-                rb: /R\s*B[\s\S]*?1\s*[\/／]\s*([\d\s,.]+)/,
-                bellA: /ベル\s*A[\s\S]*?1\s*[\/／]\s*([\d\s,.]+)/,
-                suikaA: /スイカ\s*A[\s\S]*?1\s*[\/／]\s*([\d\s,.]+)/,
-                vc_haz: /V\s*S\s*チャンス\s*中\s*はずれ[\s\S]*?1\s*[\/／]\s*([\d\s,.]+)/,
-                vg_haz: /V\s*S\s*G\s*A\s*M\s*E\s*中\s*はずれ[\s\S]*?1\s*[\/／]\s*([\d\s,.]+)/,
-                cb_match: /チェリー\s*[+＋]\s*ベル\s*揃い[\s\S]*?1\s*[\/／]\s*([\d\s,.]+)/
+                bb: /(?:総|#)?\s*B\s*B[\s\S]*?1\s*[\/／]\s*([\d,.]+)/,
+                rb: /R\s*B[\s\S]*?1\s*[\/／]\s*([\d,.]+)/,
+                ba: /ベル\s*A[\s\S]*?1\s*[\/／]\s*([\d,.]+)/,
+                sa: /スイカ\s*A[\s\S]*?1\s*[\/／]\s*([\d,.]+)/,
+                vc: /VSチャンス中はずれ.*?1\/([\d,.]+)/s,
+                vg: /VSGAME中はずれ.*?1\/([\d,.]+)/s,
+                cbs: /チェリー[+＋]ベル揃い.*?1\/([\d,.]+)/s,
+                cbh: /チェリー[+＋]ベルはずれ.*?1\/([\d,.]+)/s
             };
 
             let results = {};
             for (let key in patterns) {
                 const match = text.match(patterns[key]);
                 if (match) {
-                    let valStr = match[1].replace(/[\s,]/g, '');
-                    results[key] = parseFloat(valStr);
+                    results[key] = parseFloat(match[1].replace(/,/g, ''));
                     log(`${EXPECTED_VALUES[key].label}: 1/${results[key]}`);
                 } else {
                     results[key] = null;
@@ -101,8 +102,7 @@
                 });
             }
             if (validCount === 0) return;
-            let total = 0;
-            let probs = {};
+            let total = 0; let probs = {};
             [1, 2, 5, 6].forEach(s => {
                 probs[s] = 1 / (pts[s] + 0.05);
                 total += probs[s];
@@ -124,7 +124,7 @@
             const key = document.getElementById('api-key').value;
             const reader = new FileReader(); reader.readAsDataURL(file);
             reader.onload = async () => {
-                logArea.innerText = "Analyzing...";
+                logArea.innerText = "Analyzing with 20px Threshold...";
                 try {
                     const res = await fetch(`https://vision.googleapis.com/v1/images:annotate?key=${key}`, {
                         method: 'POST',
@@ -147,8 +147,7 @@
                         });
                         items.sort((a, b) => a.y - b.y);
                         
-                        // しきい値を 30 に調整
-                        const threshold = 30; 
+                        const threshold = 20; // 30から20へ下方調整
                         const rows = [];
                         let currentRow = [items[0]];
                         for (let i = 1; i < items.length; i++) {
