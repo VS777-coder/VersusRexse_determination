@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>VERSUS REVISE v1.0.0</title>
+    <title>VERSUS REVISE v1.0.2</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap');
@@ -20,7 +20,8 @@
 </head>
 <body>
     <div class="text-center shrink-0 mb-2">
-        <img src="https://example.com/VS.png" alt="VERSUS" class="mx-auto w-64 mb-1"> <p class="ver-text">よっちゃん専用 Ver 1.0.0 RELEASE</p>
+        <img src="https://example.com/VS.png" alt="VERSUS" class="mx-auto w-64 mb-1">
+        <p class="ver-text">よっちゃん専用 Ver 1.0.2</p>
     </div>
 
     <div class="w-full shrink-0 mb-3 relative max-w-md mx-auto">
@@ -29,15 +30,14 @@
     </div>
 
     <div class="w-full max-w-md mx-auto result-card">
-        <div class="mb-2"><div class="flex justify-between text-[10px] font-bold text-gray-400"><span>設定1 (配分13)</span><span id="p1">65.0%</span></div><div class="bar-bg"><div id="b1" class="bar-fill bg-gray-600" style="width:65%"></div></div></div>
-        <div class="mb-2"><div class="flex justify-between text-[10px] font-bold text-blue-400"><span>設定2 (配分4)</span><span id="p2">20.0%</span></div><div class="bar-bg"><div id="b2" class="bar-fill bg-blue-600" style="width:20%"></div></div></div>
-        <div class="mb-2"><div class="flex justify-between text-[10px] font-bold text-orange-400"><span>設定5 (配分2)</span><span id="p5">10.0%</span></div><div class="bar-bg"><div id="b5" class="bar-fill bg-orange-500" style="width:10%"></div></div></div>
-        <div><div class="flex justify-between text-[10px] font-bold text-red-500"><span>設定6 (配分1)</span><span id="p6">5.0%</span></div><div class="bar-bg"><div id="b6" class="bar-fill bg-red-600" style="width:5%"></div></div></div>
+        <div class="mb-2"><div class="flex justify-between text-[10px] font-bold text-gray-400"><span>設定1</span><span id="p1">65.0%</span></div><div class="bar-bg"><div id="b1" class="bar-fill bg-gray-600" style="width:65%"></div></div></div>
+        <div class="mb-2"><div class="flex justify-between text-[10px] font-bold text-blue-400"><span>設定2</span><span id="p2">20.0%</span></div><div class="bar-bg"><div id="b2" class="bar-fill bg-blue-600" style="width:20%"></div></div></div>
+        <div class="mb-2"><div class="flex justify-between text-[10px] font-bold text-orange-400"><span>設定5</span><span id="p5">10.0%</span></div><div class="bar-bg"><div id="b5" class="bar-fill bg-orange-500" style="width:10%"></div></div></div>
+        <div><div class="flex justify-between text-[10px] font-bold text-red-500"><span>設定6</span><span id="p6">5.0%</span></div><div class="bar-bg"><div id="b6" class="bar-fill bg-red-600" style="width:5%"></div></div></div>
     </div>
 
     <div class="w-full max-w-md mx-auto flex flex-col flex-grow min-h-0 mb-2">
-        <div id="log" class="console-box">【v1.0.0】準備完了。
-島構成(13:4:2:1)をベースにしたベイズ解析を行います。</div>
+        <div id="log" class="console-box">【v1.0.2】UI復元版。解析待機中...</div>
     </div>
 
     <div class="w-full max-w-md mx-auto shrink-0 pb-2 flex gap-2">
@@ -46,14 +46,13 @@
     </div>
 
     <script>
-        // --- 設定定義 ---
         const PRIOR_PROBS = { 1: 13/20, 2: 4/20, 5: 2/20, 6: 1/20 };
 
         const EXPECTED_MAP = {
-            bb:  { label: 'ビッグボーナス', type: 'bayesian', vals: {1: 273.1, 2: 268.6, 5: 264.3, 6: 256.0}, w: 1.0 },
-            rb:  { label: 'レギュラーボーナス', type: 'bayesian', vals: {1: 374.5, 2: 341.3, 5: 319.7, 6: 292.6}, w: 1.0 },
-            ba:  { label: 'ベルＡ', type: 'bayesian', vals: {1: 10.9, 2: 10.7, 5: 10.5, 6: 10.2}, w: 0.5 },
-            sa:  { label: 'スイカＡ', type: 'bayesian', vals: {1: 74.5, 2: 70.6, 5: 72.5, 6: 68.8}, w: 0.3 },
+            bb:  { label: 'ビッグボーナス', type: 'bayesian', vals: {1: 273.1, 2: 268.6, 5: 264.3, 6: 256.0} },
+            rb:  { label: 'レギュラーボーナス', type: 'bayesian', vals: {1: 374.5, 2: 341.3, 5: 319.7, 6: 292.6} },
+            ba:  { label: 'ベルＡ', type: 'bayesian', vals: {1: 10.9, 2: 10.7, 5: 10.5, 6: 10.2} },
+            sa:  { label: 'スイカＡ', type: 'bayesian', vals: {1: 74.5, 2: 70.6, 5: 72.5, 6: 68.8} },
             vc:  { label: 'バーサスチャンス　ハズレ', type: 'prob', vals: {1: 5.0, 2: 4.9, 5: 4.6, 6: 4.5}, w: 2.0 },
             vg:  { label: 'バーサスゲーム　', type: 'prob', vals: {1: 10.1, 2: 9.4, 5: 8.7, 6: 8.1}, w: 2.0 },
             cbs: { label: 'チェリー＋ベル揃い', type: 'prob', vals: {1: 12.0, 2: 10.5, 5: 12.0, 6: 10.5}, w: 0.5 },
@@ -65,15 +64,14 @@
         const logArea = document.getElementById('log');
         const log = (msg) => { logArea.innerText += msg + "\n"; logArea.scrollTop = logArea.scrollHeight; };
 
-        // --- データ抽出 ---
         function extractData(text) {
             logArea.innerText = "--- 解析結果 (Threshold 20) ---\n";
             const gMatch = text.match(/総\s*プ\s*レ\s*イ\s*数[\s\S]{0,50}?([\d,]+)G/);
             const totalG = gMatch ? parseInt(gMatch[1].replace(/,/g, '')) : 0;
             log(`総プレイ数: ${totalG}G`);
 
-            const bbCountMatch = text.match(/(?:総|#)?\s*B\s*B[\s\S]{0,100}?([\d,]+)回/);
-            const bbCount = bbCountMatch ? parseInt(bbCountMatch[1].replace(/,/g, '')) : 0;
+            const bbMatch = text.match(/(?:総|#)?\s*B\s*B[\s\S]{0,100}?([\d,]+)回/);
+            const bbCount = bbMatch ? parseInt(bbMatch[1].replace(/,/g, '')) : 0;
 
             const patterns = {
                 bb:  /(?:総|#)?\s*B\s*B[\s\S]{0,100}?[1I!ｌ]\s*[\/／]\s*([\d,.]+)/,
@@ -88,50 +86,49 @@
                 rbh: /R\s*B\s*中\s*詳\s*細[\s\S]*?は\s*ず\s*れ[\s\S]{0,100}?[1I!ｌ]\s*[\/／]\s*([\d,.]+|--?)/
             };
 
-            let data = { totalG: totalG, bbCount: bbCount };
+            let results = { totalG: totalG, bbCount: bbCount };
             for (let key in patterns) {
                 const match = text.match(patterns[key]);
                 if (match && match[1]) {
                     let valStr = match[1].replace(/[\s,]/g, '');
-                    data[key] = (valStr === '-' || valStr === '--') ? 0 : parseFloat(valStr);
-                    log(`${EXPECTED_MAP[key].label}: ${data[key] === 0 ? "1/-" : "1/" + data[key]}`);
+                    results[key] = (valStr === '-' || valStr === '--') ? 0 : parseFloat(valStr);
+                    log(`${EXPECTED_MAP[key].label}: 1/${results[key] || '-'}`);
                 } else {
-                    data[key] = null;
+                    results[key] = 0;
                     log(`${EXPECTED_MAP[key].label}: 未検出`);
                 }
             }
-            return data;
+            return results;
         }
 
-        // --- ベイズ計算 ---
         function runBayesian(data) {
             let likelihoods = { 1: PRIOR_PROBS[1], 2: PRIOR_PROBS[2], 5: PRIOR_PROBS[5], 6: PRIOR_PROBS[6] };
-            const weightG = 1.0 + (data.totalG / 2000); 
+            const weightG = 1.0 + (data.totalG / 2000);
             const weightBB = 1.0 + (data.bbCount / 10);
 
             for (let key in EXPECTED_MAP) {
                 const config = EXPECTED_MAP[key];
                 const obsVal = data[key];
-                if (!obsVal || obsVal <= 0) continue;
+                if (!obsVal || obsVal <= 0 || !config.vals) continue;
 
                 [1, 2, 5, 6].forEach(s => {
                     const pExp = 1 / config.vals[s];
                     let L = 1.0;
                     if (config.type === 'bayesian' && data.totalG > 0) {
                         const N = data.totalG; const k = N / obsVal;
-                        L = Math.pow(pExp / (1/obsVal), k) * Math.pow((1-pExp) / (1-1/obsVal), N-k);
+                        L = Math.pow(pExp / (1/obsVal), k) * Math.pow((1-pExp) / (1-1/obsVal), Math.max(0, N-k));
                         if (key === 'ba' || key === 'sa') L = Math.pow(L, weightG);
                     } else if (config.type === 'prob') {
                         L = Math.pow(pExp / (1/obsVal), (config.w || 1.0) * weightBB);
                     } else if (config.type === 'special') {
-                        L = (pExp) * 100000;
+                        L = (pExp / (1/obsVal)) * 100;
                     }
                     likelihoods[s] *= L;
                 });
             }
 
             if (data.rbh > 0) { likelihoods[1] = 0; likelihoods[2] = 0; log("! RBハズレ検出: 設定1･2除外"); }
-            if (data.bbh > 0) { likelihoods[1] *= 0.001; likelihoods[2] *= 0.001; likelihoods[5] *= 0.01; log("! BBハズレ検出: 設定6濃厚"); }
+            if (data.bbh > 0) { likelihoods[1] *= 0.01; likelihoods[2] *= 0.01; log("! BBハズレ検出: 設定6期待度上昇"); }
 
             const total = likelihoods[1] + likelihoods[2] + likelihoods[5] + likelihoods[6];
             if (total === 0) return;
@@ -141,10 +138,9 @@
                 document.getElementById(`p${s}`).innerText = prob + "%";
                 document.getElementById(`b${s}`).style.width = prob + "%";
             });
-            log("\nベイズ推論更新完了。");
+            log("\nベイズ推論完了。");
         }
 
-        // --- OCR・UI制御 ---
         const fileInput = document.getElementById('file-input');
         if(localStorage.getItem('v_key')) document.getElementById('api-key').value = localStorage.getItem('v_key');
         document.getElementById('save-key').onclick = () => { localStorage.setItem('v_key', document.getElementById('api-key').value); alert('API KEY SAVED'); };
@@ -158,28 +154,26 @@
                 try {
                     const res = await fetch(`https://vision.googleapis.com/v1/images:annotate?key=${key}`, {
                         method: 'POST',
-                        body: JSON.stringify({
-                            requests: [{ image: { content: reader.result.split(',')[1] }, features: [{ type: 'DOCUMENT_TEXT_DETECTION' }] }]
-                        }),
+                        body: JSON.stringify({ requests: [{ image: { content: reader.result.split(',')[1] }, features: [{ type: 'DOCUMENT_TEXT_DETECTION' }] }] }),
                         headers: { 'Content-Type': 'application/json' }
                     });
                     const json = await res.json();
-                    const annotations = json.responses[0].textAnnotations;
+                    const annotations = json.responses[0]?.textAnnotations;
                     if (annotations && annotations.length > 1) {
-                        const items = annotations.slice(1).map(ann => {
-                            const v = ann.boundingPoly.vertices;
-                            return { text: ann.description, x: (v[0].x + v[1].x + v[2].x + v[3].x) / 4, y: (v[0].y + v[1].y + v[2].y + v[3].y) / 4 };
-                        });
+                        const items = annotations.slice(1).map(ann => ({
+                            text: ann.description,
+                            x: (ann.boundingPoly.vertices[0].x + ann.boundingPoly.vertices[2].x) / 2,
+                            y: (ann.boundingPoly.vertices[0].y + ann.boundingPoly.vertices[2].y) / 2
+                        }));
                         items.sort((a, b) => a.y - b.y);
-                        const threshold = 20; 
-                        const rows = []; let currentRow = [items[0]];
+                        const rows = []; let cur = [items[0]];
                         for (let i = 1; i < items.length; i++) {
-                            if (Math.abs(items[i].y - currentRow[0].y) < threshold) { currentRow.push(items[i]); }
-                            else { rows.push(currentRow); currentRow = [items[i]]; }
+                            if (Math.abs(items[i].y - cur[0].y) < 20) cur.push(items[i]);
+                            else { rows.push(cur); cur = [items[i]]; }
                         }
-                        rows.push(currentRow);
-                        const cleanTxt = rows.map(row => row.sort((a, b) => a.x - b.x).map(it => it.text).join(' ')).join('\n');
-                        runBayesian(extractData(cleanTxt));
+                        rows.push(cur);
+                        const clean = rows.map(r => r.sort((a, b) => a.x - b.x).map(it => it.text).join(' ')).join('\n');
+                        runBayesian(extractData(clean));
                     }
                 } catch (err) { log("ERROR: " + err.message); }
             };
