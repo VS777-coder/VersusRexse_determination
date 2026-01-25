@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>VERSUS REVISE v1.0.3</title>
+    <title>VERSUS REVISE v1.0.4</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap');
@@ -20,8 +20,8 @@
 </head>
 <body>
     <div class="text-center shrink-0 mb-2">
-        <img src="https://example.com/VS.png" alt="VERSUS" class="mx-auto w-64 mb-1">
-        <p class="ver-text">よっちゃん専用 Ver 1.0.3</p>
+        <img src="VS.png" alt="VERSUS" class="mx-auto w-64 mb-1">
+        <p class="ver-text">よっちゃん専用 Ver 1.0.4</p>
     </div>
 
     <div class="w-full shrink-0 mb-3 relative max-w-md mx-auto">
@@ -37,7 +37,7 @@
     </div>
 
     <div class="w-full max-w-md mx-auto flex flex-col flex-grow min-h-0 mb-2">
-        <div id="log" class="console-box">【v1.0.3】計算エンジン安定化。
+        <div id="log" class="console-box">【v1.0.4】画像パス復旧。
 画像をアップロードしてください。</div>
     </div>
 
@@ -47,7 +47,6 @@
     </div>
 
     <script>
-        // 島構成（事前確率）
         const PRIOR_DIST = { 1: 13/20, 2: 4/20, 5: 2/20, 6: 1/20 };
 
         const EXPECTED_MAP = {
@@ -104,7 +103,6 @@
         }
 
         function runBayesian(data) {
-            // 対数尤度(log-likelihood)で初期化（事前確率の対数）
             let logLikelihoods = {
                 1: Math.log(PRIOR_DIST[1]),
                 2: Math.log(PRIOR_DIST[2]),
@@ -118,32 +116,27 @@
             for (let key in EXPECTED_MAP) {
                 const config = EXPECTED_MAP[key];
                 const obsVal = data[key];
-                // valsが存在しない、または無効なデータはスキップ
                 if (!obsVal || obsVal <= 0 || !config.vals) continue;
 
                 [1, 2, 5, 6].forEach(s => {
                     const pExp = 1 / config.vals[s];
                     let logL = 0;
-
                     if (config.type === 'bayesian' && data.totalG > 0) {
                         const N = data.totalG; const k = N / obsVal;
-                        // 対数二項尤度近似
                         logL = k * Math.log(pExp / (1/obsVal)) + (N - k) * Math.log((1 - pExp) / (1 - 1/obsVal));
                         if (key === 'ba' || key === 'sa') logL *= weightG;
                     } else if (config.type === 'prob') {
                         logL = Math.log(pExp / (1/obsVal)) * (config.w || 1.0) * weightBB;
                     } else if (config.type === 'special') {
-                        logL = Math.log(pExp / (1/obsVal)) + Math.log(100000);
+                        logL = Math.log(pExp / (1/obsVal)) + Math.log(100);
                     }
                     logLikelihoods[s] += logL;
                 });
             }
 
-            // 特殊フィルタ
             if (data.rbh > 0) { logLikelihoods[1] = -Infinity; logLikelihoods[2] = -Infinity; log("! RBハズレ検出: 設定1･2除外"); }
             if (data.bbh > 0) { logLikelihoods[6] += Math.log(100); log("! BBハズレ検出: 設定6期待度上昇"); }
 
-            // 対数から確率に戻す（アンダーフロー防止のため最大値で引く）
             const maxLog = Math.max(logLikelihoods[1], logLikelihoods[2], logLikelihoods[5], logLikelihoods[6]);
             let total = 0;
             let probs = {};
