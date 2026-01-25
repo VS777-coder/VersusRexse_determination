@@ -69,7 +69,7 @@
             background-color: #000000;
             border-radius: 8px;
             padding: 12px;
-            margin-bottom: 12px;
+            margin-bottom: 8px; /* 下部余白を削減 */
             font-family: 'Courier New', monospace;
             font-size: 10px;
             color: #4ade80;
@@ -79,63 +79,66 @@
             line-height: 1.4;
         }
 
-        /* APIキー入力欄 */
+        /* APIキー入力欄 (超小型化) */
         .api-container {
             background-color: #111827;
             border-radius: 9999px;
-            padding: 4px 6px 4px 16px;
+            padding: 2px 4px 2px 12px; /* パディング縮小 */
             display: flex;
             align-items: center;
             border: 1px solid #374151;
             flex-shrink: 0;
+            height: 32px; /* 高さ固定 */
+            width: 80%; /* 幅を少し狭める */
+            margin: 0 auto;
         }
         .api-dots {
             flex-grow: 1;
             background: transparent;
             border: none;
             color: #9ca3af;
-            font-size: 20px;
-            letter-spacing: 2px;
+            font-size: 12px; /* フォントサイズ縮小 */
+            letter-spacing: 1px;
             outline: none;
-            height: 24px;
-            line-height: 24px;
-            margin-top: -4px; 
+            height: 100%;
+            margin-top: 0;
         }
         .set-btn {
             background-color: #2563eb;
             color: white;
-            font-size: 10px;
+            font-size: 9px; /* 文字小さく */
             font-weight: bold;
-            padding: 6px 16px;
+            padding: 4px 10px;
             border-radius: 9999px;
-            margin-left: 8px;
+            margin-left: 4px;
         }
         .status-text {
             text-align: center;
-            font-size: 9px;
+            font-size: 8px; /* さらに小さく */
             color: #3b82f6;
             font-weight: bold;
-            margin-top: 6px;
+            margin-top: 2px;
             letter-spacing: 0.1em;
             flex-shrink: 0;
+            opacity: 0.7;
         }
     </style>
 </head>
 <body>
     
-    <div class="text-center shrink-0 mb-4">
-        <img src="VS.png" alt="VERSUS REVISE" class="mx-auto h-auto w-4/5 max-w-[280px] object-contain drop-shadow-[0_0_15px_rgba(37,99,235,0.6)]">
+    <div class="text-center shrink-0 mb-3">
+        <img src="VS.png" alt="VERSUS REVISE" class="mx-auto h-auto w-3/5 max-w-[220px] object-contain drop-shadow-[0_0_15px_rgba(37,99,235,0.6)]">
         <p class="ver-text">みおちゃん専用 VER 2.1.0</p>
     </div>
 
-    <div class="w-full max-w-md mx-auto mb-4 shrink-0">
-        <button id="drop-zone" class="analyze-btn">
+    <div class="w-full max-w-md mx-auto mb-3 shrink-0">
+        <button id="drop-zone" class="analyze-btn py-3 text-sm">
             ユニメモ画像を解析
         </button>
         <input type="file" id="file-input" class="hidden" accept="image/*">
     </div>
 
-    <div class="w-full max-w-md mx-auto result-card">
+    <div class="w-full max-w-md mx-auto result-card py-3 px-4 mb-2">
         <div class="bar-label text-gray-400"><span>設定1</span><span id="p1">0.0%</span></div>
         <div class="bar-track"><div id="b1" class="bar-fill bg-gray-500" style="width:0%"></div></div>
         
@@ -156,10 +159,10 @@
 
     <div class="w-full max-w-md mx-auto shrink-0">
         <div class="api-container">
-            <input type="password" id="api-key" class="api-dots" placeholder="•••••••••••••">
+            <input type="password" id="api-key" class="api-dots" placeholder="API KEY">
             <button id="save-key" class="set-btn">SET</button>
         </div>
-        <p id="key-status" class="status-text">API KEY: CHECKING</p>
+        <p id="key-status" class="status-text">KEY STATUS: CHECKING</p>
     </div>
 
     <script>
@@ -313,13 +316,13 @@
         
         if(localStorage.getItem('v_key')) {
             document.getElementById('api-key').value = localStorage.getItem('v_key');
-            statusText.innerText = "API KEY: READY";
+            statusText.innerText = "KEY STATUS: READY";
         }
 
         document.getElementById('save-key').onclick = () => {
             const key = document.getElementById('api-key').value;
             localStorage.setItem('v_key', key);
-            statusText.innerText = key ? "API KEY: READY" : "API KEY: EMPTY";
+            statusText.innerText = key ? "KEY STATUS: READY" : "KEY STATUS: EMPTY";
             alert('API KEY SAVED');
         };
 
