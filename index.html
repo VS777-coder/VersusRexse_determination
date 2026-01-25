@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>VERSUS REVISE v2.3.0</title>
+    <title>VERSUS REVISE v2.4.0</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap');
@@ -21,7 +21,7 @@
 <body>
     <div class="text-center shrink-0 mb-2">
         <img src="VS.png" alt="VERSUS" class="mx-auto w-64 mb-1">
-        <p class="ver-text">よっちゃん専用 VER 2.3.0</p>
+        <p class="ver-text">よっちゃん専用 VER 2.4.0</p>
     </div>
 
     <div class="w-full shrink-0 mb-3 relative max-w-md mx-auto">
@@ -37,8 +37,8 @@
     </div>
 
     <div class="w-full max-w-md mx-auto flex flex-col flex-grow min-h-0 mb-2">
-        <div id="log" class="console-box">【RAW OUTPUT MODE】
-ここにOCRが読み取った生の文字列が表示されます。</div>
+        <div id="log" class="console-box">【座標同期出力モード】
+OCRが座標に基づいて再構築した文字列が表示されます。</div>
     </div>
 
     <div class="w-full max-w-md mx-auto shrink-0 pb-2 flex gap-2">
@@ -59,7 +59,7 @@
             const key = document.getElementById('api-key').value;
             const reader = new FileReader(); reader.readAsDataURL(file);
             reader.onload = async () => {
-                showRaw("Analyzing...");
+                showRaw("Analyzing with Y-Coordinate Sync...");
                 try {
                     const res = await fetch(`https://vision.googleapis.com/v1/images:annotate?key=${key}`, {
                         method: 'POST',
@@ -72,8 +72,42 @@
                         headers: { 'Content-Type': 'application/json' }
                     });
                     const json = await res.json();
-                    if (json.responses && json.responses[0].fullTextAnnotation) {
-                        showRaw(json.responses[0].fullTextAnnotation.text);
+                    const annotations = json.responses[0].textAnnotations;
+
+                    if (annotations && annotations.length > 1) {
+                        // 0枚目は全体テキストなのでスキップし、各単語の座標を抽出
+                        const items = annotations.slice(1).map(ann => {
+                            const v = ann.boundingPoly.vertices;
+                            // 中心座標を計算
+                            const x = (v[0].x + v[1].x + v[2].x + v[3].x) / 4;
+                            const y = (v[0].y + v[1].y + v[2].y + v[3].y) / 4;
+                            return { text: ann.description, x, y };
+                        });
+
+                        // Y座標で昇順ソート（上から下へ）
+                        items.sort((a, b) => a.y - b.y);
+
+                        // 同じ行とみなす高さの許容範囲（15ピクセル）でグループ化
+                        const rows = [];
+                        let currentRow = [items[0]];
+                        const threshold = 15; 
+
+                        for (let i = 1; i < items.length; i++) {
+                            if (Math.abs(items[i].y - currentRow[0].y) < threshold) {
+                                currentRow.push(items[i]);
+                            } else {
+                                rows.push(currentRow);
+                                currentRow = [items[i]];
+                            }
+                        }
+                        rows.push(currentRow);
+
+                        // 各行の中身をX座標でソート（左から右へ）して結合
+                        const finalOutput = rows.map(row => {
+                            return row.sort((a, b) => a.x - b.x).map(item => item.text).join(' ');
+                        }).join('\n');
+
+                        showRaw(finalOutput);
                     } else {
                         showRaw("テキストが検出できませんでした。");
                     }
