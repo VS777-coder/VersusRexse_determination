@@ -2,89 +2,280 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>VERSUS REVISE RAW DUMP</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VERSUS REVISE ANALYZER</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        body { background-color: #0f172a; color: #f8fafc; font-family: monospace; padding: 20px; }
-        #debug-area { 
-            font-size: 12px; color: #4ade80; background: #000; padding: 10px; 
-            border: 1px solid #22c55e; height: 600px; overflow-y: scroll; 
-            white-space: pre-wrap; margin-top: 20px; border-radius: 6px;
-            font-family: 'Courier New', Courier, monospace;
+        body { background-color: #0f172a; color: #e2e8f0; font-family: monospace; padding: 20px; }
+        .bar-container { background: #1e293b; height: 16px; border-radius: 8px; overflow: hidden; margin-bottom: 8px; }
+        .bar-fill { height: 100%; transition: width 0.5s; }
+        .log-area { 
+            background: #000; color: #4ade80; padding: 10px; 
+            height: 300px; overflow-y: scroll; border: 1px solid #22c55e; 
+            font-size: 11px; white-space: pre-wrap; margin-top: 10px;
         }
+        .highlight { color: #facc15; font-weight: bold; }
+        .alert { color: #f87171; font-weight: bold; }
     </style>
 </head>
 <body>
     <div class="max-w-md mx-auto">
-        <header class="text-center mb-4">
-            <h1 class="text-xl font-black text-white">RAW DATA CHECKER</h1>
-            <p class="text-[10px] text-gray-400">Google Vision API 生データ出力</p>
-        </header>
+        <h1 class="text-xl font-bold text-center text-blue-400 mb-4">VERSUS REVISE V18</h1>
+        
+        <div class="mb-4 flex gap-2">
+            <input type="password" id="api-key" class="bg-slate-800 border border-slate-600 rounded px-2 py-1 flex-grow text-xs" placeholder="Google Cloud Vision API Key">
+            <button id="save-key" class="bg-blue-600 px-3 py-1 rounded text-xs font-bold">SAVE</button>
+        </div>
 
-        <div id="drop-zone" class="border-2 border-dashed border-gray-600 rounded-xl p-8 text-center bg-gray-800 cursor-pointer mb-4">
-            <p class="font-bold text-white">画像をタップして解析</p>
+        <div id="drop-zone" class="border-2 border-dashed border-blue-500/30 bg-blue-900/10 p-6 text-center rounded-xl cursor-pointer mb-4 hover:bg-blue-900/20 transition">
+            <p class="text-blue-300 font-bold">画像を選択 / 解析開始</p>
             <input type="file" id="file-input" class="hidden" accept="image/*">
         </div>
 
-        <div id="debug-area">待機中...</div>
-
-        <div class="mt-2 flex gap-2">
-            <input type="password" id="api-key" placeholder="API Key" class="flex-grow bg-slate-800 border border-slate-600 rounded px-3 text-xs h-10">
-            <button id="save-key" class="bg-blue-600 text-xs font-bold px-4 rounded h-10">SET</button>
+        <div class="bg-slate-800 p-4 rounded-xl mb-4 border border-slate-700">
+            <div class="flex justify-between text-xs mb-1"><span>設定1</span><span id="p1">0.0%</span></div>
+            <div class="bar-container"><div id="b1" class="bar-fill bg-gray-500" style="width:0%"></div></div>
+            
+            <div class="flex justify-between text-xs mb-1"><span>設定2</span><span id="p2">0.0%</span></div>
+            <div class="bar-container"><div id="b2" class="bar-fill bg-blue-500" style="width:0%"></div></div>
+            
+            <div class="flex justify-between text-xs mb-1"><span>設定5</span><span id="p5">0.0%</span></div>
+            <div class="bar-container"><div id="b5" class="bar-fill bg-orange-500" style="width:0%"></div></div>
+            
+            <div class="flex justify-between text-xs mb-1"><span>設定6</span><span id="p6">0.0%</span></div>
+            <div class="bar-container"><div id="b6" class="bar-fill bg-red-600" style="width:0%"></div></div>
         </div>
+
+        <div id="log" class="log-area">SYSTEM READY...</div>
     </div>
 
     <script>
-        const logArea = document.getElementById('debug-area');
+        // === 設定差データ定義 (Ver 18.0 調整版) ===
+        // weight: 判定における重要度 (低いものは影響小)
+        const TARGETS = {
+            // ■ 固定ストリームエリア
+            bb:      { w: 1.0,  vals: { 1: 273.1, 2: 268.6, 5: 264.3, 6: 256.0 } }, // #BB
+            rb:      { w: 1.2,  vals: { 1: 374.5, 2: 341.3, 5: 319.7, 6: 292.6 } }, // RB
+            bellA:   { w: 0.3,  vals: { 1: 10.9,  2: 10.7,  5: 10.5,  6: 10.2 } },  // ベルA (微差・参考)
+            bellB:   { w: 0.3,  vals: { 1: 20.9,  2: 19.0,  5: 20.3,  6: 18.8 } },  // ベルB (偶数優遇・微差) ※仮値
+            suikaA:  { w: 0.2,  vals: { 1: 74.5,  2: 70.6,  5: 72.5,  6: 68.8 } },  // スイカA (微差)
+            cherryB: { w: 0.2,  vals: { 1: 56.2,  2: 57.7,  5: 53.1,  6: 54.4 } },  // チェリーB (微差)
+
+            // ■ 可変検索エリア
+            vc_miss: { w: 0.8,  vals: { 1: 5.0,   2: 4.9,   5: 4.6,   6: 4.5 } },   // VSチャンスはずれ
+            vg_miss: { w: 0.8,  vals: { 1: 10.1,  2: 9.4,   5: 8.7,   6: 8.1 } },   // VSGAMEはずれ
+            cb_match:{ w: 0.5,  vals: { 1: 12.0,  2: 10.5,  5: 12.0,  6: 10.5 } },  // チェリー+ベル揃い (偶数優遇)
+            cb_miss: { w: 2.0,  vals: { 1: 256.0, 2: 128.0, 5: 256.0, 6: 128.0 } }, // チェリー+ベルはずれ (偶数優遇・重要)
+            
+            // ■ 特殊フラグ
+            rb_miss: { type: 'kill_12' } // RBハズレ (設定1・2否定)
+        };
+
+        const logArea = document.getElementById('log');
+        function log(msg, type='') {
+            const span = type ? `<span class="${type}">${msg}</span>` : msg;
+            logArea.innerHTML += span + "\n";
+        }
+
+        // === 解析ロジック ===
+        function parseData(text) {
+            const lines = text.split(/\n/).map(l => l.trim()).filter(l => l);
+            const data = {};
+
+            // 1. ノイズ除去＆確率ストリーム生成 (1/xx.x または 1/-)
+            const probRegex = /1\/([0-9,]+\.?[0-9]*|\-)/;
+            const stream = [];
+            lines.forEach(l => {
+                const m = l.match(probRegex);
+                if (m) {
+                    let v = m[1].replace(/,/g, '');
+                    v = (v === '-') ? 0 : parseFloat(v);
+                    stream.push(v);
+                }
+            });
+
+            log(`[INFO] 確率ストリーム検出数: ${stream.length}個`);
+
+            // 2. 固定エリアのマッピング (Index 0-13)
+            // 配列長が足りているかチェック
+            if (stream.length > 13) {
+                data.bb      = stream[1];  // Index 1: #BB
+                data.rb      = stream[4];  // Index 4: RB
+                data.bellA   = stream[6];  // Index 6: ベルA
+                data.bellB   = stream[7];  // Index 7: ベルB
+                data.suikaA  = stream[9];  // Index 9: スイカA
+                data.cherryB = stream[13]; // Index 13: チェリーB
+                
+                log(`[固定] BB:1/${data.bb}, RB:1/${data.rb}`);
+                log(`[固定] ベルA:1/${data.bellA}, ベルB:1/${data.bellB}`);
+            }
+
+            // 3. 可変エリアのキーワード検索 (linesから探す)
+            // アンカーを見つけたら、その行以降にある最初の確率を取得
+            const findVal = (keywords) => {
+                let idx = -1;
+                for (const k of keywords) {
+                    idx = lines.findIndex(l => l.includes(k));
+                    if (idx !== -1) break;
+                }
+                if (idx === -1) return null;
+
+                // アンカー以降の行を走査
+                for (let i = idx; i < Math.min(idx + 3, lines.length); i++) {
+                    const m = lines[i].match(probRegex);
+                    if (m) {
+                        let v = m[1].replace(/,/g, '');
+                        return (v === '-') ? 0 : parseFloat(v);
+                    }
+                }
+                return null;
+            };
+
+            data.vc_miss = findVal(['VSチャンス中はずれ']);
+            data.vg_miss = findVal(['VSGAME中はずれ']);
+            data.cb_match= findVal(['チェリー+ベル揃い', 'チェリー＋ベル揃い']);
+            data.cb_miss = findVal(['チェリー+ベルはずれ', 'チェリー＋ベルはずれ']);
+            
+            // RBハズレ特殊処理: RB詳細エリアの「最後」に出る確率
+            const rbAreaIdx = lines.findIndex(l => l.includes('RB中詳細'));
+            if (rbAreaIdx !== -1) {
+                // RBエリア以降のテキストから「はずれ」または「1/-」を探す
+                // 簡易的に「RB中詳細」以降で見つかった確率のリストを作る
+                const rbProbs = [];
+                for(let i = rbAreaIdx; i < lines.length; i++){
+                    const m = lines[i].match(probRegex);
+                    if(m) {
+                        let v = m[1].replace(/,/g, '');
+                        v = (v === '-') ? 0 : parseFloat(v);
+                        rbProbs.push(v);
+                    }
+                }
+                // 通常は [1枚役, Xベル, はずれ] の順。3つあれば最後、2つなら最後...
+                // ただし「はずれ」という文字があるか確認するのが確実
+                const hazureLabelIdx = lines.findIndex(l => l.includes('はずれ') && lines.indexOf(l) > rbAreaIdx);
+                if (hazureLabelIdx !== -1) {
+                    // はずれラベルがある -> その近隣の値
+                     for (let i = hazureLabelIdx; i < Math.min(hazureLabelIdx + 3, lines.length); i++) {
+                        const m = lines[i].match(probRegex);
+                        if (m) {
+                            let v = m[1].replace(/,/g, '');
+                            data.rb_miss = (v === '-') ? 0 : parseFloat(v);
+                            break;
+                        }
+                    }
+                } else if (rbProbs.length >= 3) {
+                     // ラベル見つからないが確率は3つある -> 末尾がハズレ
+                     data.rb_miss = rbProbs[rbProbs.length - 1];
+                }
+            }
+
+            if (data.cb_miss) log(`[可変] チェリー+ベルはずれ: 1/${data.cb_miss}`, 'highlight');
+            if (data.rb_miss) log(`[可変] RBハズレ: 1/${data.rb_miss}`, 'alert');
+
+            return data;
+        }
+
+        // === 判定計算 ===
+        function calculate(data) {
+            let points = { 1: 0, 2: 0, 5: 0, 6: 0 };
+            let validItems = 0;
+            let denied12 = false;
+
+            // RBハズレチェック
+            if (data.rb_miss && data.rb_miss > 0) {
+                log("★ RBハズレ検出 -> 設定1・2を否定", 'alert');
+                denied12 = true;
+            }
+
+            for (const [key, val] of Object.entries(data)) {
+                if (!val || val <= 0) continue;
+                const setting = TARGETS[key];
+                if (!setting || setting.type === 'kill_12') continue;
+
+                validItems++;
+                // 誤差計算 (分母の差分比率)
+                [1, 2, 5, 6].forEach(s => {
+                    const target = setting.vals[s];
+                    const diff = Math.abs(val - target);
+                    const score = (diff / target) * setting.w; // 乖離率 x 重要度
+                    points[s] += score;
+                });
+            }
+
+            if (validItems === 0) return null;
+
+            // スコアを確率に変換 (乖離が小さいほど高確率)
+            let probs = {};
+            let totalInv = 0;
+            [1, 2, 5, 6].forEach(s => {
+                if (denied12 && (s === 1 || s === 2)) {
+                    probs[s] = 0;
+                } else {
+                    probs[s] = 1 / (points[s] + 0.1); // 0除算防止
+                    totalInv += probs[s];
+                }
+            });
+
+            return {
+                1: (probs[1] / totalInv * 100).toFixed(1),
+                2: (probs[2] / totalInv * 100).toFixed(1),
+                5: (probs[5] / totalInv * 100).toFixed(1),
+                6: (probs[6] / totalInv * 100).toFixed(1)
+            };
+        }
+
+        // === UI処理 ===
         const fileInput = document.getElementById('file-input');
         const dropZone = document.getElementById('drop-zone');
         
-        // API Key管理
-        const savedKey = localStorage.getItem('v_key');
-        if (savedKey) document.getElementById('api-key').value = savedKey;
+        // Keyロード
+        if(localStorage.getItem('v_key')) document.getElementById('api-key').value = localStorage.getItem('v_key');
         document.getElementById('save-key').onclick = () => {
             localStorage.setItem('v_key', document.getElementById('api-key').value);
-            alert("KEY保存");
+            alert('保存しました');
         };
 
         dropZone.onclick = () => fileInput.click();
 
         fileInput.onchange = async (e) => {
-            const key = localStorage.getItem('v_key');
-            if(!key) return alert("API KEYがありません");
-            if(e.target.files.length === 0) return;
+            const file = e.target.files[0];
+            if (!file) return;
+            const key = document.getElementById('api-key').value;
+            if (!key) { alert('API KEYを設定してください'); return; }
 
-            logArea.innerText = "通信中...";
+            logArea.innerText = "解析中...";
             
             const reader = new FileReader();
-            reader.readAsDataURL(e.target.files[0]);
-            
+            reader.readAsDataURL(file);
             reader.onload = async () => {
                 try {
+                    const body = { requests: [{ image: { content: reader.result.split(',')[1] }, features: [{ type: 'TEXT_DETECTION' }] }] };
                     const res = await fetch(`https://vision.googleapis.com/v1/images:annotate?key=${key}`, {
-                        method: 'POST',
-                        body: JSON.stringify({ requests: [{ image: { content: reader.result.split(',')[1] }, features: [{ type: 'TEXT_DETECTION' }] }] }),
-                        headers: { 'Content-Type': 'application/json' }
+                        method: 'POST', body: JSON.stringify(body), headers: { 'Content-Type': 'application/json' }
                     });
                     const json = await res.json();
                     
                     if (!json.responses || !json.responses[0].fullTextAnnotation) {
-                        logArea.innerText = "エラー: 文字が読み取れませんでした。\n" + JSON.stringify(json, null, 2);
+                        log("文字を読み取れませんでした", 'alert');
                         return;
                     }
 
-                    // 生テキストの取得
-                    const rawText = json.responses[0].fullTextAnnotation.text;
-                    
-                    // 表示
-                    logArea.innerText = "--- Google Vision API Raw Output ---\n\n";
-                    logArea.innerText += rawText;
-                    
-                    console.log(json); // コンソールにも出す（開発者用）
+                    const text = json.responses[0].fullTextAnnotation.text;
+                    const data = parseData(text);
+                    const result = calculate(data);
 
-                } catch (err) {
-                    logArea.innerText = "SYSTEM ERROR: " + err.message;
+                    if (result) {
+                        document.getElementById('p1').innerText = result[1] + "%"; document.getElementById('b1').style.width = result[1] + "%";
+                        document.getElementById('p2').innerText = result[2] + "%"; document.getElementById('b2').style.width = result[2] + "%";
+                        document.getElementById('p5').innerText = result[5] + "%"; document.getElementById('b5').style.width = result[5] + "%";
+                        document.getElementById('p6').innerText = result[6] + "%"; document.getElementById('b6').style.width = result[6] + "%";
+                        log(">> 解析完了", 'highlight');
+                    } else {
+                        log("判定可能なデータが見つかりませんでした", 'alert');
+                    }
+
+                } catch (e) {
+                    log("エラー: " + e.message, 'alert');
                 }
             };
         };
