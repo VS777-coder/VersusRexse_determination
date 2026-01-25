@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>VERSUS REVISE v2.1.7</title>
+    <title>VERSUS REVISE v2.1.8</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap');
@@ -21,11 +21,11 @@
 <body>
     <div class="text-center shrink-0 mb-2">
         <p class="text-xl font-black tracking-tighter">VERSUS REVISE</p>
-        <p class="ver-text">よっちゃん専用 VER 2.1.7 (精密射撃版)</p>
+        <p class="ver-text">よっちゃん専用 VER 2.1.8 (真打・狙撃版)</p>
     </div>
 
     <div class="w-full shrink-0 mb-3 relative max-w-md mx-auto">
-        <label for="file-input" class="main-btn w-full py-4 text-white font-bold text-sm tracking-widest uppercase">ユニメモ解析</label>
+        <label for="file-input" class="main-btn w-full py-4 text-white font-bold text-sm tracking-widest uppercase">ユニメモをブチ抜く</label>
         <input type="file" id="file-input" class="hidden" accept="image/*">
     </div>
 
@@ -36,7 +36,7 @@
         <div><div class="flex justify-between text-[10px] font-bold text-red-500"><span>設定6</span><span id="p6">0.0%</span></div><div class="bar-bg"><div id="b6" class="bar-fill bg-red-600" style="width:0%"></div></div></div>
     </div>
 
-    <div id="log" class="console-box w-full max-w-md mx-auto mb-2">【待機中】画像をアップロードしてください。</div>
+    <div id="log" class="console-box w-full max-w-md mx-auto mb-2">【待機中】画像をアップしてください。</div>
 
     <div class="w-full max-w-md mx-auto shrink-0 pb-2 flex gap-2">
         <input type="password" id="api-key" class="api-input flex-grow" placeholder="GOOGLE API KEY">
@@ -47,9 +47,9 @@
         const TARGET_MAP = [
             { id: 'bb',      key: /#BB|XBB/, label: 'ビッグ確率',       vals: {1: 273.1, 2: 268.6, 5: 264.3, 6: 256.0}, w: 1.0 },
             { id: 'rb',      key: /RB|レギュラー/, label: 'レギュラー確率',   vals: {1: 374.5, 2: 341.3, 5: 319.7, 6: 292.6}, w: 1.2 },
-            { id: 'bellA',   key: /ベルA/,      label: 'ベルA',           vals: {1: 10.9,  2: 10.7,  5: 10.5,  6: 10.2},  w: 0.5 },
-            { id: 'bellB',   key: /ベルB/,      label: 'ベルB',           vals: {1: 20.9,  2: 19.0,  5: 20.3,  6: 18.8},  w: 0.5 },
-            { id: 'suikaA',  key: /スイカA/,     label: 'スイカA',         vals: {1: 74.5,  2: 70.6,  5: 72.5,  6: 68.8},  w: 0.3 },
+            { id: 'bellA',   key: /ベル.*A/,      label: 'ベルA',           vals: {1: 10.9,  2: 10.7,  5: 10.5,  6: 10.2},  w: 0.5 },
+            { id: 'bellB',   key: /ベル.*B/,      label: 'ベルB',           vals: {1: 20.9,  2: 19.0,  5: 20.3,  6: 18.8},  w: 0.5 },
+            { id: 'suikaA',  key: /スイカ.*A/,     label: 'スイカA',         vals: {1: 74.5,  2: 70.6,  5: 72.5,  6: 68.8},  w: 0.3 },
             { id: 'vc_miss', key: /VS.*チャンス.*はずれ/, label: 'VC中はずれ', vals: {1: 5.0,  2: 4.9,  5: 4.6,  6: 4.5},   w: 2.0 },
             { id: 'vg_miss', key: /VS.*GAME.*はずれ/,     label: 'VG中はずれ',     vals: {1: 10.1, 2: 9.4,  5: 8.7,  6: 8.1},   w: 2.0 },
             { id: 'cb_match',key: /チェリー.*ベル.*揃い/,  label: 'チェリベル揃い', vals: {1: 12.0, 2: 10.5, 5: 12.0, 6: 10.5},  w: 0.5 },
@@ -61,7 +61,7 @@
         const log = (msg) => { logArea.innerHTML += msg + "\n"; logArea.scrollTop = logArea.scrollHeight; };
 
         function parseImage(json) {
-            logArea.innerHTML = "【解析ログ：同期開始】\n";
+            logArea.innerHTML = "【真打解析：実行中】\n";
             const data = {};
             const annotations = json.responses[0].textAnnotations;
             if (!annotations) return;
@@ -70,17 +70,13 @@
             annotations.slice(1).forEach(ann => {
                 const y = ann.boundingPoly.vertices[0].y;
                 const text = ann.description;
-                let row = rows.find(r => Math.abs(r.y - y) < 18);
-                if (!row) {
-                    row = { y, words: [] };
-                    rows.push(row);
-                }
+                let row = rows.find(r => Math.abs(r.y - y) < 20);
+                if (!row) { row = { y, words: [] }; rows.push(row); }
                 row.words.push({ text, x: ann.boundingPoly.vertices[0].x });
             });
 
             const combinedRows = rows.map(r => {
                 r.words.sort((a, b) => a.x - b.x);
-                // 単語間にスペースを入れ、数字の癒着を防ぐ
                 return { y: r.y, fullText: r.words.map(w => w.text).join(' ') };
             });
 
@@ -88,17 +84,21 @@
                 let foundVal = 0;
                 for (let row of combinedRows) {
                     if (t.key.test(row.fullText)) {
-                        // スペース区切りを考慮した分数抽出
+                        // 1/ を探す。なければ行の最後の数値を取る
                         const match = row.fullText.match(/[1I!]\s*[\/／]\s*([0-9,]+\.?[0-9]*)/);
                         if (match) {
                             foundVal = parseFloat(match[1].replace(/,/g, ''));
-                            if (t.id === 'rb_haz' && row.y < 1200) { foundVal = 0; continue; }
+                        } else {
+                            // 確率形式が見つからない場合、行の最後の数値を抽出
+                            const nums = row.fullText.match(/[0-9,]+\.[0-9]+/g);
+                            if (nums) foundVal = parseFloat(nums[nums.length - 1].replace(/,/g, ''));
                         }
+                        if (t.id === 'rb_haz' && row.y < 1200) { foundVal = 0; continue; }
                     }
                     if (foundVal) break;
                 }
                 data[t.id] = foundVal;
-                log(`[${foundVal ? 'OK' : '--'}] ${t.label} → ${foundVal > 0 ? (t.special ? "発生" : "1/" + foundVal.toFixed(1)) : "未検出"}`);
+                log(`[${foundVal ? 'FIX' : '--'}] ${t.label} → ${foundVal > 0 ? (t.special ? "発生" : "1/" + foundVal.toFixed(1)) : "未検出"}`);
             });
             return data;
         }
@@ -123,7 +123,7 @@
                 document.getElementById(`p${s}`).innerText = p + "%";
                 document.getElementById(`b${s}`).style.width = p + "%";
             });
-            log("\n同期解析完了。36万Gの真実をどうぞ。");
+            log("\n完了。36万Gの同期、これにて結実。");
         }
 
         const fileInput = document.getElementById('file-input');
