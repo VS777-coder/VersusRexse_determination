@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>VERSUS REVISE v1.0.4</title>
+    <title>VERSUS REVISE v1.0.5</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap');
@@ -21,7 +21,7 @@
 <body>
     <div class="text-center shrink-0 mb-2">
         <img src="VS.png" alt="VERSUS" class="mx-auto w-64 mb-1">
-        <p class="ver-text">よっちゃん専用 Ver 1.0.4</p>
+        <p class="ver-text">よっちゃん専用 Ver 1.0.5</p>
     </div>
 
     <div class="w-full shrink-0 mb-3 relative max-w-md mx-auto">
@@ -37,7 +37,7 @@
     </div>
 
     <div class="w-full max-w-md mx-auto flex flex-col flex-grow min-h-0 mb-2">
-        <div id="log" class="console-box">【v1.0.4】画像パス復旧。
+        <div id="log" class="console-box">【v1.0.5】エラーガード実装。
 画像をアップロードしてください。</div>
     </div>
 
@@ -66,7 +66,7 @@
         const log = (msg) => { logArea.innerText += msg + "\n"; logArea.scrollTop = logArea.scrollHeight; };
 
         function extractData(text) {
-            logArea.innerText = "--- 解析結果 (Threshold 20) ---\n";
+            logArea.innerText = "--- 解析窓 (Threshold 20) ---\n";
             const gMatch = text.match(/総\s*プ\s*レ\s*イ\s*数[\s\S]{0,50}?([\d,]+)G/);
             const totalG = gMatch ? parseInt(gMatch[1].replace(/,/g, '')) : 0;
             log(`総プレイ数: ${totalG}G`);
@@ -103,6 +103,16 @@
         }
 
         function runBayesian(data) {
+            // エラー処理: 総プレイ数、BB、RB、ベルAのいずれかが欠けていたら中止
+            if (!data.totalG || !data.bb || !data.rb || !data.ba) {
+                [1, 2, 5, 6].forEach(s => {
+                    document.getElementById(`p${s}`).innerText = "0.0%";
+                    document.getElementById(`b${s}`).style.width = "0%";
+                });
+                log("\nERROR: 必須データ(総プレイ数/ボーナス/ベルA)が不足しています。解析を中止しました。");
+                return;
+            }
+
             let logLikelihoods = {
                 1: Math.log(PRIOR_DIST[1]),
                 2: Math.log(PRIOR_DIST[2]),
