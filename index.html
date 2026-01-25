@@ -6,7 +6,7 @@
     <title>VERSUS REVISE v2.1.0</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        /* UI BLOCK (FIXED v2.1.0) */
+        /* UIデザイン固定（みおちゃん専用 v2.1.0） */
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap');
         body { background-color: #0f1219; color: #ffffff; font-family: 'Inter', sans-serif; height: 100dvh; width: 100vw; padding: 12px; overflow: hidden; display: flex; flex-direction: column; box-sizing: border-box; }
         .ver-text { color: #ef4444; text-shadow: 0 0 10px rgba(239, 68, 68, 0.6); font-weight: bold; letter-spacing: 0.1em; font-size: 10px; margin-top: 4px; }
@@ -32,22 +32,10 @@
     </div>
 
     <div class="w-full max-w-md mx-auto result-card">
-        <div class="bar-row">
-            <div class="flex justify-between text-[10px] font-bold text-gray-400"><span>設定1</span><span id="p1">0.0%</span></div>
-            <div class="bar-bg"><div id="b1" class="bar-fill bg-gray-600" style="width:0%"></div></div>
-        </div>
-        <div class="bar-row">
-            <div class="flex justify-between text-[10px] font-bold text-blue-400"><span>設定2</span><span id="p2">0.0%</span></div>
-            <div class="bar-bg"><div id="b2" class="bar-fill bg-blue-600" style="width:0%"></div></div>
-        </div>
-        <div class="bar-row">
-            <div class="flex justify-between text-[10px] font-bold text-orange-400"><span>設定5</span><span id="p5">0.0%</span></div>
-            <div class="bar-bg"><div id="b5" class="bar-fill bg-orange-500" style="width:0%"></div></div>
-        </div>
-        <div class="mb-1">
-            <div class="flex justify-between text-[10px] font-bold text-red-500"><span>設定6</span><span id="p6">0.0%</span></div>
-            <div class="bar-bg"><div id="b6" class="bar-fill bg-red-600" style="width:0%"></div></div>
-        </div>
+        <div class="bar-row"><div class="flex justify-between text-[10px] font-bold text-gray-400"><span>設定1</span><span id="p1">0.0%</span></div><div class="bar-bg"><div id="b1" class="bar-fill bg-gray-600" style="width:0%"></div></div></div>
+        <div class="bar-row"><div class="flex justify-between text-[10px] font-bold text-blue-400"><span>設定2</span><span id="p2">0.0%</span></div><div class="bar-bg"><div id="b2" class="bar-fill bg-blue-600" style="width:0%"></div></div></div>
+        <div class="bar-row"><div class="flex justify-between text-[10px] font-bold text-orange-400"><span>設定5</span><span id="p5">0.0%</span></div><div class="bar-bg"><div id="b5" class="bar-fill bg-orange-500" style="width:0%"></div></div></div>
+        <div class="mb-1"><div class="flex justify-between text-[10px] font-bold text-red-500"><span>設定6</span><span id="p6">0.0%</span></div><div class="bar-bg"><div id="b6" class="bar-fill bg-red-600" style="width:0%"></div></div></div>
     </div>
 
     <div class="w-full max-w-md mx-auto flex flex-col flex-grow min-h-0">
@@ -64,54 +52,71 @@
 
     <script>
         const SETTING_DATA = {
-            bb:      { vals: {1: 273.1, 2: 268.6, 5: 264.3, 6: 256.0}, w: 1.0 },
-            rb:      { vals: {1: 374.5, 2: 341.3, 5: 319.7, 6: 292.6}, w: 1.2 },
-            bellA:   { vals: {1: 10.9,  2: 10.7,  5: 10.5,  6: 10.2},  w: 0.3 }, 
-            bellB:   { vals: {1: 20.9,  2: 19.0,  5: 20.3,  6: 18.8},  w: 0.3 }, 
-            suikaA:  { vals: {1: 74.5,  2: 70.6,  5: 72.5,  6: 68.8},  w: 0.2 },
-            cherryB: { vals: {1: 56.2,  2: 57.7,  5: 53.1,  6: 54.4},  w: 0.2 },
-            vc_miss: { vals: {1: 5.0,  2: 4.9,  5: 4.6,  6: 4.5},   w: 2.0 },
-            vg_miss: { vals: {1: 10.1, 2: 9.4,  5: 8.7,  6: 8.1},   w: 2.0 },
-            cb_match:{ vals: {1: 12.0, 2: 10.5, 5: 12.0, 6: 10.5},  w: 0.5 },
-            cb_miss: { vals: {1: 256.0, 2: 128.0, 5: 256.0, 6: 128.0}, w: 4.0 }
+            bb:      { label: "ビッグボーナス確率", vals: {1: 273.1, 2: 268.6, 5: 264.3, 6: 256.0}, w: 1.0 },
+            rb:      { label: "レギュラーボーナス確率", vals: {1: 374.5, 2: 341.3, 5: 319.7, 6: 292.6}, w: 1.2 },
+            bellA:   { label: "ベルＡ", vals: {1: 10.9,  2: 10.7,  5: 10.5,  6: 10.2},  w: 0.3 }, 
+            bellB:   { label: "ベルＢ", vals: {1: 20.9,  2: 19.0,  5: 20.3,  6: 18.8},  w: 0.3 }, 
+            suikaA:  { label: "スイカＡ", vals: {1: 74.5,  2: 70.6,  5: 72.5,  6: 68.8},  w: 0.2 },
+            vc_miss: { label: "バーサスチャンス　はずれ", vals: {1: 5.0,  2: 4.9,  5: 4.6,  6: 4.5},   w: 2.0 },
+            vg_miss: { label: "バーサスゲーム　はずれ", vals: {1: 10.1, 2: 9.4,  5: 8.7,  6: 8.1},   w: 2.0 },
+            bb_haz:  { label: "ビッグ中　はずれ", vals: {1: 256.0, 2: 128.0, 5: 256.0, 6: 128.0}, w: 4.0 },
+            rb_haz:  { label: "レギュラー中　はずれ", vals: {1: 1000.0, 2: 1000.0, 5: 10.0, 6: 10.0}, w: 5.0 }
         };
 
         const logArea = document.getElementById('log');
         const log = (msg) => { logArea.innerHTML += msg + "\n"; logArea.scrollTop = logArea.scrollHeight; };
 
         function extractParameters(lines) {
-            logArea.innerHTML = "【SQM抽出プロセス実行】\n";
+            logArea.innerHTML = "【抽出パラメータ確認】\n";
             const data = {};
             const probRegex = /1\/([0-9,.]*)/;
             
-            // 全1/x数値を順番通り抽出
+            // 確率形式(1/x)をすべて抽出
             const allProbs = lines.map(l => l.match(probRegex)).filter(m => m).map(m => parseFloat(m[1].replace(/,/g,'')));
             
-            // 総ボーナス(0)の次がBB/RB
+            // 1. ボーナス・小役（SQM: 出現順序固定）
             data.bb = allProbs[1] || 0;
             data.rb = allProbs[2] || 0;
 
-            // 「合算」という文字を探し、その後の1/xの並びから特定
             const kIdx = lines.findIndex(l => l.includes('合算'));
             if (kIdx !== -1) {
                 const subProbs = lines.slice(kIdx).map(l => l.match(probRegex)).filter(m => m).map(m => parseFloat(m[1].replace(/,/g,'')));
-                data.bellA = subProbs[1] || 0;  // 合算(0) -> ベルA(1)
+                data.bellA = subProbs[1] || 0;
                 data.bellB = subProbs[2] || 0;
-                data.suikaA = subProbs[4] || 0; // スイカ合算(3) -> スイカA(4)
+                data.suikaA = subProbs[4] || 0;
             }
 
-            // RT中ハズレ (ラベルの直後)
-            const vcIdx = lines.findIndex(l => l.includes('VSチャンス中はずれ'));
-            if (vcIdx !== -1) data.vc_miss = parseFloat(lines[vcIdx+1]?.match(probRegex)?.[1] || 0);
+            // 2. 独立スキャン項目（可変行対策）
+            const findValAfter = (label) => {
+                const idx = lines.findIndex(l => l.includes(label));
+                if (idx === -1) return 0;
+                // ラベルの直後、または同一行から1/xを探す
+                const match = (lines[idx] + (lines[idx+1] || "")).match(probRegex);
+                return match ? parseFloat(match[1].replace(/,/g,'')) : 0;
+            };
+
+            data.vc_miss = findValAfter('VSチャンス中はずれ');
+            data.vg_miss = findValAfter('VSGAME中はずれ');
             
-            const vgIdx = lines.findIndex(l => l.includes('VSGAME中はずれ'));
-            if (vgIdx !== -1) data.vg_miss = parseFloat(lines[vgIdx+1]?.match(probRegex)?.[1] || 0);
+            // ビッグ中 はずれ (ユニメモ上は チェリー＋ベルはずれ)
+            data.bb_haz = findValAfter('チェリー＋ベルはずれ') || findValAfter('チェリー+ベルはずれ');
+            
+            // レギュラー中 はずれ (RBセクション内の ハズレ)
+            const rbIdx = lines.findIndex(l => l.includes('RB中詳細'));
+            if (rbIdx !== -1) {
+                const rbSection = lines.slice(rbIdx, rbIdx + 15);
+                const hazIdx = rbSection.findIndex(l => l.includes('ハズレ'));
+                if (hazIdx !== -1) {
+                    const match = rbSection[hazIdx+1]?.match(probRegex);
+                    data.rb_haz = match ? parseFloat(match[1].replace(/,/g,'')) : 0;
+                }
+            }
 
-            // チェリベ揃い (ラベルの直後)
-            const cbIdx = lines.findIndex(l => l.includes('チェリー+ベル揃い'));
-            if (cbIdx !== -1) data.cb_match = parseFloat(lines[cbIdx+1]?.match(probRegex)?.[1] || 0);
-
-            Object.keys(data).forEach(k => log(`${k}: [ 1/${data[k]} ]`));
+            // ログ出力（指定の日本語ラベルを使用）
+            Object.keys(data).forEach(key => {
+                const label = SETTING_DATA[key]?.label || key;
+                log(`${label}: [ ${data[key] ? '1/' + data[key] : '---'} ]`);
+            });
             return data;
         }
 
@@ -135,48 +140,32 @@
 
         const fileInput = document.getElementById('file-input');
         const dropZone = document.getElementById('drop-zone');
-
         if(localStorage.getItem('v_key')) document.getElementById('api-key').value = localStorage.getItem('v_key');
-        document.getElementById('save-key').onclick = () => { localStorage.setItem('v_key', document.getElementById('api-key').value); alert('API KEY SAVED'); };
+        document.getElementById('save-key').onclick = () => { localStorage.setItem('v_key', document.getElementById('api-key').value); alert('APIキーを保存しました'); };
 
         dropZone.addEventListener('click', () => fileInput.click());
-
         fileInput.addEventListener('change', async (e) => {
             const file = e.target.files[0]; if (!file) return;
             const key = document.getElementById('api-key').value;
-            if(!key) { alert("API KEYを入力してください"); return; }
-
-            const reader = new FileReader();
-            reader.readAsDataURL(file);
+            if(!key) { alert("API KEYをセットしてください"); return; }
+            const reader = new FileReader(); reader.readAsDataURL(file);
             reader.onload = async () => {
-                log("画像送信中...");
+                log("画像解析中...");
                 try {
                     const res = await fetch(`https://vision.googleapis.com/v1/images:annotate?key=${key}`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                            requests: [{
-                                image: { content: reader.result.split(',')[1] },
-                                features: [{ type: 'TEXT_DETECTION' }]
-                            }]
-                        })
+                        method: 'POST', headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ requests: [{ image: { content: reader.result.split(',')[1] }, features: [{ type: 'TEXT_DETECTION' }] }] })
                     });
                     const json = await res.json();
-                    if(!json.responses[0].fullTextAnnotation) throw new Error("テキストが検出できませんでした");
-                    
-                    const rawText = json.responses[0].fullTextAnnotation.text;
-                    const result = calculate(extractParameters(rawText.split('\n')));
-                    
+                    const result = calculate(extractParameters(json.responses[0].fullTextAnnotation.text.split('\n')));
                     if (result) {
                         [1, 2, 5, 6].forEach(s => {
                             document.getElementById(`p${s}`).innerText = result[s] + "%";
                             document.getElementById(`b${s}`).style.width = result[s] + "%";
                         });
-                        log("\n解析完了。");
+                        log("\n解析が完了いたしました。");
                     }
-                } catch (err) {
-                    log("ERROR: " + err.message);
-                }
+                } catch (err) { log("エラー: " + err.message); }
             };
         });
     </script>
