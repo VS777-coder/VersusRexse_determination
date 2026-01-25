@@ -3,13 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>VERSUS REVISE v2.1.2</title>
+    <title>VERSUS REVISE v2.1.4</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap');
         body { background-color: #0f1219; color: #ffffff; font-family: 'Inter', sans-serif; height: 100dvh; width: 100vw; padding: 12px; overflow: hidden; display: flex; flex-direction: column; box-sizing: border-box; }
         .ver-text { color: #ef4444; text-shadow: 0 0 10px rgba(239, 68, 68, 0.6); font-weight: bold; font-size: 10px; margin-top: 4px; }
         .main-btn { background-color: #1e3a8a; border-radius: 9999px; box-shadow: 0 4px 10px rgba(30,58,138,0.5); transition: all 0.2s; border: 2px solid #2563eb; display: block; text-align: center; cursor: pointer; }
+        .main-btn:active { transform: scale(0.98); }
         .result-card { background-color: #131722; border-radius: 12px; padding: 12px 16px; margin-bottom: 8px; flex-shrink: 0; }
         .bar-bg { background-color: #1f2937; height: 8px; border-radius: 4px; overflow: hidden; margin-top: 2px; }
         .bar-fill { height: 100%; transition: width 0.8s ease-out; }
@@ -20,11 +21,11 @@
 <body>
     <div class="text-center shrink-0 mb-2">
         <img src="VS.png" alt="VERSUS" class="mx-auto w-64 mb-1">
-        <p class="ver-text">よっちゃん専用 VER 2.1.2 (狙撃同期版)</p>
+        <p class="ver-text">よっちゃん専用 VER 2.1.4 (執念の追跡版)</p>
     </div>
 
     <div class="w-full shrink-0 mb-3 relative max-w-md mx-auto">
-        <label for="file-input" class="main-btn w-full py-3 text-white font-bold text-sm tracking-widest uppercase">解析を実行する</label>
+        <label for="file-input" class="main-btn w-full py-3 text-white font-bold text-sm tracking-widest uppercase">解析を実行</label>
         <input type="file" id="file-input" class="hidden" accept="image/*">
     </div>
 
@@ -43,90 +44,84 @@
     </div>
 
     <script>
-        // 狙撃（スナイパー）設定：見出しから何番目の分数を拾うか
-        const SNIPER_MAP = [
-            { header: /基本情報/, targets: [
-                { id: 'bb', rank: 2, label: 'ビッグ確率', vals: {1: 273.1, 2: 268.6, 5: 264.3, 6: 256.0}, w: 1.0 },
-                { id: 'rb', rank: 5, label: 'レギュラー確率', vals: {1: 374.5, 2: 341.3, 5: 319.7, 6: 292.6}, w: 1.2 }
-            ]},
-            { header: /小役/, targets: [
-                { id: 'bellA',  rank: 2, label: 'ベルA', vals: {1: 10.9, 2: 10.7, 5: 10.5, 6: 10.2}, w: 0.5 },
-                { id: 'bellB',  rank: 3, label: 'ベルB', vals: {1: 20.9, 2: 19.0, 5: 20.3, 6: 18.8}, w: 0.5 },
-                { id: 'suikaA', rank: 5, label: 'スイカA', vals: {1: 74.5, 2: 70.6, 5: 72.5, 6: 68.8}, w: 0.3 }
-            ]},
-            { header: /RT詳細/, targets: [
-                { id: 'vc_miss', rank: 1, label: 'VC中はずれ', vals: {1: 5.0, 2: 4.9, 5: 4.6, 6: 4.5}, w: 2.0 },
-                { id: 'vg_miss', rank: 2, label: 'VG中はずれ', vals: {1: 10.1, 2: 9.4, 5: 8.7, 6: 8.1}, w: 2.0 }
-            ]},
-            { header: /BB中詳細/, targets: [
-                { id: 'cb_match', rank: 2, label: 'チェリベル揃い', vals: {1: 12.0, 2: 10.5, 5: 12.0, 6: 10.5}, w: 0.5 },
-                { id: 'bb_haz',   rank: 4, label: 'ビッグ中 はずれ', special: 'denial' }
-            ]},
-            { header: /RB中詳細/, targets: [
-                { id: 'rb_haz', rank: 3, label: 'レギュラー中 はずれ', special: 'denial' }
-            ]}
+        const TARGET_MAP = [
+            { id: 'bb',      key: /#BB/,        label: 'ビッグ確率',       vals: {1: 273.1, 2: 268.6, 5: 264.3, 6: 256.0}, w: 1.0 },
+            { id: 'rb',      key: /RB/,         label: 'レギュラー確率',   vals: {1: 374.5, 2: 341.3, 5: 319.7, 6: 292.6}, w: 1.2 },
+            { id: 'bellA',   key: /ベルA/,      label: 'ベルA',           vals: {1: 10.9,  2: 10.7,  5: 10.5,  6: 10.2},  w: 0.5 },
+            { id: 'bellB',   key: /ベルB/,      label: 'ベルB',           vals: {1: 20.9,  2: 19.0,  5: 20.3,  6: 18.8},  w: 0.5 },
+            { id: 'suikaA',  key: /スイカA/,     label: 'スイカA',         vals: {1: 74.5,  2: 70.6,  5: 72.5,  6: 68.8},  w: 0.3 },
+            { id: 'vc_miss', key: /VSチャンス中はずれ/, label: 'VC中はずれ', vals: {1: 5.0,  2: 4.9,  5: 4.6,  6: 4.5},   w: 2.0 },
+            { id: 'vg_miss', key: /VSGAME中はずれ/,     label: 'VG中はずれ',     vals: {1: 10.1, 2: 9.4,  5: 8.7,  6: 8.1},   w: 2.0 },
+            { id: 'cb_match',key: /チェリー\+ベル揃い/,  label: 'チェリベル揃い', vals: {1: 12.0, 2: 10.5, 5: 12.0, 6: 10.5},  w: 0.5 },
+            { id: 'bb_haz',  key: /中段チェリー/,        label: 'ビッグ中 はずれ', special: 'denial' },
+            { id: 'rb_haz',  key: /はずれ/,              label: 'レギュラー中 はずれ', special: 'denial', section: /RB中詳細/ }
         ];
 
         const logArea = document.getElementById('log');
         const log = (msg) => { logArea.innerHTML += msg + "\n"; logArea.scrollTop = logArea.scrollHeight; };
 
         function extractData(lines) {
-            logArea.innerHTML = "【スナイパー証拠ログ】\n";
+            logArea.innerHTML = "【執念の追跡ログ】\n";
             const data = {};
             const probRegex = /[0-9!lI|]\s*[\/／]\s*([0-9,]+\.?[0-9]*)/i;
 
-            SNIPER_MAP.forEach(section => {
-                let headerIdx = lines.findIndex(l => section.header.test(l));
-                if (headerIdx !== -1) {
-                    // 見出しから35行以内をスキャンして分数を集める
-                    let foundProbs = [];
-                    for (let i = headerIdx; i < headerIdx + 35 && i < lines.length; i++) {
-                        const m = lines[i].match(probRegex);
-                        if (m) foundProbs.push({ val: parseFloat(m[1].replace(/,/g, '')), line: i });
-                    }
+            TARGET_MAP.forEach(t => {
+                let val = 0;
+                let nameIdx = -1;
 
-                    section.targets.forEach(t => {
-                        const target = foundProbs[t.rank - 1];
-                        if (target) {
-                            data[t.id] = target.val;
-                            if (t.special) {
-                                log(`[${section.header.source}] ${t.label} → 検出(1/${target.val.toFixed(1)})`);
-                            } else {
-                                log(`[${section.header.source}] ${t.label} → 1/${target.val.toFixed(1)}`);
-                            }
-                        } else {
-                            data[t.id] = 0;
-                            log(`[${section.header.source}] ${t.label} → 未検出`);
-                        }
-                    });
+                // レギュラー中のはずれは「RB中詳細」の下から探す特殊処理
+                if (t.section) {
+                    const secStart = lines.findIndex(l => t.section.test(l));
+                    if (secStart !== -1) {
+                        const subIdx = lines.slice(secStart).findIndex(l => t.key.test(l));
+                        if (subIdx !== -1) nameIdx = secStart + subIdx;
+                    }
                 } else {
-                    log(`[ERR] ${section.header.source} 見出しが見つかりません`);
+                    nameIdx = lines.findIndex(l => t.key.test(l));
                 }
+
+                if (nameIdx !== -1) {
+                    // 名前が見つかったら、その下30行以内に最初に出た数値を採用
+                    for (let i = nameIdx; i < nameIdx + 30 && i < lines.length; i++) {
+                        const m = lines[i].match(probRegex);
+                        if (m) {
+                            val = parseFloat(m[1].replace(/,/g, ''));
+                            break;
+                        }
+                    }
+                }
+
+                data[t.id] = val;
+                const status = t.special ? (val > 0 ? "発生！" : "未検出") : (val > 0 ? `1/${val.toFixed(1)}` : "未検出");
+                log(`[${val ? 'OK' : '--'}] ${t.label} → ${status}`);
             });
             return data;
         }
 
         function calculate(data) {
             let pts = { 1: 0, 2: 0, 5: 0, 6: 0 }; let valid = 0;
-            let denied12 = (data.bb_haz > 0 || data.rb_haz > 0);
-            SNIPER_MAP.forEach(s => s.targets.forEach(t => {
+            const hasDenial = (data.bb_haz > 0 || data.rb_haz > 0);
+
+            TARGET_MAP.forEach(t => {
                 if (!t.special && data[t.id]) {
                     valid++;
-                    [1, 2, 5, 6].forEach(set => pts[set] += Math.pow(Math.abs(data[t.id] - t.vals[set]) / t.vals[set], 2) * t.w);
+                    [1, 2, 5, 6].forEach(s => pts[s] += Math.pow(Math.abs(data[t.id] - t.vals[s]) / t.vals[s], 2) * t.w);
                 }
-            }));
-            if (!valid && !denied12) return;
+            });
+
+            if (!valid && !hasDenial) return;
             let probs = {}; let total = 0;
             [1, 2, 5, 6].forEach(s => {
-                if (denied12 && (s === 1 || s === 2)) probs[s] = 0;
+                if (hasDenial && (s === 1 || s === 2)) probs[s] = 0;
                 else { probs[s] = 1 / (pts[s] + 0.05); total += probs[s]; }
             });
+
             [1, 2, 5, 6].forEach(s => {
                 const p = (probs[s] / total * 100).toFixed(1);
                 document.getElementById(`p${s}`).innerText = p + "%";
                 document.getElementById(`b${s}`).style.width = p + "%";
             });
-            log("\n解析完了。今度は『1/0』にさせない。");
+            log("\n追跡解析完了。これぞ精密機器。");
         }
 
         const fileInput = document.getElementById('file-input');
