@@ -6,16 +6,13 @@
     <title>VERSUS REVISE v2.1.0</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        /* UI BLOCK (FIXED v2.1.0) */
+        /* UIデザインは維持（固定） */
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap');
         body { background-color: #0f1219; color: #ffffff; font-family: 'Inter', sans-serif; height: 100dvh; width: 100vw; padding: 12px; overflow: hidden; display: flex; flex-direction: column; box-sizing: border-box; }
         .ver-text { color: #ef4444; text-shadow: 0 0 10px rgba(239, 68, 68, 0.6); font-weight: bold; letter-spacing: 0.1em; font-size: 10px; margin-top: 4px; }
         .main-btn { background-color: #1e3a8a; border-radius: 9999px; box-shadow: 0 4px 10px rgba(30, 58, 138, 0.5); transition: all 0.2s; border: 2px solid #2563eb; display: block; text-align: center; cursor: pointer; }
         .main-btn:active { transform: scale(0.98); opacity: 0.9; }
         .result-card { background-color: #131722; border-radius: 12px; padding: 12px 16px; margin-bottom: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.3); flex-shrink: 0; }
-        .bar-row { margin-bottom: 8px; }
-        .bar-bg { background-color: #1f2937; height: 8px; border-radius: 4px; overflow: hidden; margin-top: 2px; }
-        .bar-fill { height: 100%; transition: width 0.8s ease-out; }
         .console-box { background-color: #000000; border: 1px solid #22c55e; border-radius: 8px; padding: 8px; font-family: 'Courier New', monospace; font-size: 10px; color: #4ade80; flex-grow: 1; min-height: 0; overflow-y: auto; white-space: pre-wrap; box-shadow: 0 0 10px rgba(34, 197, 94, 0.2); margin-bottom: 8px; }
         .api-input-dots { background-color: #1e293b; color: white; border: none; border-radius: 99px; padding: 6px 12px; letter-spacing: 2px; font-size: 16px; outline: none; text-align: center; width: 100%; }
     </style>
@@ -29,34 +26,19 @@
 
     <div class="w-full shrink-0 mb-3 relative max-w-md mx-auto">
         <label for="file-input" class="main-btn w-full py-3 text-white font-bold text-sm tracking-wider uppercase">
-            ユニメモ画像を解析
+            画像を読み込んで生データを確認
         </label>
         <input type="file" id="file-input" class="hidden" accept="image/*">
     </div>
 
     <div class="w-full max-w-md mx-auto result-card">
-        <div class="text-[10px] text-gray-500 text-center mb-1 uppercase tracking-widest">--- RAW DATA MODE ---</div>
-        <div class="bar-row">
-            <div class="flex justify-between text-[10px] font-bold text-gray-400"><span>設定1</span><span id="p1">0.0%</span></div>
-            <div class="bar-bg"><div id="b1" class="bar-fill bg-gray-600" style="width:0%"></div></div>
-        </div>
-        <div class="bar-row">
-            <div class="flex justify-between text-[10px] font-bold text-blue-400"><span>設定2</span><span id="p2">0.0%</span></div>
-            <div class="bar-bg"><div id="b2" class="bar-fill bg-blue-600" style="width:0%"></div></div>
-        </div>
-        <div class="bar-row">
-            <div class="flex justify-between text-[10px] font-bold text-orange-400"><span>設定5</span><span id="p5">0.0%</span></div>
-            <div class="bar-bg"><div id="b5" class="bar-fill bg-orange-500" style="width:0%"></div></div>
-        </div>
-        <div class="mb-1">
-            <div class="flex justify-between text-[10px] font-bold text-red-500"><span>設定6</span><span id="p6">0.0%</span></div>
-            <div class="bar-bg"><div id="b6" class="bar-fill bg-red-600" style="width:0%"></div></div>
-        </div>
+        <div class="text-[10px] text-gray-500 text-center mb-1 uppercase tracking-widest">--- OCR RAW DUMP MODE ---</div>
+        <p class="text-[9px] text-gray-400 text-center">※ここには判別結果ではなく、読み取り順のテキストが出力されます。</p>
     </div>
 
     <div class="w-full max-w-md mx-auto flex flex-col flex-grow min-h-0">
-        <div id="log" class="console-box">【RAWデータ出力中】
-画像をアップロードすると、ここにインデックス番号とOCRが読み取った文字列が表示されます。</div>
+        <div id="log" class="console-box">【待機中】
+画像をアップロードすると、[インデックス]：文字列 の形式で全データを表示します。</div>
     </div>
 
     <div class="w-full max-w-md mx-auto shrink-0 pb-2">
@@ -66,7 +48,6 @@
                 SET
             </button>
         </div>
-        <p id="key-status" class="text-center text-[9px] font-bold text-blue-500 tracking-widest uppercase mt-1">API KEY: READY</p>
     </div>
 
     <script>
@@ -88,16 +69,19 @@
                         method: 'POST', body: JSON.stringify({ requests: [{ image: { content: reader.result.split(',')[1] }, features: [{ type: 'DOCUMENT_TEXT_DETECTION' }] }] }), headers: { 'Content-Type': 'application/json' }
                     });
                     const json = await res.json();
+                    
                     if (!json.responses || !json.responses[0].fullTextAnnotation) {
-                        log("ERROR: テキストを検出できませんでした。JSONを確認してください。");
+                        log("ERROR: テキストを検出できませんでした。JSONを確認：");
                         log(JSON.stringify(json, null, 2));
                         return;
                     }
                     
+                    // 生のテキストを行ごとに分割して出力
                     const rawLines = json.responses[0].fullTextAnnotation.text.split(/\n/);
                     rawLines.forEach((line, index) => {
                         log(`[${index}] : ${line.trim()}`);
                     });
+                    
                     log("\n【DUMP END】");
                 } catch (err) { log("ERROR: " + err.message); }
             };
