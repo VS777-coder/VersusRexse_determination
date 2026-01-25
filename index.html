@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>VERSUS REVISE v2.4.0</title>
+    <title>VERSUS REVISE v2.4.1</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap');
@@ -21,7 +21,7 @@
 <body>
     <div class="text-center shrink-0 mb-2">
         <img src="VS.png" alt="VERSUS" class="mx-auto w-64 mb-1">
-        <p class="ver-text">よっちゃん専用 VER 2.4.0</p>
+        <p class="ver-text">よっちゃん専用 VER 2.4.1</p>
     </div>
 
     <div class="w-full shrink-0 mb-3 relative max-w-md mx-auto">
@@ -38,7 +38,7 @@
 
     <div class="w-full max-w-md mx-auto flex flex-col flex-grow min-h-0 mb-2">
         <div id="log" class="console-box">【座標同期出力モード】
-OCRが座標に基づいて再構築した文字列が表示されます。</div>
+ここに座標同期済みの文字列が表示されます。</div>
     </div>
 
     <div class="w-full max-w-md mx-auto shrink-0 pb-2 flex gap-2">
@@ -59,7 +59,7 @@ OCRが座標に基づいて再構築した文字列が表示されます。</div
             const key = document.getElementById('api-key').value;
             const reader = new FileReader(); reader.readAsDataURL(file);
             reader.onload = async () => {
-                showRaw("Analyzing with Y-Coordinate Sync...");
+                showRaw("Analyzing with Spatial Sync...");
                 try {
                     const res = await fetch(`https://vision.googleapis.com/v1/images:annotate?key=${key}`, {
                         method: 'POST',
@@ -72,27 +72,29 @@ OCRが座標に基づいて再構築した文字列が表示されます。</div
                         headers: { 'Content-Type': 'application/json' }
                     });
                     const json = await res.json();
+                    
+                    // 単語単位の座標データを取得
                     const annotations = json.responses[0].textAnnotations;
-
                     if (annotations && annotations.length > 1) {
-                        // 0枚目は全体テキストなのでスキップし、各単語の座標を抽出
                         const items = annotations.slice(1).map(ann => {
                             const v = ann.boundingPoly.vertices;
-                            // 中心座標を計算
-                            const x = (v[0].x + v[1].x + v[2].x + v[3].x) / 4;
-                            const y = (v[0].y + v[1].y + v[2].y + v[3].y) / 4;
-                            return { text: ann.description, x, y };
+                            // 中心点Y座標を算出
+                            const centerY = (v[0].y + v[1].y + v[2].y + v[3].y) / 4;
+                            // 中心点X座標を算出
+                            const centerX = (v[0].x + v[1].x + v[2].x + v[3].x) / 4;
+                            return { text: ann.description, x: centerX, y: centerY };
                         });
 
-                        // Y座標で昇順ソート（上から下へ）
+                        // 1. まず全単語をY座標（高さ）で昇順ソート
                         items.sort((a, b) => a.y - b.y);
 
-                        // 同じ行とみなす高さの許容範囲（15ピクセル）でグループ化
+                        // 2. 同じ行とみなす高さの「遊び（しきい値）」を設定
+                        const threshold = 15; 
                         const rows = [];
                         let currentRow = [items[0]];
-                        const threshold = 15; 
 
                         for (let i = 1; i < items.length; i++) {
+                            // 前の単語との高さの差が15px以内なら同じ行
                             if (Math.abs(items[i].y - currentRow[0].y) < threshold) {
                                 currentRow.push(items[i]);
                             } else {
@@ -102,14 +104,14 @@ OCRが座標に基づいて再構築した文字列が表示されます。</div
                         }
                         rows.push(currentRow);
 
-                        // 各行の中身をX座標でソート（左から右へ）して結合
-                        const finalOutput = rows.map(row => {
-                            return row.sort((a, b) => a.x - b.x).map(item => item.text).join(' ');
+                        // 3. 各行の中身をX座標（左から右）でソートして結合
+                        const finalTxt = rows.map(row => {
+                            return row.sort((a, b) => a.x - b.x).map(it => it.text).join(' ');
                         }).join('\n');
 
-                        showRaw(finalOutput);
+                        showRaw(finalTxt);
                     } else {
-                        showRaw("テキストが検出できませんでした。");
+                        showRaw("テキストが見つかりません。");
                     }
                 } catch (err) {
                     showRaw("ERROR: " + err.message);
