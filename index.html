@@ -42,12 +42,13 @@
 
     <div class="w-full max-w-md mx-auto shrink-0 pb-2 flex gap-2">
         <input type="password" id="api-key" class="api-input-dots flex-grow" placeholder="••••••••">
-        <button id="save-key" class="bg-blue-600 text-white font-bold py-2 px-6 rounded-full text-[10px]">SET</button>
+        <button id="save-key" class="bg-blue-600 text-white font-bold py-2 px-6 rounded-full text-[10px] shadow-lg transition whitespace-nowrap uppercase">SET</button>
     </div>
 
     <script>
+        // RAW DUMPから算出した各項目の「rank（出現順）」を確定
         const SQM_MAP = [
-            { id: 'bb',      key: /#BB/,        rank: 2, label: 'ビッグ確率',       vals: {1: 273.1, 2: 268.6, 5: 264.3, 6: 256.0}, w: 1.0 },
+            { id: 'bb',      key: /#BB/,        rank: 1, label: 'ビッグ確率',       vals: {1: 273.1, 2: 268.6, 5: 264.3, 6: 256.0}, w: 1.0 },
             { id: 'rb',      key: /RB/,         rank: 2, label: 'レギュラー確率',   vals: {1: 374.5, 2: 341.3, 5: 319.7, 6: 292.6}, w: 1.2 },
             { id: 'bellA',   key: /ベルA/,      rank: 2, label: 'ベルA',           vals: {1: 10.9,  2: 10.7,  5: 10.5,  6: 10.2},  w: 0.5 },
             { id: 'bellB',   key: /ベルB/,      rank: 3, label: 'ベルB',           vals: {1: 20.9,  2: 19.0,  5: 20.3,  6: 18.8},  w: 0.5 },
@@ -65,7 +66,7 @@
         function extractParameters(lines) {
             logArea.innerHTML = "【マッピング証拠ログ】\n";
             const data = {};
-            const probRegex = /[1lI!]\s*[\/／]\s*([0-9,]+\.?[0-9]*)/i;
+            const probRegex = /[0-9!lI|]\s*[\/／]\s*([0-9,]+\.?[0-9]*)/i; // 正規表現を強化
 
             SQM_MAP.forEach(target => {
                 let foundVal = 0;
@@ -76,8 +77,7 @@
                 for (let i = 0; i < lines.length; i++) {
                     if (target.key.test(lines[i])) {
                         foundLabelIdx = i;
-                        // ラベル発見後の「rank番目」の分数を射抜く
-                        for (let j = i; j < i + 30 && j < lines.length; j++) {
+                        for (let j = i; j < i + 35 && j < lines.length; j++) {
                             const m = lines[j].match(probRegex);
                             if (m) {
                                 matchCount++;
@@ -96,7 +96,8 @@
                 if (target.special) {
                     log(`[${foundLabelIdx !== -1 ? foundLabelIdx : '--'}] ${target.label} → ${foundVal > 0 ? "発生！" : "未検出"}`);
                 } else {
-                    log(`[${foundLabelIdx !== -1 ? foundLabelIdx : '--'}] ${target.label} → [${foundValueIdx !== -1 ? foundValueIdx : '??'}] 1/${foundVal > 0 ? foundVal.toFixed(1) : '0'}`);
+                    const displayVal = foundVal > 0 ? foundVal.toFixed(1) : "0";
+                    log(`[${foundLabelIdx !== -1 ? foundLabelIdx : '--'}] ${target.label} → [${foundValueIdx !== -1 ? foundValueIdx : '??'}] 1/${displayVal}`);
                 }
             });
             return data;
