@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>VERSUS REVISE v1.0.5</title>
+    <title>VERSUS REVISE v1.0.7</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap');
@@ -21,7 +21,7 @@
 <body>
     <div class="text-center shrink-0 mb-2">
         <img src="VS.png" alt="VERSUS" class="mx-auto w-64 mb-1">
-        <p class="ver-text">よっちゃん専用 Ver 1.0.5</p>
+        <p class="ver-text">よっちゃん専用 Ver 1.0.7</p>
     </div>
 
     <div class="w-full shrink-0 mb-3 relative max-w-md mx-auto">
@@ -37,8 +37,7 @@
     </div>
 
     <div class="w-full max-w-md mx-auto flex flex-col flex-grow min-h-0 mb-2">
-        <div id="log" class="console-box">【v1.0.5】エラーガード実装。
-画像をアップロードしてください。</div>
+        <div id="log" class="console-box">【v1.0.7】小数点1桁統一・安定版。</div>
     </div>
 
     <div class="w-full max-w-md mx-auto shrink-0 pb-2 flex gap-2">
@@ -66,25 +65,25 @@
         const log = (msg) => { logArea.innerText += msg + "\n"; logArea.scrollTop = logArea.scrollHeight; };
 
         function extractData(text) {
-            logArea.innerText = "--- 解析窓 (Threshold 20) ---\n";
+            logArea.innerText = "--- 解析結果 (Threshold 20) ---\n";
             const gMatch = text.match(/総\s*プ\s*レ\s*イ\s*数[\s\S]{0,50}?([\d,]+)G/);
-            const totalG = gMatch ? parseInt(gMatch[1].replace(/,/g, '')) : 0;
-            log(`総プレイ数: ${totalG}G`);
+            const totalG = gMatch ? parseInt(gMatch[1].replace(/,/g, '')) : null;
+            if (totalG !== null) log(`総プレイ数: ${totalG}G`);
 
             const bbCountMatch = text.match(/(?:総|#)?\s*B\s*B[\s\S]{0,100}?([\d,]+)回/);
             const bbCount = bbCountMatch ? parseInt(bbCountMatch[1].replace(/,/g, '')) : 0;
 
             const patterns = {
-                bb:  /(?:総|#)?\s*B\s*B[\s\S]{0,100}?[1I!ｌ]\s*[\/／]\s*([\d,.]+)/,
-                rb:  /R\s*B[\s\S]{0,100}?[1I!ｌ]\s*[\/／]\s*([\d,.]+)/,
-                ba:  /ベル\s*A[\s\S]{0,100}?[1I!ｌ]\s*[\/／]\s*([\d,.]+)/,
-                sa:  /スイカ\s*A[\s\S]{0,100}?[1I!ｌ]\s*[\/／]\s*([\d,.]+)/,
-                vc:  /V\s*S\s*チャンス\s*中\s*はずれ[\s\S]{0,100}?[1I!ｌ]\s*[\/／]\s*([\d,.]+)/,
-                vg:  /V\s*S\s*G\s*A\s*M\s*E\s*中\s*はずれ[\s\S]{0,100}?[1I!ｌ]\s*[\/／]\s*([\d,.]+)/,
-                cbs: /チェリー\s*[+＋]\s*ベル\s*揃い[\s\S]{0,100}?[1I!ｌ]\s*[\/／]\s*([\d,.]+)/,
-                cbh: /チェリー\s*[+＋]\s*ベル\s*はずれ[\s\S]{0,100}?[1I!ｌ]\s*[\/／]\s*([\d,.]+|--?)/,
-                bbh: /(?:B\s*B|ビ\s*ッ\s*グ)\s*中\s*は\s*ず\s*れ|中\s*段\s*チ\s*ェ\s*リ\s*ー[\s\S]{0,100}?[1I!ｌ]\s*[\/／]\s*([\d,.]+|--?)/,
-                rbh: /R\s*B\s*中\s*詳\s*細[\s\S]*?は\s*ず\s*れ[\s\S]{0,100}?[1I!ｌ]\s*[\/／]\s*([\d,.]+|--?)/
+                bb:  /(?:総|#)?\s*B\s*B[\s\S]{0,30}?[1I!ｌ]\s*[\/／]\s*([\d,.]+|--?)/,
+                rb:  /R\s*B[\s\S]{0,30}?[1I!ｌ]\s*[\/／]\s*([\d,.]+|--?)/,
+                ba:  /ベル\s*A[\s\S]{0,30}?[1I!ｌ]\s*[\/／]\s*([\d,.]+|--?)/,
+                sa:  /スイカ\s*A[\s\S]{0,30}?[1I!ｌ]\s*[\/／]\s*([\d,.]+|--?)/,
+                vc:  /V\s*S\s*チャンス\s*中\s*はずれ[\s\S]{0,30}?[1I!ｌ]\s*[\/／]\s*([\d,.]+|--?)/,
+                vg:  /V\s*S\s*G\s*A\s*M\s*E\s*中\s*はずれ[\s\S]{0,30}?[1I!ｌ]\s*[\/／]\s*([\d,.]+|--?)/,
+                cbs: /チェリー\s*[+＋]\s*ベル\s*揃い[\s\S]{0,30}?[1I!ｌ]\s*[\/／]\s*([\d,.]+|--?)/,
+                cbh: /チェリー\s*[+＋]\s*ベル\s*はずれ[\s\S]{0,30}?[1I!ｌ]\s*[\/／]\s*([\d,.]+|--?)/,
+                bbh: /(?:B\s*B|ビ\s*ッ\s*グ)\s*中\s*は\s*ず\s*れ|中\s*段\s*チ\s*ェ\s*リ\s*ー[\s\S]{0,30}?[1I!ｌ]\s*[\/／]\s*([\d,.]+|--?)/,
+                rbh: /R\s*B\s*中\s*詳\s*細[\s\S]*?は\s*ず\s*れ[\s\S]{0,30}?[1I!ｌ]\s*[\/／]\s*([\d,.]+|--?)/
             };
 
             let data = { totalG: totalG, bbCount: bbCount };
@@ -93,9 +92,11 @@
                 if (match && match[1]) {
                     let valStr = match[1].replace(/[\s,]/g, '');
                     data[key] = (valStr === '-' || valStr === '--') ? 0 : parseFloat(valStr);
-                    log(`${EXPECTED_MAP[key].label}: 1/${data[key] || '-'}`);
+                    // 表示を小数点1桁に固定
+                    const disp = (data[key] === 0) ? "-" : data[key].toFixed(1);
+                    log(`${EXPECTED_MAP[key].label}: 1/${disp}`);
                 } else {
-                    data[key] = 0;
+                    data[key] = null;
                     log(`${EXPECTED_MAP[key].label}: 未検出`);
                 }
             }
@@ -103,13 +104,12 @@
         }
 
         function runBayesian(data) {
-            // エラー処理: 総プレイ数、BB、RB、ベルAのいずれかが欠けていたら中止
-            if (!data.totalG || !data.bb || !data.rb || !data.ba) {
+            if (data.totalG === null || data.bb === null || data.rb === null || data.ba === null) {
                 [1, 2, 5, 6].forEach(s => {
                     document.getElementById(`p${s}`).innerText = "0.0%";
                     document.getElementById(`b${s}`).style.width = "0%";
                 });
-                log("\nERROR: 必須データ(総プレイ数/ボーナス/ベルA)が不足しています。解析を中止しました。");
+                log("\nERROR: 必須データが見当たりません。");
                 return;
             }
 
@@ -126,13 +126,13 @@
             for (let key in EXPECTED_MAP) {
                 const config = EXPECTED_MAP[key];
                 const obsVal = data[key];
-                if (!obsVal || obsVal <= 0 || !config.vals) continue;
+                if (obsVal === null || obsVal <= 0 || !config.vals) continue;
 
                 [1, 2, 5, 6].forEach(s => {
                     const pExp = 1 / config.vals[s];
-                    let logL = 0;
+                    let logL = k = N = 0;
                     if (config.type === 'bayesian' && data.totalG > 0) {
-                        const N = data.totalG; const k = N / obsVal;
+                        N = data.totalG; k = N / obsVal;
                         logL = k * Math.log(pExp / (1/obsVal)) + (N - k) * Math.log((1 - pExp) / (1 - 1/obsVal));
                         if (key === 'ba' || key === 'sa') logL *= weightG;
                     } else if (config.type === 'prob') {
@@ -148,13 +148,13 @@
             if (data.bbh > 0) { logLikelihoods[6] += Math.log(100); log("! BBハズレ検出: 設定6期待度上昇"); }
 
             const maxLog = Math.max(logLikelihoods[1], logLikelihoods[2], logLikelihoods[5], logLikelihoods[6]);
-            let total = 0;
-            let probs = {};
+            let total = 0; let probs = {};
             [1, 2, 5, 6].forEach(s => {
                 probs[s] = (logLikelihoods[s] === -Infinity) ? 0 : Math.exp(logLikelihoods[s] - maxLog);
                 total += probs[s];
             });
 
+            if (total === 0) return;
             [1, 2, 5, 6].forEach(s => {
                 const finalP = (probs[s] / total * 100).toFixed(1);
                 document.getElementById(`p${s}`).innerText = finalP + "%";
