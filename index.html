@@ -39,7 +39,7 @@
     </div>
 
     <div class="w-full max-w-md mx-auto flex flex-col flex-grow min-h-0">
-        <div id="log" class="console-box">【解析開始をお待ちください】</div>
+        <div id="log" class="console-box">【デバッグモード：全項目表示】</div>
     </div>
 
     <div class="w-full max-w-md mx-auto shrink-0 flex flex-col items-center gap-1">
@@ -51,16 +51,16 @@
     </div>
 
     <script>
-        const SETTING_DATA = {
-            bb:      { label: "ビッグボーナス確率", vals: {1: 273.1, 2: 268.6, 5: 264.3, 6: 256.0}, w: 1.0 },
-            rb:      { label: "レギュラーボーナス確率", vals: {1: 374.5, 2: 341.3, 5: 319.7, 6: 292.6}, w: 1.2 },
-            bellA:   { label: "ベルＡ", vals: {1: 10.9,  2: 10.7,  5: 10.5,  6: 10.2},  w: 0.3 }, 
-            bellB:   { label: "ベルＢ", vals: {1: 20.9,  2: 19.0,  5: 20.3,  6: 18.8},  w: 0.3 }, 
-            suikaA:  { label: "スイカＡ", vals: {1: 74.5,  2: 70.6,  5: 72.5,  6: 68.8},  w: 0.2 },
-            vc_miss: { label: "バーサスチャンス　はずれ", vals: {1: 5.0,  2: 4.9,  5: 4.6,  6: 4.5},   w: 2.0 },
-            vg_miss: { label: "バーサスゲーム　はずれ", vals: {1: 10.1, 2: 9.4,  5: 8.7,  6: 8.1},   w: 2.0 },
-            bb_haz:  { label: "ビッグ中　はずれ", vals: {1: 256.0, 2: 128.0, 5: 256.0, 6: 128.0}, w: 4.0 },
-            rb_haz:  { label: "レギュラー中　はずれ", vals: {1: 1000.0, 2: 1000.0, 5: 10.0, 6: 10.0}, w: 5.0 }
+        const SETTING_MAP = {
+            bb: { label: "ビッグボーナス確率", vals: {1: 273.1, 2: 268.6, 5: 264.3, 6: 256.0}, w: 1.0 },
+            rb: { label: "レギュラーボーナス確率", vals: {1: 374.5, 2: 341.3, 5: 319.7, 6: 292.6}, w: 1.2 },
+            bellA: { label: "ベルＡ", vals: {1: 10.9, 2: 10.7, 5: 10.5, 6: 10.2}, w: 0.3 },
+            bellB: { label: "ベルＢ", vals: {1: 20.9, 2: 19.0, 5: 20.3, 6: 18.8}, w: 0.3 },
+            suikaA: { label: "スイカＡ", vals: {1: 74.5, 2: 70.6, 5: 72.5, 6: 68.8}, w: 0.2 },
+            vc_miss: { label: "バーサスチャンス　はずれ", vals: {1: 5.0, 2: 4.9, 5: 4.6, 6: 4.5}, w: 2.0 },
+            vg_miss: { label: "バーサスゲーム　はずれ", vals: {1: 10.1, 2: 9.4, 5: 8.7, 6: 8.1}, w: 2.0 },
+            bb_haz: { label: "ビッグ中　はずれ", vals: {1: 256.0, 2: 128.0, 5: 256.0, 6: 128.0}, w: 4.0 },
+            rb_haz: { label: "レギュラー中　はずれ", vals: {1: 1000.0, 2: 1000.0, 5: 10.0, 6: 10.0}, w: 5.0 }
         };
 
         const logArea = document.getElementById('log');
@@ -69,53 +69,62 @@
         function extractParameters(lines) {
             logArea.innerHTML = "【抽出パラメータ確認】\n";
             const data = {};
-            const probRegex = /1\/([0-9,.]*)/;
+            const probRegex = /1\/([0-9,.-]+)/;
             
-            // 確率形式(1/x)をすべて抽出
-            const allProbs = lines.map(l => l.match(probRegex)).filter(m => m).map(m => parseFloat(m[1].replace(/,/g,'')));
-            
-            // 1. ボーナス・小役（SQM: 出現順序固定）
+            // 全項目をデフォルト 0 で初期化（デバッグ用）
+            Object.keys(SETTING_MAP).forEach(k => data[k] = 0);
+
+            const allProbs = lines.map(l => l.match(probRegex)).filter(m => m).map(m => {
+                const s = m[1].replace(/,/g,'');
+                return s === '-' ? 0 : parseFloat(s);
+            });
+
+            // 1. 基本項目
             data.bb = allProbs[1] || 0;
             data.rb = allProbs[2] || 0;
 
             const kIdx = lines.findIndex(l => l.includes('合算'));
             if (kIdx !== -1) {
-                const subProbs = lines.slice(kIdx).map(l => l.match(probRegex)).filter(m => m).map(m => parseFloat(m[1].replace(/,/g,'')));
+                const subProbs = lines.slice(kIdx).map(l => l.match(probRegex)).filter(m => m).map(m => {
+                    const s = m[1].replace(/,/g,'');
+                    return s === '-' ? 0 : parseFloat(s);
+                });
                 data.bellA = subProbs[1] || 0;
                 data.bellB = subProbs[2] || 0;
                 data.suikaA = subProbs[4] || 0;
             }
 
-            // 2. 独立スキャン項目（可変行対策）
-            const findValAfter = (label) => {
-                const idx = lines.findIndex(l => l.includes(label));
+            // 2. ラベル周辺検索
+            const findValAround = (keyword, targetLines) => {
+                const idx = targetLines.findIndex(l => l.includes(keyword));
                 if (idx === -1) return 0;
-                // ラベルの直後、または同一行から1/xを探す
-                const match = (lines[idx] + (lines[idx+1] || "")).match(probRegex);
-                return match ? parseFloat(match[1].replace(/,/g,'')) : 0;
+                const context = (targetLines[idx-1] || "") + " " + targetLines[idx] + " " + (targetLines[idx+1] || "");
+                const m = context.match(probRegex);
+                if (!m) return 0;
+                return m[1] === '-' ? 0 : parseFloat(m[1].replace(/,/g,''));
             };
 
-            data.vc_miss = findValAfter('VSチャンス中はずれ');
-            data.vg_miss = findValAfter('VSGAME中はずれ');
-            
-            // ビッグ中 はずれ (ユニメモ上は チェリー＋ベルはずれ)
-            data.bb_haz = findValAfter('チェリー＋ベルはずれ') || findValAfter('チェリー+ベルはずれ');
-            
-            // レギュラー中 はずれ (RBセクション内の ハズレ)
-            const rbIdx = lines.findIndex(l => l.includes('RB中詳細'));
-            if (rbIdx !== -1) {
-                const rbSection = lines.slice(rbIdx, rbIdx + 15);
-                const hazIdx = rbSection.findIndex(l => l.includes('ハズレ'));
-                if (hazIdx !== -1) {
-                    const match = rbSection[hazIdx+1]?.match(probRegex);
-                    data.rb_haz = match ? parseFloat(match[1].replace(/,/g,'')) : 0;
-                }
+            data.vc_miss = findValAround('VSチャンス中はずれ', lines);
+            data.vg_miss = findValAround('VSGAME中はずれ', lines);
+
+            // ビッグ中 はずれ（チェリー＋ベルはずれ / 中段チェリー）
+            data.bb_haz = findValAround('チェリー＋ベルはずれ', lines) || 
+                          findValAround('チェリー+ベルはずれ', lines) || 
+                          findValAround('中段チェリー', lines);
+
+            // レギュラー中 はずれ（RB中詳細セクション内）
+            const rbStart = lines.findIndex(l => l.includes('RB中詳細'));
+            if (rbStart !== -1) {
+                const rbSection = lines.slice(rbStart, rbStart + 20);
+                data.rb_haz = findValAround('ハズレ', rbSection) || findValAround('はずれ', rbSection);
             }
 
-            // ログ出力（指定の日本語ラベルを使用）
-            Object.keys(data).forEach(key => {
-                const label = SETTING_DATA[key]?.label || key;
-                log(`${label}: [ ${data[key] ? '1/' + data[key] : '---'} ]`);
+            // 【デバッグ修正】全項目を強制的にログへ出力
+            Object.keys(SETTING_MAP).forEach(key => {
+                const label = SETTING_MAP[key].label;
+                const v = data[key];
+                // 値が0（または未検出）の場合は 1/- と表示
+                log(`${label}: [ ${v === 0 ? '1/-' : '1/' + v} ]`);
             });
             return data;
         }
@@ -123,8 +132,8 @@
         function calculate(data) {
             let pts = { 1: 0, 2: 0, 5: 0, 6: 0 };
             let valid = 0;
-            Object.keys(SETTING_DATA).forEach(key => {
-                const t = SETTING_DATA[key]; const val = data[key];
+            Object.keys(SETTING_MAP).forEach(key => {
+                const t = SETTING_MAP[key]; const val = data[key];
                 if (!val || val <= 0) return;
                 valid++;
                 [1, 2, 5, 6].forEach(s => {
@@ -141,13 +150,11 @@
         const fileInput = document.getElementById('file-input');
         const dropZone = document.getElementById('drop-zone');
         if(localStorage.getItem('v_key')) document.getElementById('api-key').value = localStorage.getItem('v_key');
-        document.getElementById('save-key').onclick = () => { localStorage.setItem('v_key', document.getElementById('api-key').value); alert('APIキーを保存しました'); };
-
+        document.getElementById('save-key').onclick = () => { localStorage.setItem('v_key', document.getElementById('api-key').value); alert('保存しました'); };
         dropZone.addEventListener('click', () => fileInput.click());
         fileInput.addEventListener('change', async (e) => {
             const file = e.target.files[0]; if (!file) return;
             const key = document.getElementById('api-key').value;
-            if(!key) { alert("API KEYをセットしてください"); return; }
             const reader = new FileReader(); reader.readAsDataURL(file);
             reader.onload = async () => {
                 log("画像解析中...");
@@ -163,7 +170,7 @@
                             document.getElementById(`p${s}`).innerText = result[s] + "%";
                             document.getElementById(`b${s}`).style.width = result[s] + "%";
                         });
-                        log("\n解析が完了いたしました。");
+                        log("\n解析完了。");
                     }
                 } catch (err) { log("エラー: " + err.message); }
             };
