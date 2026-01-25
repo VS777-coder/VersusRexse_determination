@@ -74,7 +74,8 @@
 
     <script>
         /* ==========================================
-           1. SQM (Structured Query Mapping) DEFINITION
+           SQM (Structured Query Mapping) 
+           中段チェリー = ビッグ中 はずれ マッピング済み
            ========================================== */
         const SQM_MAP = [
             { id: 'bb',      label: 'ビッグ確率',       vals: {1: 273.1, 2: 268.6, 5: 264.3, 6: 256.0}, w: 1.0 },
@@ -91,12 +92,10 @@
             { id: 'rb_hazure', label: 'Reg中はずれ',       special: 'denial' }
         ];
 
-        /* ==========================================
-           2. LOGIC BLOCK (SQM ENGINE)
-           ========================================== */
         const logArea = document.getElementById('log');
         const log = (msg) => { logArea.innerHTML += msg + "\n"; logArea.scrollTop = logArea.scrollHeight; };
 
+        /* 前方一致・後方一致の両方に対応したSQMエンジン */
         function extractBySQM(lines) {
             logArea.innerHTML = "【抽出パラメータ確認】\n";
             const extracted = {};
@@ -104,11 +103,10 @@
 
             SQM_MAP.forEach(target => {
                 let foundVal = 0;
-                // インデックスを完全に無視し、ラベルで配列を走査
                 for (let i = lines.length - 1; i >= 0; i--) {
                     if (lines[i].includes(target.label)) {
-                        // 同一行、または直後1行のみに限定して誤認を防止
-                        const searchRange = [lines[i], lines[i+1] || ""];
+                        // ラベルの【前】【同じ行】【後】をすべて確認
+                        const searchRange = [lines[i], lines[i-1] || "", lines[i+1] || ""];
                         for (let line of searchRange) {
                             const match = line.match(probRegex);
                             if (match) {
@@ -179,6 +177,3 @@
                 } catch (err) { log("ERROR: " + err.message); }
             };
         };
-    </script>
-</body>
-</html>
