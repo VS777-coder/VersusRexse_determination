@@ -16,7 +16,17 @@
             min-height: 100vh;
         }
 
-        /* 赤いバージョン表記 */
+        /* 画像なし時の予備ロゴ */
+        .logo-text {
+            font-family: 'Arial Black', sans-serif;
+            background: linear-gradient(180deg, #00bfff, #1e3a8a);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            filter: drop-shadow(0 0 5px rgba(0, 191, 255, 0.5));
+            font-style: italic;
+            display: none; /* 初期は非表示 */
+        }
+
         .ver-text {
             color: #ef4444;
             text-shadow: 0 0 10px rgba(239, 68, 68, 0.6);
@@ -26,17 +36,15 @@
             margin-top: -5px;
         }
 
-        /* メインボタン */
         .main-btn {
-            background-color: #1e3a8a; /* 濃い青 */
-            border-radius: 9999px; /* 丸く */
+            background-color: #1e3a8a;
+            border-radius: 9999px;
             box-shadow: 0 4px 15px rgba(30, 58, 138, 0.5);
             transition: all 0.2s;
             border: 2px solid #2563eb;
         }
         .main-btn:active { transform: scale(0.98); }
 
-        /* 結果バーエリア */
         .result-card {
             background-color: #131722;
             border-radius: 16px;
@@ -47,7 +55,6 @@
         .bar-bg { background-color: #1f2937; height: 10px; border-radius: 4px; overflow: hidden; margin-top: 4px; }
         .bar-fill { height: 100%; transition: width 0.8s ease-out; }
 
-        /* コンソール画面（緑枠・黒背景） */
         .console-box {
             background-color: #000000;
             border: 1px solid #22c55e;
@@ -62,7 +69,6 @@
             box-shadow: 0 0 10px rgba(34, 197, 94, 0.2);
         }
 
-        /* API KEY 入力欄 */
         .api-input-dots {
             background-color: #1e293b;
             color: white;
@@ -79,8 +85,15 @@
 <body>
     <div class="max-w-md mx-auto flex flex-col items-center">
         
-        <div class="mb-6 text-center w-full">
-            <img src="vs.png" alt="VERSUS REVISE" class="mx-auto w-full max-w-[280px] object-contain drop-shadow-[0_0_15px_rgba(37,99,235,0.6)]">
+        <div class="mb-6 text-center w-full relative">
+            <img src="VS.png" alt="VERSUS REVISE" 
+                 class="mx-auto w-full max-w-[280px] object-contain drop-shadow-[0_0_15px_rgba(37,99,235,0.6)]"
+                 onerror="this.style.display='none'; document.getElementById('fallback-logo').style.display='block';">
+            
+            <div id="fallback-logo" class="logo-text">
+                <h1 class="text-4xl font-black italic mb-1">VERSUS <span class="text-white">REVISE</span></h1>
+            </div>
+
             <p class="ver-text mt-2">みおちゃん専用 VER 2.1.0</p>
         </div>
 
@@ -93,89 +106,63 @@
 
         <div class="w-full result-card">
             <div class="mb-3">
-                <div class="flex justify-between text-xs font-bold text-gray-400">
-                    <span>設定1</span><span id="p1">0.0%</span>
-                </div>
+                <div class="flex justify-between text-xs font-bold text-gray-400"><span>設定1</span><span id="p1">0.0%</span></div>
                 <div class="bar-bg"><div id="b1" class="bar-fill bg-gray-600" style="width:0%"></div></div>
             </div>
             <div class="mb-3">
-                <div class="flex justify-between text-xs font-bold text-blue-400">
-                    <span>設定2</span><span id="p2">0.0%</span>
-                </div>
+                <div class="flex justify-between text-xs font-bold text-blue-400"><span>設定2</span><span id="p2">0.0%</span></div>
                 <div class="bar-bg"><div id="b2" class="bar-fill bg-blue-600" style="width:0%"></div></div>
             </div>
             <div class="mb-3">
-                <div class="flex justify-between text-xs font-bold text-orange-400">
-                    <span>設定5</span><span id="p5">0.0%</span>
-                </div>
+                <div class="flex justify-between text-xs font-bold text-orange-400"><span>設定5</span><span id="p5">0.0%</span></div>
                 <div class="bar-bg"><div id="b5" class="bar-fill bg-orange-500" style="width:0%"></div></div>
             </div>
             <div class="mb-1">
-                <div class="flex justify-between text-xs font-bold text-red-500">
-                    <span>設定6</span><span id="p6">0.0%</span>
-                </div>
+                <div class="flex justify-between text-xs font-bold text-red-500"><span>設定6</span><span id="p6">0.0%</span></div>
                 <div class="bar-bg"><div id="b6" class="bar-fill bg-red-600" style="width:0%"></div></div>
             </div>
         </div>
 
         <div class="w-full mb-4">
-            <div id="log" class="console-box">
-【抽出パラメータ確認】
-待機中...
-            </div>
+            <div id="log" class="console-box">【抽出パラメータ確認】
+待機中...</div>
         </div>
 
         <div class="w-full flex flex-col items-center gap-2">
             <div class="flex w-full gap-2 justify-center">
                 <input type="password" id="api-key" class="api-input-dots flex-grow" placeholder="•••••••••••••••">
-                <button id="save-key" class="bg-blue-600 hover:bg-blue-500 text-white font-bold py-2 px-6 rounded-lg text-xs shadow-lg transition">
-                    SET
-                </button>
+                <button id="save-key" class="bg-blue-600 hover:bg-blue-500 text-white font-bold py-2 px-6 rounded-lg text-xs shadow-lg transition">SET</button>
             </div>
             <p id="key-status" class="text-[10px] font-bold text-blue-500 tracking-widest">API KEY: CHECKING</p>
         </div>
-
     </div>
 
     <script>
         // ==========================================
-        //  LOGIC: VER 1.0.0 FIXED (固定ストリーム+可変検索)
+        //  LOGIC: VER 1.0.0 FIXED
         // ==========================================
         const TARGETS = {
-            // 第1エリア：固定ストリーム (Index 0-13)
             bb:      { type: 'fixed', idx: 1,  name: 'BB確率',       vals: {1: 273.1, 2: 268.6, 5: 264.3, 6: 256.0}, w: 1.0 },
             rb:      { type: 'fixed', idx: 4,  name: 'RB確率',       vals: {1: 374.5, 2: 341.3, 5: 319.7, 6: 292.6}, w: 1.2 },
             bellA:   { type: 'fixed', idx: 6,  name: 'ベルA',        vals: {1: 10.9,  2: 10.7,  5: 10.5,  6: 10.2},  w: 0.3 }, 
             bellB:   { type: 'fixed', idx: 7,  name: 'ベルB',        vals: {1: 20.9,  2: 19.0,  5: 20.3,  6: 18.8},  w: 0.3 }, 
             suikaA:  { type: 'fixed', idx: 9,  name: 'スイカA',      vals: {1: 74.5,  2: 70.6,  5: 72.5,  6: 68.8},  w: 0.2 },
             cherryB: { type: 'fixed', idx: 13, name: 'チェリーB',    vals: {1: 56.2,  2: 57.7,  5: 53.1,  6: 54.4},  w: 0.2 },
-
-            // 第2エリア：可変キーワード検索
             vc_miss: { type: 'search', keys: ['VSチャンス中はずれ'],       name: 'VC中ハズレ', vals: {1: 5.0,  2: 4.9,  5: 4.6,  6: 4.5}, w: 0.8 },
             vg_miss: { type: 'search', keys: ['VSGAME中はずれ'],           name: 'VG中ハズレ', vals: {1: 10.1, 2: 9.4,  5: 8.7,  6: 8.1}, w: 0.8 },
             cb_match:{ type: 'search', keys: ['チェリー+ベル揃い','チェリー＋ベル揃い'], name: 'CB揃い',     vals: {1: 12.0, 2: 10.5, 5: 12.0, 6: 10.5}, w: 0.5 },
             cb_miss: { type: 'search', keys: ['チェリー+ベルはずれ','チェリー＋ベルはずれ'], name: 'CBハズレ',   vals: {1: 256.0, 2: 128.0, 5: 256.0, 6: 128.0}, w: 2.0 },
-            
-            // 特殊フラグ
             rb_miss: { type: 'special_rb', name: 'RBハズレ', desc: '出現で設定1・2否定' }
         };
 
         const logArea = document.getElementById('log');
-        
-        // ログ出力（コンソールの緑文字を再現）
-        function log(msg) {
-            logArea.innerHTML += msg + "\n";
-            logArea.scrollTop = logArea.scrollHeight;
-        }
+        function log(msg) { logArea.innerHTML += msg + "\n"; logArea.scrollTop = logArea.scrollHeight; }
         function clearLog() { logArea.innerHTML = "【抽出パラメータ確認】\n"; }
 
-        // --- PARSER ---
         function parseData(text) {
             clearLog();
             const lines = text.split(/\n/).map(l => l.trim()).filter(l => l);
             const data = {};
-
-            // 1. ノイズ除去＆確率ストリーム生成
             const probRegex = /1\/([0-9,]+\.?[0-9]*|\-)/;
             const stream = [];
             lines.forEach(l => {
@@ -187,19 +174,16 @@
                 }
             });
 
-            // 2. マッピング & コンソール表示
             Object.keys(TARGETS).forEach(key => {
                 const t = TARGETS[key];
                 let val = null;
-
                 if (t.type === 'fixed') {
                     if (stream.length > t.idx) {
                         val = stream[t.idx];
                         data[key] = val;
                         log(`${t.name}: [ 1/${val} ]`);
                     }
-                } 
-                else if (t.type === 'search') {
+                } else if (t.type === 'search') {
                     let foundLineIdx = -1;
                     for (const k of t.keys) {
                         foundLineIdx = lines.findIndex(l => l.includes(k));
@@ -226,8 +210,7 @@
                         log(`${t.name}: [ 0 (なし) ]`);
                         data[key] = 0;
                     }
-                }
-                else if (t.type === 'special_rb') {
+                } else if (t.type === 'special_rb') {
                     const rbAreaIdx = lines.findIndex(l => l.includes('RB中詳細'));
                     if (rbAreaIdx !== -1) {
                         const rbProbs = [];
@@ -247,28 +230,20 @@
                     } else { data[key] = 0; }
                 }
             });
-
             log("\n【Google OCR 生データ】\n------------------");
             return data;
         }
 
-        // --- CALCULATE ---
         function calculate(data) {
             let points = { 1: 0, 2: 0, 5: 0, 6: 0 };
             let validItems = 0;
             let denied12 = false;
-
-            if (data.rb_miss && data.rb_miss > 0) {
-                log("★ RBハズレ検出 (1/2否定)");
-                denied12 = true;
-            }
-
+            if (data.rb_miss && data.rb_miss > 0) { log("★ RBハズレ検出 (1/2否定)"); denied12 = true; }
             Object.keys(TARGETS).forEach(key => {
                 const t = TARGETS[key];
                 const val = data[key];
                 if (t.type === 'special_rb') return;
                 if (!val || val <= 0) return;
-
                 validItems++;
                 [1, 2, 5, 6].forEach(s => {
                     const diff = Math.abs(val - t.vals[s]);
@@ -276,19 +251,13 @@
                     points[s] += score;
                 });
             });
-
             if (validItems === 0 && !denied12) return null;
-
             let probs = {};
             let totalInv = 0;
             [1, 2, 5, 6].forEach(s => {
                 if (denied12 && (s === 1 || s === 2)) probs[s] = 0;
-                else {
-                    probs[s] = 1 / (points[s] + 0.1);
-                    totalInv += probs[s];
-                }
+                else { probs[s] = 1 / (points[s] + 0.1); totalInv += probs[s]; }
             });
-
             if (totalInv === 0) return {1:0, 2:0, 5:0, 6:0};
             return {
                 1: (probs[1] / totalInv * 100).toFixed(1),
@@ -298,34 +267,26 @@
             };
         }
 
-        // --- UI Events ---
         const fileInput = document.getElementById('file-input');
         const dropZone = document.getElementById('drop-zone');
         const statusText = document.getElementById('key-status');
-        
-        // Key Manager
         if(localStorage.getItem('v_key')) {
             document.getElementById('api-key').value = localStorage.getItem('v_key');
             statusText.innerText = "API KEY: READY";
         }
-
         document.getElementById('save-key').onclick = () => {
             const key = document.getElementById('api-key').value;
             localStorage.setItem('v_key', key);
             statusText.innerText = key ? "API KEY: READY" : "API KEY: EMPTY";
             alert('API KEY を保存しました');
         };
-
         dropZone.onclick = () => fileInput.click();
-
         fileInput.onchange = async (e) => {
             const file = e.target.files[0];
             if (!file) return;
             const key = document.getElementById('api-key').value;
             if (!key) { alert('API KEY を設定してください'); return; }
-
             logArea.innerHTML = "【抽出パラメータ確認】\n解析中...";
-            
             const reader = new FileReader();
             reader.readAsDataURL(file);
             reader.onload = async () => {
@@ -335,29 +296,18 @@
                         method: 'POST', body: JSON.stringify(body), headers: { 'Content-Type': 'application/json' }
                     });
                     const json = await res.json();
-                    
-                    if (!json.responses || !json.responses[0].fullTextAnnotation) {
-                        log("エラー: 文字認識に失敗しました");
-                        return;
-                    }
-
+                    if (!json.responses || !json.responses[0].fullTextAnnotation) { log("エラー: 文字認識に失敗しました"); return; }
                     const text = json.responses[0].fullTextAnnotation.text;
                     const data = parseData(text);
                     const result = calculate(data);
-
                     if (result) {
                         document.getElementById('p1').innerText = result[1] + "%"; document.getElementById('b1').style.width = result[1] + "%";
                         document.getElementById('p2').innerText = result[2] + "%"; document.getElementById('b2').style.width = result[2] + "%";
                         document.getElementById('p5').innerText = result[5] + "%"; document.getElementById('b5').style.width = result[5] + "%";
                         document.getElementById('p6').innerText = result[6] + "%"; document.getElementById('b6').style.width = result[6] + "%";
                         log("解析完了");
-                    } else {
-                        log("データが見つかりませんでした");
-                    }
-
-                } catch (e) {
-                    log("システムエラー: " + e.message);
-                }
+                    } else { log("データが見つかりませんでした"); }
+                } catch (e) { log("システムエラー: " + e.message); }
             };
         };
     </script>
