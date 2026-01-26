@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>VERSUS REVISE v1.0.7</title>
+    <title>VERSUS REVISE v1.0.8</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap');
@@ -21,7 +21,7 @@
 <body>
     <div class="text-center shrink-0 mb-2">
         <img src="VS.png" alt="VERSUS" class="mx-auto w-64 mb-1">
-        <p class="ver-text">よっちゃん専用 Ver 1.0.7</p>
+        <p class="ver-text">よっちゃん専用 Ver 1.0.8</p>
     </div>
 
     <div class="w-full shrink-0 mb-3 relative max-w-md mx-auto">
@@ -37,7 +37,7 @@
     </div>
 
     <div class="w-full max-w-md mx-auto flex flex-col flex-grow min-h-0 mb-2">
-        <div id="log" class="console-box">【v1.0.7】小数点1桁統一・安定版。</div>
+        <div id="log" class="console-box">【v1.0.8】解析準備完了。画像をアップロードしてください。</div>
     </div>
 
     <div class="w-full max-w-md mx-auto shrink-0 pb-2 flex gap-2">
@@ -70,8 +70,8 @@
             const totalG = gMatch ? parseInt(gMatch[1].replace(/,/g, '')) : null;
             if (totalG !== null) log(`総プレイ数: ${totalG}G`);
 
-            const bbCountMatch = text.match(/(?:総|#)?\s*B\s*B[\s\S]{0,100}?([\d,]+)回/);
-            const bbCount = bbCountMatch ? parseInt(bbCountMatch[1].replace(/,/g, '')) : 0;
+            const bbMatch = text.match(/(?:総|#)?\s*B\s*B[\s\S]{0,100}?([\d,]+)回/);
+            const bbCount = bbMatch ? parseInt(bbMatch[1].replace(/,/g, '')) : 0;
 
             const patterns = {
                 bb:  /(?:総|#)?\s*B\s*B[\s\S]{0,30}?[1I!ｌ]\s*[\/／]\s*([\d,.]+|--?)/,
@@ -86,30 +86,30 @@
                 rbh: /R\s*B\s*中\s*詳\s*細[\s\S]*?は\s*ず\s*れ[\s\S]{0,30}?[1I!ｌ]\s*[\/／]\s*([\d,.]+|--?)/
             };
 
-            let data = { totalG: totalG, bbCount: bbCount };
+            let results = { totalG: totalG, bbCount: bbCount };
             for (let key in patterns) {
                 const match = text.match(patterns[key]);
                 if (match && match[1]) {
                     let valStr = match[1].replace(/[\s,]/g, '');
-                    data[key] = (valStr === '-' || valStr === '--') ? 0 : parseFloat(valStr);
-                    // 表示を小数点1桁に固定
-                    const disp = (data[key] === 0) ? "-" : data[key].toFixed(1);
+                    results[key] = (valStr === '-' || valStr === '--') ? 0 : parseFloat(valStr);
+                    const disp = (results[key] === 0) ? "-" : results[key].toFixed(1);
                     log(`${EXPECTED_MAP[key].label}: 1/${disp}`);
                 } else {
-                    data[key] = null;
+                    results[key] = null;
                     log(`${EXPECTED_MAP[key].label}: 未検出`);
                 }
             }
-            return data;
+            return results;
         }
 
         function runBayesian(data) {
+            // ガード条件修正：0回(1/-)は許容し、null(ラベル未検出)のみエラーとする
             if (data.totalG === null || data.bb === null || data.rb === null || data.ba === null) {
                 [1, 2, 5, 6].forEach(s => {
                     document.getElementById(`p${s}`).innerText = "0.0%";
                     document.getElementById(`b${s}`).style.width = "0%";
                 });
-                log("\nERROR: 必須データが見当たりません。");
+                log("\nERROR: 必須ラベル(総G/BB/RB/ベルA)が見当たりません。");
                 return;
             }
 
@@ -130,9 +130,9 @@
 
                 [1, 2, 5, 6].forEach(s => {
                     const pExp = 1 / config.vals[s];
-                    let logL = k = N = 0;
+                    let logL = 0;
                     if (config.type === 'bayesian' && data.totalG > 0) {
-                        N = data.totalG; k = N / obsVal;
+                        const N = data.totalG; const k = N / obsVal;
                         logL = k * Math.log(pExp / (1/obsVal)) + (N - k) * Math.log((1 - pExp) / (1 - 1/obsVal));
                         if (key === 'ba' || key === 'sa') logL *= weightG;
                     } else if (config.type === 'prob') {
