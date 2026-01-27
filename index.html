@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>よっちゃんの解析 1.0.0</title>
+    <title>みおの解析 1.0.0</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@700&family=Share+Tech+Mono&display=swap');
@@ -21,7 +21,7 @@
 <body>
     <div class="text-center shrink-0 mb-4">
         <div class="text-xl font-black kawaii-title tracking-tighter">✨ バーサスリヴァイズ ＆ 新ハナビ ✨</div>
-        <p class="text-[10px] text-pink-300 font-bold tracking-widest uppercase">よっちゃん専用 Rev 1.0.0</p>
+        <p class="text-[10px] text-pink-300 font-bold tracking-widest uppercase">みおちゃん専用 Rev 1.0.0</p>
     </div>
 
     <div class="w-full shrink-0 mb-4 max-w-md mx-auto">
@@ -46,7 +46,7 @@
     </div>
 
     <script>
-        // 常駐項目ロジック & 高精度検索エンジン維持
+        // MASTER_CONFIG 構造維持
         const MASTER_CONFIG = {
             "VERSUS": {
                 name: "バーサスリヴァイズ",
@@ -95,6 +95,7 @@
             for (let id in session.extracted) {
                 const data = session.extracted[id];
                 const item = Object.values(config).find(v => v.id === id);
+                // 1/1などの異常データ( prob < 2.0 )を確実にスキップ
                 if (!item || !data.prob || data.prob < 2.0) continue;
 
                 [1, 2, 5, 6].forEach(s => {
@@ -144,7 +145,7 @@
                     return Math.abs((v[2]?.y || 0) - (v[0]?.y || 0));
                 }).filter(h => h > 0);
                 const avgHeight = heights.reduce((a, b) => a + b, 0) / heights.length;
-                const threshold = avgHeight * 3.0; // 動的しきい値維持
+                const threshold = avgHeight * 3.0;
                 addLog(`[DEBUG] THRESHOLD: ${threshold.toFixed(1)}px`);
 
                 let lines = [];
@@ -197,14 +198,18 @@
                     if (lineMatch) {
                         const nums = lineMatch[0].match(/[\d,.]+/g);
                         if (nums && nums.length >= 1) {
+                            // 整数の中から最大値を回数とみなす(1/などのゴミを避ける)
+                            const count = (nums.length > 1) ? Math.max(...nums.filter(n => !n.includes('.')).map(n => parseInt(n.replace(/,/g, '')))) : parseInt(nums[0].replace(/,/g, ''));
                             const decimal = nums.find(n => n.includes('.') && parseFloat(n) > 1.0);
-                            const lastNum = nums[nums.length - 1].replace(/,/g,'');
-                            
-                            session.extracted[item.id] = { 
-                                prob: decimal ? parseFloat(decimal) : parseFloat(lastNum),
-                                count: nums.length > 1 ? parseInt(nums[0].replace(/,/g,'')) : 0
-                            };
-                            addLog(`[OK] ${item.name}: 1/${session.extracted[item.id].prob}`);
+                            let prob = decimal ? parseFloat(decimal) : parseFloat(nums[nums.length - 1].replace(/,/g, ''));
+
+                            // 「0回 1/-」の誤読(prob=1)を徹底的に排除
+                            if (count === 0 && prob <= 1.0) {
+                                addLog(`[SKIPPED] ${item.name}: データなし(0回)`);
+                            } else {
+                                session.extracted[item.id] = { prob, count };
+                                addLog(`[OK] ${item.name}: ${count}回 (1/${prob})`);
+                            }
                         }
                     }
                 }
