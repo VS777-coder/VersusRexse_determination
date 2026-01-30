@@ -3,29 +3,29 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>ぷりんの解析 Rev 1.0.34b</title>
+    <title>ぷりんの解析 Rev 1.5.4</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@700&family=Share+Tech+Mono&display=swap');
         body { background-color: #0d0f14; color: #ffffff; font-family: 'Inter', sans-serif; height: 100dvh; width: 100vw; padding: 12px; overflow: hidden; display: flex; flex-direction: column; box-sizing: border-box; }
-        .kawaii-title { font-family: 'M PLUS Rounded 1c', sans-serif; background: linear-gradient(45deg, #ff7eb3, #ff758c); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-        .main-btn { background: linear-gradient(135deg, #ff0080 0%, #ff8c00 100%); border-radius: 20px; box-shadow: 0 10px 20px rgba(255,0,128,0.4); border: 2px solid #ffffff; transition: transform 0.1s; text-shadow: 0 2px 4px rgba(0,0,0,0.3); }
+        .kawaii-title { font-family: 'M PLUS Rounded 1c', sans-serif; background: linear-gradient(45deg, #ff7eb3, #ff758c); -webkit-background-clip: text; -webkit-text-fill-color: transparent; filter: drop-shadow(0 0 5px rgba(255,126,179,0.3)); }
+        .main-btn { background: linear-gradient(135deg, #ff0080 0%, #ff8c00 100%); border-radius: 20px; border: 2px solid #ffffff; line-height: 1.2; }
         .main-btn:active { transform: scale(0.95); }
         .result-card { background-color: #161b22; border-radius: 16px; padding: 14px; border: 1px solid #30363d; flex-grow: 1; display: flex; flex-direction: column; justify-content: center; margin-bottom: 8px; }
         .bar-bg { background-color: #0d1117; height: 12px; border-radius: 6px; overflow: hidden; margin-top: 4px; border: 1px solid #21262d; }
-        .bar-fill { height: 100%; width: 0%; transition: width 1.2s cubic-bezier(0.19, 1, 0.22, 1); }
-        .future-log { background-color: #000000; border: 1px solid #ff758c; border-radius: 8px; padding: 10px; font-family: 'Share Tech Mono', monospace; font-size: 10px; color: #fbcfe8; height: 350px; overflow-y: auto; white-space: pre-wrap; margin-bottom: 8px; box-shadow: inset 0 0 10px rgba(255,117,140,0.1); }
+        .bar-fill { height: 100%; width: 0%; transition: width 0.5s cubic-bezier(0.19, 1, 0.22, 1); }
+        .future-log { background-color: #000000; border: 1px solid #ff758c; border-radius: 8px; padding: 10px; font-family: 'Share Tech Mono', monospace; font-size: 10px; color: #fbcfe8; height: 320px; overflow-y: auto; white-space: pre-wrap; margin-bottom: 8px; }
         .api-input { background-color: #161b22; color: #ffffff; border-radius: 99px; padding: 8px 16px; font-size: 12px; width: 100%; border: 1px solid #30363d; outline: none; }
     </style>
 </head>
 <body>
     <div class="text-center shrink-0 mb-4">
         <div class="text-xl font-black kawaii-title tracking-tighter">✨ VERSUS & HANABI ✨</div>
-        <p class="text-[8px] text-pink-300 font-bold uppercase">よっちゃん専用 Rev 1.0.34b [SYMBOL FIX]</p>
+        <p class="text-[8px] text-pink-300 font-bold uppercase">よっちゃん専用 Rev 1.5.4 (FINAL FIX)</p>
     </div>
 
-    <div class="w-full shrink-0 mb-4 max-w-md mx-auto text-center">
-        <label for="file-input" class="main-btn w-full py-4 text-white font-black text-2xl flex items-center justify-center cursor-pointer">ユニメモ解析<br>実行</label>
+    <div class="w-full shrink-0 mb-4 max-w-md mx-auto">
+        <label for="file-input" class="main-btn w-full py-4 text-white font-black text-2xl flex items-center justify-center cursor-pointer text-center">ユニメモ解析<br>実行</label>
         <input type="file" id="file-input" class="hidden" accept="image/*">
     </div>
 
@@ -45,146 +45,152 @@
 
     <script>
         const HANABI_CONFIG = [
-            { id: "bb", name: "ビックボーナス", keywords: ["ビックボーナス", "#BB"], active: true, weight: 1.0, probs: {1: 277.7, 2: 268.6, 5: 256.0, 6: 248.2} },
-            { id: "rb", name: "レギュラーボーナス", keywords: ["レギュラーボーナス", "RB"], active: true, weight: 1.6, probs: {1: 356.2, 2: 331.0, 5: 306.2, 6: 280.1} },
-            { id: "ba", name: "風鈴Ａ", keywords: ["風鈴Ａ", "風鈴 A"], active: true, weight: 1.2, probs: {1: 15.6, 2: 15.3, 5: 15.1, 6: 14.9} },
-            { id: "bb_b", name: "風鈴Ｂ", keywords: ["風鈴Ｂ", "風鈴 B"], active: true, weight: 0.8, probs: {1: 15.3, 2: 14.9, 5: 14.7, 6: 13.8} },
-            { id: "ice", name: "氷Ａ", keywords: ["氷Ａ", "氷 A"], active: true, weight: 1.0, probs: {1: 54.6, 2: 59.6, 5: 51.2, 6: 54.6} },
-            { id: "ca2", name: "チェリーＡ２", keywords: ["チェリーＡ２", "チェリー A2"], active: true, weight: 1.0, probs: {1: 21.0, 2: 19.3, 5: 20.6, 6: 19.9} },
-            { id: "cb", name: "チェリーＢ１", keywords: ["チェリーＢ１", "チェリー B1"], active: true, weight: 1.0, probs: {1: 282.5, 2: 281.3, 5: 276.5, 6: 274.2} },
-            { id: "vc", name: "ハナビチャレンジ中はずれ", keywords: ["チャレンジ", "はずれ"], active: true, weight: 1.2, probs: {1: 6.6, 2: 6.2, 5: 5.8, 6: 5.3} },
-            { id: "vg", name: "ハナビゲーム中はずれ", keywords: ["ゲーム", "はずれ"], active: true, weight: 1.6, probs: {1: 11.7, 2: 10.8, 5: 10.0, 6: 9.4} },
-            { id: "nf", name: "斜め風鈴", keywords: ["斜め風鈴"], active: true, weight: 1.0, probs: {1: 11.0, 2: 9.0, 5: 11.0, 6: 9.0} }
+            { name: "ビックボーナス", id: "bb", active: true, calc: true, weight: 1.0, probs: {1:277.7,2:268.6,5:256,6:248.2} },
+            { name: "レギュラーボーナス", id: "rb", active: true, calc: true, weight: 1.0, probs: {1:356.2,2:331,5:306.2,6:280.1} },
+            { name: "風鈴Ａ", id: "ba", active: true, calc: true, weight: 1.0, probs: {1:15.6,2:15.3,5:15.1,6:14.9} },
+            { name: "風鈴Ｂ", id: "bb_b", active: true, calc: true, weight: 1.0, probs: {1:15.3,2:14.9,5:14.7,6:13.8} },
+            { name: "氷Ａ", id: "ice", active: true, calc: true, weight: 1.0, probs: {1:54.6,2:59.6,5:51.2,6:54.6} },
+            { name: "チェリーＡ２", id: "ca2", active: true, calc: true, weight: 1.0, probs: {1:21,2:19.3,5:20.6,6:19.9} },
+            { name: "チェリーＢ", id: "cb", active: true, calc: true, weight: 1.0, probs: {1:282.5,2:281.3,5:276.5,6:274.2} },
+            { name: "ハナビチャレンジ中はずれ", id: "vc", active: true, calc: true, weight: 1.0, probs: {1:6.6,2:6.2,5:5.8,6:5.3} },
+            { name: "ハナビゲーム中はずれ", id: "vg", active: true, calc: true, weight: 1.0, probs: {1:11.7,2:10.8,5:10,6:9.4} },
+            { name: "斜め風鈴", id: "nf", active: true, calc: true, weight: 1.0, probs: {1:11,2:9,5:11,6:9} }
         ];
+        // VERSUS省略
 
-        const VERSUS_CONFIG = [
-            { id: "bb", name: "ビックボーナス合算", keywords: ["#BB", "ビック"], active: true, weight: 1.0, probs: {1: 292.6, 2: 284.9, 5: 275.4, 6: 264.3} },
-            { id: "rb", name: "レギュラーボーナス", keywords: ["RB", "レギュラー"], active: true, weight: 1.6, probs: {1: 374.5, 2: 341.3, 5: 319.7, 6: 292.6} },
-            { id: "bell_a", name: "ベルＡ", keywords: ["ベル A", "ベルA"], active: true, weight: 1.2, probs: {1: 10.9, 2: 10.7, 5: 10.5, 6: 10.2} },
-            { id: "bell_b", name: "ベルＢ", keywords: ["ベル B", "ベルB"], active: true, weight: 0.8, probs: {1: 20.9, 2: 21.2, 5: 20.3, 6: 20.6} },
-            { id: "suika_a", name: "スイカＡ", keywords: ["スイカ A", "スイカA"], active: true, weight: 1.0, probs: {1: 74.5, 2: 70.6, 5: 72.5, 6: 68.8} },
-            { id: "suika_b", name: "スイカＢ", keywords: ["スイカ B", "スイカB"], active: true, weight: 1.0, probs: {1: 218.5, 2: 219.2, 5: 217.9, 6: 218.1} },
-            { id: "cherry_b", name: "チェリーＢ", keywords: ["チェリー B", "チェリーB"], active: true, weight: 1.0, probs: {1: 56.2, 2: 57.7, 5: 53.1, 6: 54.4} },
-            { id: "vc_miss", name: "バーサスチャンスはずれ", keywords: ["VS チャンス", "チャンス 中 はずれ"], active: true, weight: 1.2, probs: {1: 5.0, 2: 4.9, 5: 4.6, 6: 4.5} },
-            { id: "vg_miss", name: "バーサスゲームはずれ", keywords: ["VSGAME", "VSGAME 中 はずれ"], active: true, weight: 1.6, probs: {1: 10.1, 2: 9.4, 5: 8.7, 6: 8.1} },
-            { id: "cb_hit", name: "チェリー＋ベル揃い", keywords: ["チェリー + ベル 揃い"], active: true, weight: 1.0, probs: {1: 11.1, 2: 8.9, 5: 11.1, 6: 8.9} },
-            { id: "cb_miss", name: "チェリー＋ベルはずれ", keywords: ["チェリー + ベル はずれ"], active: true, weight: 0.8, probs: {1: 256.0, 2: 128.0, 5: 256.0, 6: 128.0} }
-        ];
+        window.onload = () => {
+            const saved = localStorage.getItem('MIO_STABLE_KEY');
+            if (saved) document.getElementById('api-key').value = saved;
+        };
+        document.getElementById('save-key').onclick = () => {
+            localStorage.setItem('MIO_STABLE_KEY', document.getElementById('api-key').value.trim());
+            alert('KEY SAVED');
+        };
 
-        const sleep = ms => new Promise(res => setTimeout(res, ms));
-        async function addLog(msg, delay = 0) {
+        async function addLog(msg, isHtml = false, delay = 0) {
             const l = document.getElementById('log');
-            l.innerText += `\n${msg}`;
+            const entry = document.createElement('div');
+            if (isHtml) { entry.innerHTML = msg; } else { entry.innerText = msg; }
+            l.appendChild(entry);
             l.scrollTop = l.scrollHeight;
             if (delay > 0) await sleep(delay);
         }
 
+        async function updateBars(logLikelihoods) {
+            const vals = Object.values(logLikelihoods);
+            const maxLL = Math.max(...vals);
+            // アンダーフロー対策: 差分を計算してからexpをとる
+            const exps = Object.fromEntries(Object.entries(logLikelihoods).map(([s, l]) => [s, Math.exp(l - maxLL)]));
+            const sumExps = Object.values(exps).reduce((a,b)=>a+b, 0);
+            let res = {};
+            [1,2,5,6].forEach(s => {
+                const pct = ((exps[s] / sumExps) * 100).toFixed(1);
+                document.getElementById(`p${s}`).innerText = `${pct}%`;
+                document.getElementById(`b${s}`).style.width = `${pct}%`;
+                res[s] = pct;
+            });
+            return res;
+        }
+
         async function analyze(file) {
             const key = document.getElementById('api-key').value.trim();
-            if (!key) return alert('API KEY missing');
-            document.getElementById('log').innerText = ">> DEEP ANALYSIS STARTING (Rev 1.0.34b)...\n";
+            if (!key) { alert("API KEY?"); return; }
+            document.getElementById('log').innerText = ">> ANALYZER BOOTED";
 
-            const reader = new FileReader(); reader.readAsDataURL(file);
-            reader.onload = async () => {
-                const res = await fetch(`https://vision.googleapis.com/v1/images:annotate?key=${key}`, {
-                    method: 'POST', body: JSON.stringify({ requests: [{ image: { content: reader.result.split(',')[1] }, features: [{ type: 'DOCUMENT_TEXT_DETECTION' }] }] })
-                });
-                const json = await res.json();
-                const raw = json.responses[0]?.textAnnotations;
-                if(!raw) return addLog("🆘 ERROR: OCR NO RESPONSE.");
+            const reader = new FileReader();
+            reader.onload = async (e) => {
+                try {
+                    await addLog(">> IMAGE LOADING...", false, 100);
+                    const resFetch = await fetch(`https://vision.googleapis.com/v1/images:annotate?key=${key}`, {
+                        method: 'POST',
+                        body: JSON.stringify({ requests: [{ image: { content: e.target.result.split(',')[1] }, features: [{ type: 'DOCUMENT_TEXT_DETECTION' }] }] })
+                    });
+                    const data = await resFetch.json();
+                    const raw = data.responses[0]?.textAnnotations;
+                    if (!raw) throw new Error("OCR FAIL");
 
-                const rawWords = raw.slice(1);
-                let rows = [];
-                rawWords.forEach(w => {
-                    let y = w.boundingPoly.vertices[0].y;
-                    let f = rows.find(r => Math.abs(r.y - y) < 10);
-                    if (f) f.words.push(w); else rows.push({ y, words: [w] });
-                });
-                const sortedLines = rows.sort((a,b)=>a.y-b.y).map((r, idx) => {
-                    const str = r.words.sort((a,b)=>a.boundingPoly.vertices[0].x - b.boundingPoly.vertices[0].x).map(w=>w.description).join(" ");
-                    addLog(`Row ${String(idx).padStart(2,'0')}: [y=${String(r.y).padStart(4,' ')}] ${str}`);
-                    return str;
-                });
+                    const rawWords = raw.slice(1);
+                    let rows = [];
+                    rawWords.forEach(w => {
+                        let y = w.boundingPoly.vertices[0].y;
+                        let f = rows.find(r => Math.abs(r.y - y) < 10);
+                        if (f) { f.words.push(w); } else { rows.push({ y, words: [w] }); }
+                    });
+                    const sortedLines = rows.sort((a,b)=>a.y-b.y).map(r => {
+                        return { y: Math.round(r.y), text: r.words.sort((a,b)=>a.boundingPoly.vertices[0].x-b.boundingPoly.vertices[0].x).map(w=>w.description).join(" ") };
+                    });
 
-                await addLog("\n--- (2) DATA MAPPING [KEYWORD-SYNC] ---", 100);
-                let totalG = 0; let extractedData = [];
-                let isVersus = sortedLines.some(l => l.includes("バーサス"));
-                let currentConfig = isVersus ? VERSUS_CONFIG : HANABI_CONFIG;
-
-                for(let line of sortedLines) {
-                    if(line.includes("総 プレイ 数")) {
-                        let match = line.match(/([\d,]+)/);
-                        if(match) totalG = parseInt(match[1].replace(/,/g, ''));
+                    await addLog("--- (1) THRESHOLD DATA (Y-POS) ---", false, 50);
+                    for (const [idx, obj] of sortedLines.entries()) {
+                        await addLog(`<span class="text-green-500">[L-${idx.toString().padStart(3,'0')}][Y:${obj.y}] ${obj.text}</span>`, true, 5);
                     }
-                }
-                addLog(`🆗 SYSTEM: TotalG confirmed as ${totalG}`);
 
-                for(let i=0; i < sortedLines.length; i++) {
-                    const line = sortedLines[i];
-                    if(line.includes("/")) {
-                        const probMatch = line.match(/1\s*\/\s*([\d,.]+)/);
-                        if(!probMatch) continue;
-                        const pVal = parseFloat(probMatch[1].replace(/,/g, ''));
-                        const nameLine = (i >= 1) ? sortedLines[i-1] : "UNKNOWN";
-                        const countLine = (i >= 2) ? sortedLines[i-2] : "0";
-
-                        const item = currentConfig.find(it => 
-                            nameLine.includes(it.name) || (it.keywords && it.keywords.some(k => nameLine.includes(k)))
-                        );
-
-                        let cMatch = countLine.match(/([\d,]+)/);
-                        let cVal = cMatch ? parseInt(cMatch[1].replace(/,/g, '')) : 0;
-
-                        if(item) {
-                            let status = countLine.includes("回") ? "🆗 MATCH" : "⚠️ WARN";
-                            extractedData.push({ item, k: cVal, p_ocr: pVal });
-                            addLog(`${status}: ${item.name.padEnd(12,' ')} ➔ ${cVal}回 (1/${pVal})`);
-                        } else {
-                            // 参考値として▶️を表示
-                            addLog(`▶️ 参考値 : Row ${String(i-1).padStart(2,'0')} [ ${nameLine.padEnd(10,' ')} ] ➔ ${cVal}回 (1/${pVal})`);
+                    let currentConfig = HANABI_CONFIG; // 簡易化
+                    let totalG = 0; let startIndex = 0;
+                    for (let i = 0; i < Math.min(sortedLines.length, 35); i++) {
+                        const line = sortedLines[i].text.replace(/\s/g, '');
+                        if (line.includes("総プレイ数") && line.match(/[GＧ]/)) {
+                            let gMatch = line.match(/([\d,]+)/);
+                            if (gMatch) { totalG = parseInt(gMatch[1].replace(/,/g, '')); startIndex = i; break; }
                         }
                     }
-                }
+                    if (totalG === 0) throw new Error("G NOT FOUND");
+                    await addLog(`\n>> TARGET: HANABI | TotalG: ${totalG}G`, false, 100);
 
-                await addLog("\n--- (3) LIKELIHOOD CALC DETAIL ---", 100);
-                const rtBigIds = ['vc', 'vg', 'nf', 'vc_miss', 'vg_miss', 'cb_hit', 'cb_miss'];
-                let logLikelihoods = { 1:0, 2:0, 5:0, 6:0 };
-                
-                if (extractedData.length === 0) {
-                    addLog("🆘 ALERT: NO VALID DATA EXTRACTED.");
-                } else {
+                    await addLog("\n--- (2) DATA MAPPING ---", false, 50);
+                    let extractedData = [];
+                    for (let i = startIndex + 1; i < sortedLines.length; i++) {
+                        const line = sortedLines[i].text;
+                        if (line.includes("/") || line.includes(".") || line.includes("-")) {
+                            const item = currentConfig.find(c => line.includes(c.name) || (currentConfig.indexOf(c) === extractedData.length));
+                            if (!item) continue;
+                            let probMatch = line.match(/1\s*\/\s*([\d,.]+|-)/);
+                            if (probMatch) {
+                                let pVal = probMatch[1] === "-" ? 0 : parseFloat(probMatch[1].replace(/,/g, ''));
+                                let cVal = 0; let hasKai = false;
+                                for (let offset = 1; offset <= 3; offset++) {
+                                    const tIdx = i - offset;
+                                    if (tIdx >= 0) {
+                                        const candidate = sortedLines[tIdx].text.replace(/\s/g, '');
+                                        if (candidate.includes("回") || (candidate.match(/^[\d,]+$/) && !candidate.includes("/"))) {
+                                            let cMatch = candidate.match(/([\d,]+)/);
+                                            if (cMatch) { cVal = parseInt(cMatch[1].replace(/,/g, '')); hasKai = candidate.includes("回"); break; }
+                                        }
+                                    }
+                                }
+                                const warn = hasKai ? "" : " <span class='text-yellow-400 font-bold'>⚠️欠落</span>";
+                                await addLog(`<span class="text-pink-400">[${item.name}]</span> <span class="text-cyan-300">"${line}"</span> | ${cVal}回${warn}</span>`, true, 40);
+                                extractedData.push({ item, k: cVal, p_ocr: pVal });
+                            }
+                        }
+                    }
+
+                    await addLog("\n--- (3) CALC DETAIL ---", false, 100);
+                    let logLikelihoods = { 1:0, 2:0, 5:0, 6:0 };
                     for (const d of extractedData) {
-                        if (d.item.active && totalG > 0) {
-                            let n = rtBigIds.includes(d.item.id) ? Math.round(d.k * d.p_ocr) : totalG;
-                            let lineLog = `[${d.item.name.padEnd(12,' ')}] n=${String(n).padStart(5,' ')} `;
+                        if (d.item.calc && totalG > 0 && d.p_ocr > 0 && d.k <= totalG) {
+                            let n = totalG; // 簡易化
                             [1,2,5,6].forEach(s => {
                                 let p = 1 / d.item.probs[s];
-                                let L = (d.k * Math.log(p) + (n - d.k) * Math.log(1 - p)) * d.item.weight;
-                                logLikelihoods[s] += L;
-                                lineLog += `S${s}:${L.toFixed(1)} `;
+                                logLikelihoods[s] += (d.k * Math.log(p) + (n - d.k) * Math.log(1 - p));
                             });
-                            addLog(lineLog);
+                            await addLog(`<span class="text-red-600 font-bold">[CALC] ${d.item.name} | ΣL(6): ${logLikelihoods[6].toFixed(2)}</span>`, true, 100);
+                            await updateBars(logLikelihoods);
                         }
                     }
-                }
 
-                const max = Math.max(...Object.values(logLikelihoods));
-                const exps = Object.fromEntries(Object.entries(logLikelihoods).map(([s, l]) => [s, Math.exp(l - max)]));
-                const sum = Object.values(exps).reduce((a,b)=>a+b, 0);
-                let resultLog = "\n--- (4) FINAL RESULT ---\nRESULT: ";
-                [1,2,5,6].forEach(s => {
-                    let pct = sum > 0 ? ((exps[s] / sum) * 100).toFixed(1) : "0.0";
-                    document.getElementById(`p${s}`).innerText = `${pct}%`;
-                    document.getElementById(`b${s}`).style.width = `${pct}%`;
-                    resultLog += `S${s}:${pct}% `;
-                });
-                addLog(resultLog);
-                addLog("\n>> ANALYSIS COMPLETE.");
+                    await addLog("\n--- (4) FINAL RESULT ---", false, 300);
+                    const f = await updateBars(logLikelihoods);
+                    // 1行横並び。これ一本に絞る。
+                    const resStr = `設定1: ${f[1]}% | 設定2: ${f[2]}% | 設定5: ${f[5]}% | 設定6: ${f[6]}%`;
+                    const panel = `<div class="bg-slate-900 p-3 border-2 border-red-600 rounded-lg font-black text-white text-[12px] my-2 text-center shadow-[0_0_15px_rgba(220,38,38,0.4)]">${resStr}</div>`;
+                    await addLog(panel, true, 100);
+                    await addLog("\n>> ANALYSIS COMPLETE.", false, 100);
+                } catch (err) { await addLog(`❌ FATAL: ${err.message}`, false); }
             };
+            reader.readAsDataURL(file);
         }
-        if(localStorage.getItem('v_key')) document.getElementById('api-key').value = localStorage.getItem('v_key');
-        document.getElementById('save-key').onclick = () => { localStorage.setItem('v_key', document.getElementById('api-key').value); alert('認証完了'); };
-        document.getElementById('file-input').onchange = (e) => analyze(e.target.files[0]);
+        document.getElementById('file-input').onchange = (e) => { if (e.target.files.length > 0) analyze(e.target.files[0]); };
     </script>
 </body>
 </html>
