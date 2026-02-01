@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>ぷりんの解析 Rev 1.3.0</title>
+    <title>ぷりんの解析 Rev 1.3.1</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@700&family=Share+Tech+Mono&display=swap');
@@ -30,7 +30,7 @@
 <body>
     <div class="text-center shrink-0 mb-4 px-2">
         <div class="font-black kawaii-title tracking-tighter">L-HANABI & VERSUS</div>
-        <p class="text-[10px] text-pink-300 font-bold uppercase tracking-widest mt-1">Rev 1.3.0 (Complete)</p>
+        <p class="text-[10px] text-pink-300 font-bold uppercase tracking-widest mt-1">Rev 1.3.1 (Simple)</p>
     </div>
 
     <div class="w-full shrink-0 mb-4 max-w-md mx-auto">
@@ -55,7 +55,8 @@
     <script>
         const sleep = ms => new Promise(res => setTimeout(res, ms));
 
-        // --- スマスロハナビ (Lハナビ) 定義データ [COMPLETE] ---
+        // --- スマスロハナビ (Lハナビ) 定義データ [Simple Ver] ---
+        // ※ index 14以降（バラケ目・REG系）を削除して軽量化
         window.L_HANABI_CONFIG = [
             // ボーナス確率
             { index: 0, id: "total_bonus", name: "ボーナス合算", active: false, weight: 0.0, probs: {1: 169.8, 2: 161.0, 5: 149.3, 6: 138.8} },
@@ -75,16 +76,9 @@
             { index: 10, id: "vc", name: "ハナビチャレンジ中はずれ", active: true, weight: 1.0, probs: {1: 4.7, 2: 4.5, 5: 4.3, 6: 4.2} },
             { index: 11, id: "vg", name: "ハナビゲーム中はずれ", active: true, weight: 1.0, probs: {1: 6.4, 2: 6.0, 5: 5.4, 6: 5.4} },
 
-            // BIG中詳細
+            // BIG中詳細 (風鈴のみ採用)
             { index: 12, id: "bb_bell_a", name: "BIG中風鈴Ａ", active: true, weight: 1.0, probs: {1: 1.1, 2: 1.2, 5: 1.1, 6: 1.2} },
-            { index: 13, id: "bb_bell_b", name: "BIG中風鈴Ｂ", active: true, weight: 1.0, probs: {1: 10.0, 2: 7.0, 5: 10.0, 6: 7.0} },
-            { index: 14, id: "bb_rare", name: "BIG中バラケ目", active: true, weight: 1.0, probs: {1: 16384.0, 2: 16384.0, 5: 819.2, 6: 819.2} },
-
-            // REG中詳細
-            { index: 15, id: "rb_bell", name: "REG中風鈴", active: false, weight: 0.0, probs: {1: 1.2, 2: 1.2, 5: 1.2, 6: 1.2} },
-            { index: 16, id: "rb_1mai", name: "REG中1枚役", active: true, weight: 1.0, probs: {1: 8.0, 2: 8.0, 5: 7.0, 6: 7.0} },
-            { index: 17, id: "rb_15mai", name: "REG中共通15枚", active: false, weight: 0.0, probs: {1: 32.8, 2: 32.8, 5: 32.8, 6: 32.8} },
-            { index: 18, id: "rb_rare", name: "REG中バラケ目", active: true, weight: 1.0, probs: {1: 16384.0, 2: 16384.0, 5: 16384.0, 6: 1092.3} }
+            { index: 13, id: "bb_bell_b", name: "BIG中風鈴Ｂ", active: true, weight: 1.0, probs: {1: 10.0, 2: 7.0, 5: 10.0, 6: 7.0} }
         ];
 
         // --- 新ハナビ ---
@@ -306,18 +300,4 @@
                     const finalExps = await updateBars(logLikelihoods);
                     const sumFinal = Object.values(finalExps).reduce((a,b)=>a+b, 0);
                     let panel = `<div class="flex justify-around bg-slate-900 p-2 border border-red-900 rounded-lg font-black text-sm">`;
-                    [1,2,5,6].forEach(s => {
-                        let pct = ((finalExps[s] / sumFinal) * 100).toFixed(1);
-                        panel += `<div class="text-center"><span class="block text-[10px] opacity-70">設定${s}</span><span class="text-white">${pct}%</span></div>`;
-                    });
-                    panel += `</div>`;
-                    await addLog(panel, true, 100);
-                    await addLog(`<br><span class="text-pink-400">>> ANALYSIS COMPLETE.</span>`, true, 100);
-                } catch (err) { await addLog(`<span class="text-red-500 font-bold">❌ FATAL ERROR: ${err.message}</span>`, true); }
-            };
-            reader.readAsDataURL(file);
-        }
-        document.getElementById('file-input').onchange = (e) => { if (e.target.files.length > 0) analyze(e.target.files[0]); };
-    </script>
-</body>
-</html>
+                    [1,2,5,6
