@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>ANALYZER Rev 3.1.10</title>
+    <title>ANALYZER Rev 3.1.11</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Squada+One&family=Noto+Sans+JP:wght@700;900&display=swap');
@@ -31,9 +31,9 @@
 <body>
     <div class="app-header">
         <div class="main-title">HANABI ANALYZER</div>
-        <div class="rev-tag">Revision 3.1.10 - Structured Logger</div>
+        <div class="rev-tag">Revision 3.1.11 - Visual Insight Engine</div>
     </div>
-    <div class="shrink-0 mb-3"><label for="f-in" class="main-btn"><span>よしこ💕</span></label><input type="file" id="f-in" class="hidden" accept="image/*"></div>
+    <div class="shrink-0 mb-3"><label for="f-in" class="main-btn"><span>💕よしこ💕/span></label><input type="file" id="f-in" class="hidden" accept="image/*"></div>
     <div class="result-card panel-frame">
         <div id="machine-type" class="absolute top-2 right-3 text-[10px] text-blue-400 font-bold">READY</div>
         <div class="mt-4">
@@ -117,7 +117,7 @@ const VERSUS_CONFIG = [
 ];
 
 /* ============================================================
-   LOGIC ENGINE Rev 3.1.10
+   LOGIC ENGINE Rev 3.1.11
    ============================================================ */
 const logDisplay = document.getElementById('log-display');
 const addLog = (m, c="text-slate-400") => { const e=document.createElement('div'); e.className=c; e.innerHTML=m; logDisplay.appendChild(e); logDisplay.scrollTop=logDisplay.scrollHeight; };
@@ -165,7 +165,6 @@ async function run(file) {
         document.getElementById('machine-type').innerText = machine.name;
         addLog(`  DETECTED: ${machine.name}`);
 
-        // アンカー特定 (G数以前はゴミ)
         let anchorIdx = -1, gCounts = [];
         for(let i=0; i<fullLines.length; i++){
             const lineTrim = fullLines[i].replace(/\s/g, '');
@@ -225,33 +224,55 @@ async function run(file) {
                 }
             }
             finalStorage.push({ ...def, k, n });
-            addLog(`  ${def.name.padEnd(12, ' ')} ${String(k).padStart(4, ' ')}回 : 1/${data.rawP}`);
+            
+            // 小数点第一位で統一
+            const displayProb = k > 0 ? (n / k).toFixed(1) : '-';
+            addLog(`  ${def.name.padEnd(12, ' ')} ${String(k).padStart(4, ' ')}回 : 1/${displayProb}`);
         });
 
+        // (5) 尤度計算 - 項目順遵守 + 強度色付け
         addLog(`\n（５）尤度計算　各項目・各設定別に強度ギャップ`, "text-blue-400 font-bold");
-        let lls = {1:0, 2:0, 5:0, 6:0};
-        finalStorage.forEach(res => {
-            if (res.active && res.k >= 0 && res.n > 0) {
+        
+        // 強度計算用
+        const intensityData = finalStorage
+            .filter(res => res.active && res.k >= 0 && res.n > 0)
+            .map(res => {
                 let itemLLs = {};
                 [1,2,5,6].forEach(s => { 
                     const tp = 1/res.probs[s];
                     itemLLs[s] = (res.k * Math.log(tp) + (res.n - res.k) * Math.log(1 - tp));
-                    lls[s] += itemLLs[s];
                 });
-                const maxL = Math.max(...Object.values(itemLLs));
-                const stars = [1,2,5,6].map(s => {
-                    const g = maxL - itemLLs[s];
-                    const sStr = g < 0.2 ? "★★★★★" : g < 0.7 ? "★★★★☆" : g < 1.5 ? "★★★☆☆" : g < 3.0 ? "★★☆☆☆" : "★☆☆☆☆";
-                    return `設${s}:${sStr}`;
-                }).join(" ");
-                addLog(`  ${res.name.padEnd(12, ' ')} ${stars}`);
-            }
+                const vals = Object.values(itemLLs);
+                return { id: res.id, intensity: Math.max(...vals) - Math.min(...vals), itemLLs, maxL: Math.max(...vals) };
+            });
+
+        const top3Ids = [...intensityData].sort((a,b) => b.intensity - a.intensity).slice(0, 3).map(x => x.id);
+
+        let totalLLs = {1:0, 2:0, 5:0, 6:0};
+        finalStorage.forEach(res => {
+            const calc = intensityData.find(x => x.id === res.id);
+            if (!calc) return;
+
+            let nameClass = "";
+            const rank = top3Ids.indexOf(res.id);
+            if(rank === 0) nameClass = "text-red-500 font-bold";
+            else if(rank === 1) nameClass = "text-orange-500 font-bold";
+            else if(rank === 2) nameClass = "text-yellow-500 font-bold";
+
+            const stars = [1,2,5,6].map(s => {
+                totalLLs[s] += calc.itemLLs[s]; // ロジック用累積
+                const g = calc.maxL - calc.itemLLs[s];
+                const sStr = g < 0.2 ? "★★★★★" : g < 0.7 ? "★★★★☆" : g < 1.5 ? "★★★☆☆" : g < 3.0 ? "★★☆☆☆" : "★☆☆☆☆";
+                return g < 0.2 ? `設${s}:<b class="text-red-500">${sStr}</b>` : `設${s}:${sStr}`;
+            }).join(" ");
+
+            addLog(`  <span class="${nameClass}">${res.name.padEnd(12, ' ')}</span> ${stars}`);
         });
 
         addLog(`\n（６）設定判別処理`, "text-blue-400 font-bold");
-        const max = Math.max(...Object.values(lls)), sum = Object.values(lls).reduce((a, l) => a + Math.exp(l - max), 0);
+        const max = Math.max(...Object.values(totalLLs)), sum = Object.values(totalLLs).reduce((a, l) => a + Math.exp(l - max), 0);
         [1,2,5,6].forEach(s => {
-            let prob = (sum === 0) ? 0 : (Math.exp(lls[s] - max) / sum) * 100;
+            let prob = (sum === 0) ? 0 : (Math.exp(totalLLs[s] - max) / sum) * 100;
             document.getElementById(`p${s}`).innerText = prob.toFixed(1) + "%";
             document.getElementById(`b${s}`).style.width = prob + "%";
             addLog(`  [RESULT] 設定${s}: ${prob.toFixed(2)}%`, `c-s${s} font-bold`);
