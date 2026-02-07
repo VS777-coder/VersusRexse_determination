@@ -3,198 +3,265 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>ANALYZER Rev 1.7.3</title>
+    <title>ANALYZER Rev 3.1.10</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Squada+One&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Squada+One&family=Noto+Sans+JP:wght@700;900&display=swap');
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-        body { background-color: #0b0d11; color: #ffffff; font-family: 'Inter', sans-serif; height: 100dvh; width: 100%; margin: 0; padding: 12px; overflow: hidden; display: flex; flex-direction: column; }
-        .kawaii-title { font-family: 'Squada One', cursive; color: #3b82f6; font-size: 2.2rem; line-height: 1.0; text-align: center; }
-        .main-btn { background-color: #1e3a8a; border-radius: 12px; border: 2px solid #3b82f6; cursor: pointer; height: 75px; display: flex; align-items: center; justify-content: center; width: 100%; margin-bottom: 8px; flex-shrink: 0; }
-        .main-btn span { font-weight: 900; font-size: 1.5rem; color: #fff; }
-        .result-card { background-color: #0f172a; border-radius: 12px; padding: 10px; border: 1px solid #1e293b; margin-bottom: 8px; flex-shrink: 0; }
-        .bar-bg { background-color: #020617; height: 8px; border-radius: 4px; overflow: hidden; margin-top: 2px; border: 1px solid #1e293b; }
-        .bar-fill { height: 100%; width: 0%; transition: width 0.4s ease-out; }
-        .log-container { flex-grow: 1; min-height: 0; position: relative; margin-bottom: 4px; display: flex; flex-direction: column; }
-        .copy-btn { position: absolute; top: 8px; right: 8px; background: #3b82f6; color: #fff; font-size: 10px; padding: 6px 12px; border-radius: 4px; z-index: 100; cursor: pointer; border: none; font-weight: bold; }
-        .future-log { background-color: #000000; border: 1px solid #3b82f6; border-radius: 8px; padding: 10px; font-family: 'Share Tech Mono', monospace; font-size: 10px; width: 100%; height: 100%; overflow-y: auto; white-space: pre-wrap; word-break: break-all; color: #adbac7; line-height: 1.4; }
-        .api-footer { flex-shrink: 0; display: flex; gap: 8px; padding-bottom: 2px; }
-        .api-input { background-color: #0f172a; color: #ffffff; border-radius: 6px; padding: 8px 10px; font-size: 11px; flex-grow: 1; border: 1px solid #1e293b; outline: none; }
-        .save-btn { background-color: #1e293b; color: #3b82f6; font-weight: bold; padding: 0 12px; border-radius: 6px; border: 1px solid #3b82f6; font-size: 10px; cursor: pointer; }
-        .set-1 { color: #22d3ee; } .bar-1 { background-color: #22d3ee; } .set-2 { color: #facc15; } .bar-2 { background-color: #facc15; } .set-5 { color: #4ade80; } .bar-5 { background-color: #4ade80; } .set-6 { color: #f87171; } .bar-6 { background-color: #f87171; }
+        body { background-color: #0c0a09; color: #fbbf24; font-family: 'Noto Sans JP', sans-serif; height: 100dvh; width: 100%; margin: 0; padding: 12px; overflow: hidden; display: flex; flex-direction: column; }
+        .app-header { text-align: center; margin-bottom: 12px; }
+        .main-title { font-family: 'Squada One', cursive; color: #60a5fa; font-size: 2.8rem; line-height: 1; text-shadow: 0 0 15px rgba(96, 165, 250, 0.4); }
+        .rev-tag { font-family: 'Share Tech Mono', monospace; font-size: 10px; color: #4b5563; margin-top: -5px; }
+        .main-btn { background: linear-gradient(180deg, #2563eb 0%, #1e40af 100%); border: 2px solid #3b82f6; border-radius: 12px; cursor: pointer; height: 75px; display: flex; align-items: center; justify-content: center; width: 100%; box-shadow: 0 4px 15px rgba(0,0,0,0.5); }
+        .main-btn span { font-weight: 900; font-size: 1.8rem; color: #ffffff; letter-spacing: 2px; }
+        .panel-frame { border: 2px solid #1e293b; background: #0f172a; border-radius: 12px; padding: 16px; position: relative; }
+        .bar-bg { background-color: #020617; height: 12px; border-radius: 6px; overflow: hidden; border: 1px solid #1e293b; margin-top: 4px; }
+        .bar-fill { height: 100%; width: 0%; transition: width 1.2s cubic-bezier(0.16, 1, 0.3, 1); }
+        .log-container { flex-grow: 1; min-height: 0; margin: 12px 0; border: 2px solid #1e293b; background-color: #000000; border-radius: 8px; display: flex; flex-direction: column; overflow: hidden; position: relative; }
+        .copy-btn { position: absolute; top: 8px; right: 8px; background: #2563eb; color: #fff; font-size: 9px; padding: 4px 10px; border-radius: 4px; border: 1px solid #3b82f6; cursor: pointer; z-index: 20; font-weight: bold; }
+        .log-body { padding: 12px; font-size: 9px; width: 100%; height: 100%; overflow-y: auto; white-space: pre-wrap; color: #94a3b8; font-family: 'Share Tech Mono', monospace; padding-top: 35px; line-height: 1.6; }
+        .api-input { background: #0f172a; color: #f1f5f9; border: 1px solid #1e293b; padding: 10px; font-size: 10px; flex-grow: 1; border-radius: 8px; outline: none; }
+        .save-btn { background: #1e40af; color: #ffffff; font-weight: bold; padding: 0 20px; border-radius: 8px; font-size: 11px; cursor: pointer; }
+        .c-s1 { color: #3b82f6; } .bg-s1 { background-color: #3b82f6; }
+        .c-s2 { color: #eab308; } .bg-s2 { background-color: #eab308; }
+        .c-s5 { color: #22c55e; } .bg-s5 { background-color: #22c55e; }
+        .c-s6 { color: #ef4444; } .bg-s6 { background-color: #ef4444; }
     </style>
 </head>
 <body>
-    <div class="header-area">
-        <div class="kawaii-title uppercase text-blue-500">HANABI & VERSUS</div>
-        <div id="machine-info" class="text-[9px] font-bold text-gray-500 text-center mb-1">Rev 1.7.3 (Full Logs / K-Priority)</div>
+    <div class="app-header">
+        <div class="main-title">HANABI ANALYZER</div>
+        <div class="rev-tag">Revision 3.1.10 - Structured Logger</div>
     </div>
-    <div class="shrink-0"><label for="file-input" class="main-btn"><span>よしこの 解析実行</span></label><input type="file" id="file-input" class="hidden" accept="image/*" multiple></div>
+    <div class="shrink-0 mb-3"><label for="f-in" class="main-btn"><span>よしこ💕</span></label><input type="file" id="f-in" class="hidden" accept="image/*"></div>
+    <div class="result-card panel-frame">
+        <div id="machine-type" class="absolute top-2 right-3 text-[10px] text-blue-400 font-bold">READY</div>
+        <div class="mt-4">
+            <div class="mb-3"><div class="flex justify-between items-end"><span class="c-s1 font-black text-xs">設定1</span><span id="p1" class="c-s1 font-black text-sm">---</span></div><div class="bar-bg"><div id="b1" class="bar-fill bg-s1"></div></div></div>
+            <div class="mb-3"><div class="flex justify-between items-end"><span class="c-s2 font-black text-xs">設定2</span><span id="p2" class="c-s2 font-black text-sm">---</span></div><div class="bar-bg"><div id="b2" class="bar-fill bg-s2"></div></div></div>
+            <div class="mb-3"><div class="flex justify-between items-end"><span class="c-s5 font-black text-xs">設定5</span><span id="p5" class="c-s5 font-black text-sm">---</span></div><div class="bar-bg"><div id="b5" class="bar-fill bg-s5"></div></div></div>
+            <div class="mb-3"><div class="flex justify-between items-end"><span class="c-s6 font-black text-xs">設定6</span><span id="p6" class="c-s6 font-black text-sm">---</span></div><div class="bar-bg"><div id="b6" class="bar-fill bg-s6"></div></div></div>
+        </div>
+    </div>
+    <div class="log-container"><button id="copy-log" class="copy-btn">COPY LOG</button><div id="log-display" class="log-body">READY...</div></div>
+    <div class="api-footer flex gap-2"><input type="password" id="api-key" class="api-input" placeholder="Vision API Key"><button id="sv-key" class="save-btn">SAVE KEY</button></div>
+
+<script>
+/* ============================================================
+   CONFIGURATIONS (DEFINITIONS)
+   ============================================================ */
+const L_HANABI_CONFIG = [
+    { id: "total", name: "ボーナス合算", active: false, type: "normal", probs: {1: 169.8, 2: 161.0, 5: 149.3, 6: 138.8} },
+    { id: "bb", name: "ビックボーナス", active: true, type: "normal", probs: {1: 297.9, 2: 292.6, 5: 284.9, 6: 273.1} },
+    { id: "don", name: "ドンBB", active: false, type: "normal", probs: {1: 595.8, 2: 585.2, 5: 569.8, 6: 546.2} },
+    { id: "red7", name: "赤七BB", active: false, type: "normal", probs: {1: 595.8, 2: 585.2, 5: 569.8, 6: 546.2} },
+    { id: "rb", name: "レギュラーボーナス", active: true, type: "normal", probs: {1: 394.8, 2: 358.1, 5: 313.6, 6: 282.5} },
+    { id: "ba", name: "風鈴Ａ", active: true, type: "normal", probs: {1: 12.9, 2: 12.5, 5: 12.1, 6: 11.5} },
+    { id: "bb_b", name: "風鈴Ｂ", active: true, type: "normal", probs: {1: 38.4, 2: 38.7, 5: 36.2, 6: 34.5} },
+    { id: "f_tot", name: "風鈴合算", active: false, type: "normal", probs: {1: 9.68, 2: 9.45, 5: 9.06, 6: 8.64} },
+    { id: "ia", name: "氷Ａ", active: true, type: "normal", probs: {1: 46.3, 2: 47.3, 5: 46.2, 6: 47.4} },
+    { id: "ib", name: "氷Ｂ", active: false, type: "normal", probs: {1: 1560.4, 2: 1560.4, 5: 1560.4, 6: 1560.4} },
+    { id: "i_tot", name: "氷合算", active: false, type: "normal", probs: {1: 44.9, 2: 45.9, 5: 44.8, 6: 46.0} },
+    { id: "ca1", name: "チェリーＡ１", active: false, type: "normal", probs: {1: 99.4, 2: 99.4, 5: 99.4, 6: 99.3} },
+    { id: "ca2", name: "チェリーＡ２", active: true, type: "normal", probs: {1: 21.0, 2: 19.4, 5: 20.5, 6: 19.6} },
+    { id: "cb", name: "チェリーＢ", active: true, type: "normal", probs: {1: 307.7, 2: 306.2, 5: 300.6, 6: 297.9} },
+    { id: "c_tot", name: "チェリー合算", active: false, type: "normal", probs: {1: 16.3, 2: 15.3, 5: 16.0, 6: 15.4} },
+    { id: "vc", name: "ハナビチャレンジ中ハズレ", active: true, type: "vc", probs: {1: 4.7, 2: 4.5, 5: 4.3, 6: 4.2} },
+    { id: "vg", name: "ハナビゲーム中ハズレ", active: true, type: "vg", probs: {1: 6.4, 2: 6.0, 5: 5.4, 6: 5.4} },
+    { id: "b_ba", name: "BIG中風鈴Ａ", active: false, type: "big", probs: {1: 1.1, 2: 1.2, 5: 1.1, 6: 1.2} },
+    { id: "b_bb", name: "BIG中風鈴Ｂ", active: true, type: "big", probs: {1: 10.0, 2: 7.0, 5: 10.0, 6: 7.0} }
+];
+
+const HANABI_CONFIG = [
+    { id: "total", name: "ボーナス合算", active: false, type: "normal", probs: {1: 156.0, 2: 148.3, 5: 139.4, 6: 131.6} },
+    { id: "bb", name: "ビックボーナス", active: true, type: "normal", probs: {1: 277.7, 2: 268.6, 5: 256.0, 6: 248.2} },
+    { id: "don", name: "ドンBB", active: false, type: "normal", probs: {1: 555.4, 2: 537.2, 5: 512.0, 6: 496.4} },
+    { id: "red", name: "赤七BB", active: false, type: "normal", probs: {1: 555.4, 2: 537.2, 5: 512.0, 6: 496.4} },
+    { id: "rb", name: "レギュラーボーナス", active: true, type: "normal", probs: {1: 356.2, 2: 331.0, 5: 306.2, 6: 280.1} },
+    { id: "f_tot", name: "風鈴合算", active: false, type: "normal", probs: {1: 7.7, 2: 7.6, 5: 7.5, 6: 7.3} },
+    { id: "ba", name: "風鈴Ａ", active: true, type: "normal", probs: {1: 15.3, 2: 14.9, 5: 14.5, 6: 14.1} },
+    { id: "bb_b", name: "風鈴Ｂ", active: true, type: "normal", probs: {1: 15.3, 2: 15.6, 5: 15.3, 6: 15.1} },
+    { id: "i_tot", name: "氷合算", active: false, type: "normal", probs: {1: 51.2, 2: 51.8, 5: 48.2, 6: 49.3} },
+    { id: "ia", name: "氷Ａ", active: true, type: "normal", probs: {1: 52.9, 2: 53.5, 5: 49.6, 6: 50.8} },
+    { id: "ib", name: "氷Ｂ", active: false, type: "normal", probs: {1: 1638.4, 2: 1638.4, 5: 1638.4, 6: 1638.4} },
+    { id: "c_tot", name: "チェリー合算", active: false, type: "normal", probs: {1: 16.4, 2: 15.3, 5: 16.1, 6: 15.6} },
+    { id: "ca1", name: "チェリーＡ１", active: false, type: "normal", probs: {1: 99.4, 2: 99.4, 5: 99.3, 6: 99.3} },
+    { id: "ca2", name: "チェリーＡ２", active: true, type: "normal", probs: {1: 21.0, 2: 19.3, 5: 20.6, 6: 19.9} },
+    { id: "cb", name: "チェリーＢ", active: true, type: "normal", probs: {1: 282.5, 2: 281.3, 5: 276.5, 6: 274.2} },
+    { id: "vc", name: "ハナビチャレンジ中ハズレ", active: true, type: "vc", probs: {1: 6.0, 2: 5.8, 5: 5.3, 6: 5.1} },
+    { id: "vg", name: "ハナビゲーム中ハズレ", active: true, type: "vg", probs: {1: 13.4, 2: 12.4, 5: 10.1, 6: 9.5} },
+    { id: "pf", name: "平行風鈴", active: false, type: "big", probs: {1: 1.1, 2: 1.13, 5: 1.1, 6: 1.13} },
+    { id: "nf", name: "斜め風鈴", active: true, type: "big", probs: {1: 11.0, 2: 9.0, 5: 11.0, 6: 9.0} }
+];
+
+const VERSUS_CONFIG = [
+    { id: "total", name: "ボーナス合算", active: false, type: "normal", probs: {1: 164.3, 2: 155.3, 5: 147.9, 6: 138.8} },
+    { id: "bb", name: "ビックボーナス合算", active: true, type: "normal", probs: {1: 292.6, 2: 284.9, 5: 275.4, 6: 264.3} },
+    { id: "xbb", name: "XBB", active: false, type: "normal", probs: {1: 585.2, 2: 569.8, 5: 550.8, 6: 528.6} },
+    { id: "7bb", name: "7BB", active: false, type: "normal", probs: {1: 585.2, 2: 569.8, 5: 550.8, 6: 528.6} },
+    { id: "rb", name: "レギュラーボーナス", active: true, type: "normal", probs: {1: 374.5, 2: 341.3, 5: 319.7, 6: 292.6} },
+    { id: "f_tot", name: "ベル合算", active: false, type: "normal", probs: {1: 7.22, 2: 7.1, 5: 6.9, 6: 6.8} },
+    { id: "ba", name: "ベルＡ", active: true, type: "normal", probs: {1: 10.9, 2: 10.7, 5: 10.5, 6: 10.2} },
+    { id: "bb_b", name: "ベルＢ", active: true, type: "normal", probs: {1: 20.9, 2: 21.2, 5: 20.3, 6: 20.6} },
+    { id: "i_tot", name: "スイカ合算", active: false, type: "normal", probs: {1: 55.5, 2: 53.4, 5: 54.4, 6: 52.3} },
+    { id: "sa", name: "スイカＡ", active: true, type: "normal", probs: {1: 74.5, 2: 70.6, 5: 72.5, 6: 68.8} },
+    { id: "sb", name: "スイカＢ", active: false, type: "normal", probs: {1: 218.5, 2: 218.5, 5: 218.5, 6: 218.5} },
+    { id: "che_tot", name: "チェリー合算", active: false, type: "normal", probs: {1: 38.2, 2: 38.9, 5: 36.7, 6: 37.3} },
+    { id: "ca", name: "チェリーＡ", active: false, type: "normal", probs: {1: 119.2, 2: 119.2, 5: 119.2, 6: 118.9} },
+    { id: "cb", name: "チェリーＢ", active: true, type: "normal", probs: {1: 56.2, 2: 57.7, 5: 53.1, 6: 54.4} },
+    { id: "vc", name: "バーサスチャンス中ハズレ", active: true, type: "vc", probs: {1: 5.0, 2: 4.9, 5: 4.6, 6: 4.5} },
+    { id: "vg", name: "バーサスゲーム中ハズレ", active: true, type: "vg", probs: {1: 10.1, 2: 9.4, 5: 8.7, 6: 8.1} },
+    { id: "rb_bel", name: "ベル揃い", active: false, type: "big", probs: {1: 1.0, 2: 1.0, 5: 1.0, 6: 1.0} },
+    { id: "cbs", name: "チェリー＋ベル揃い", active: true, type: "big", probs: {1: 11.1, 2: 8.9, 5: 11.1, 6: 8.9} },
+    { id: "cbh", name: "チェリー＋ベルはずれ", active: true, type: "big", probs: {1: 256.0, 2: 128.0, 5: 256.0, 6: 128.0} }
+];
+
+/* ============================================================
+   LOGIC ENGINE Rev 3.1.10
+   ============================================================ */
+const logDisplay = document.getElementById('log-display');
+const addLog = (m, c="text-slate-400") => { const e=document.createElement('div'); e.className=c; e.innerHTML=m; logDisplay.appendChild(e); logDisplay.scrollTop=logDisplay.scrollHeight; };
+
+// COPYボタン (フォールバック付)
+document.getElementById('copy-log').onclick = () => {
+    const text = logDisplay.innerText;
+    if (navigator.clipboard && window.isSecureContext) {
+        navigator.clipboard.writeText(text).then(() => alert("LOG COPIED!"));
+    } else {
+        const area = document.createElement('textarea');
+        area.value = text; document.body.appendChild(area);
+        area.style.position = "fixed"; area.style.left = "-9999px";
+        area.select();
+        try { document.execCommand('copy'); alert("LOG COPIED (Legacy)!"); } catch(e) { alert("COPY FAILED"); }
+        document.body.removeChild(area);
+    }
+};
+
+async function run(file) {
+    const k = document.getElementById('api-key').value.trim();
+    if(!k) return alert("API Key Required");
+    logDisplay.innerHTML = "";
+    [1,2,5,6].forEach(s => { document.getElementById(`p${s}`).innerText = "---"; document.getElementById(`b${s}`).style.width = "0%"; });
     
-    <div id="result-area" class="result-card">
-        <div class="mb-2"><div class="flex justify-between text-[11px] font-bold set-1"><span>設定1</span><span id="p1">---</span></div><div class="bar-bg"><div id="b1" class="bar-fill bar-1"></div></div></div>
-        <div class="mb-2"><div class="flex justify-between text-[11px] font-bold set-2"><span>設定2</span><span id="p2">---</span></div><div class="bar-bg"><div id="b2" class="bar-fill bar-2"></div></div></div>
-        <div class="mb-2"><div class="flex justify-between text-[11px] font-bold set-5"><span>設定5</span><span id="p5">---</span></div><div class="bar-bg"><div id="b5" class="bar-fill bar-5"></div></div></div>
-        <div><div class="flex justify-between text-[11px] font-bold set-6"><span>設定6</span><span id="p6">---</span></div><div class="bar-bg"><div id="b6" class="bar-fill bar-6"></div></div></div>
-    </div>
-    <div class="log-container"><button id="copy-log" class="copy-btn">COPY</button><div id="log" class="future-log">READY...</div></div>
-    <div class="api-footer"><input type="password" id="api-key" class="api-input" placeholder="VISION API KEY"><button id="save-key" class="save-btn">SAVE</button></div>
+    addLog(`（１）画像情報`, "text-blue-400 font-bold");
+    addLog(`  FILE: ${file.name}`);
 
-    <script>
-        // 定義表 (Lハナビ)
-        const L_HANABI_CONFIG = [
-            { id: "total", name: "ボーナス合算", active: false, weight: 1, probs: {1:1,2:1,5:1,6:1} },
-            { id: "bb", name: "ビックボーナス", active: true, weight: 1, probs: {1: 297.9, 2: 292.6, 5: 284.9, 6: 273.1} },
-            { id: "don", name: "ドンBB", active: false, weight: 1, probs: {1:1,2:1,5:1,6:1} },
-            { id: "red7", name: "赤七BB", active: false, weight: 1, probs: {1:1,2:1,5:1,6:1} },
-            { id: "rb", name: "レギュラーボーナス", active: true, weight: 1, probs: {1: 394.8, 2: 358.1, 5: 313.6, 6: 282.5} },
-            { id: "ba", name: "風鈴Ａ", active: true, weight: 1, probs: {1: 12.9, 2: 12.5, 5: 12.1, 6: 11.5} },
-            { id: "bb_b", name: "風鈴Ｂ", active: true, weight: 1, probs: {1: 38.4, 2: 38.7, 5: 36.2, 6: 34.5} },
-            { id: "f_tot", name: "風鈴合算", active: false, weight: 1, probs: {1:1,2:1,5:1,6:1} },
-            { id: "ia", name: "氷Ａ", active: true, weight: 1, probs: {1: 46.3, 2: 47.3, 5: 46.2, 6: 47.4} },
-            { id: "ib", name: "氷Ｂ", active: false, weight: 1, probs: {1:1,2:1,5:1,6:1} },
-            { id: "i_tot", name: "氷合算", active: false, weight: 1, probs: {1:1,2:1,5:1,6:1} },
-            { id: "ca1", name: "チェリーＡ１", active: false, weight: 1, probs: {1:1,2:1,5:1,6:1} },
-            { id: "ca2", name: "チェリーＡ２", active: true, weight: 1, probs: {1: 21.0, 2: 19.4, 5: 20.5, 6: 19.6} },
-            { id: "cb", name: "チェリーＢ", active: true, weight: 1, probs: {1: 307.7, 2: 306.2, 5: 300.6, 6: 297.9} },
-            { id: "c_tot", name: "チェリー合算", active: false, weight: 1, probs: {1:1,2:1,5:1,6:1} },
-            { id: "vc", name: "ハナビチャレンジ中ハズレ", active: true, weight: 1, probs: {1: 4.7, 2: 4.5, 5: 4.3, 6: 4.2} },
-            { id: "vg", name: "ハナビゲーム中ハズレ", active: true, weight: 1, probs: {1: 6.4, 2: 6.0, 5: 5.4, 6: 5.4} },
-            { id: "b_ba", name: "BIG中風鈴Ａ", active: false, weight: 1, probs: {1: 1.1, 2: 1.2, 5: 1.1, 6: 1.2} },
-            { id: "b_bb", name: "BIG中風鈴Ｂ", active: true, weight: 1, probs: {1: 10.0, 2: 7.0, 5: 10.0, 6: 7.0} }
-        ];
+    try {
+        const base64 = await new Promise(res => { const r=new FileReader(); r.onload=e=>res(e.target.result.split(',')[1]); r.readAsDataURL(file); });
+        const resp = await fetch(`https://vision.googleapis.com/v1/images:annotate?key=${k}`, {
+            method: 'POST', body: JSON.stringify({ requests: [{ image: { content: base64 }, features: [{ type: 'DOCUMENT_TEXT_DETECTION' }] }] })
+        });
+        const json = await resp.json();
+        if(!json.responses || !json.responses[0].textAnnotations) throw new Error("Vision API: No Text Detected");
+        const fullLines = json.responses[0].textAnnotations[0].description.split('\n');
 
-        const logArea = document.getElementById('log');
-        const addLog = (m, c="text-white") => { const e=document.createElement('div'); e.className=c; e.innerHTML=m; logArea.appendChild(e); logArea.scrollTop=logArea.scrollHeight; };
-        
-        const getDenominator = (str) => { if (!str || !str.includes('/')) return null; const clean = str.split('/').pop().replace(/[^0-9.]/g, ''); return clean ? parseFloat(clean) : null; };
-        const getIntOnly = (str) => { if (!str || str.includes('/') || str.includes('.')) return null; const clean = str.replace(/[^0-9]/g, ''); return clean ? parseInt(clean) : null; };
+        addLog(`\n（２）画像の生データ出力`, "text-blue-400 font-bold");
+        fullLines.forEach(l => addLog(`| ${l}`, "text-[8px] text-zinc-600"));
 
-        async function processMulti(files) {
-            const key = document.getElementById('api-key').value.trim();
-            logArea.innerHTML = ""; if (!key) { addLog("❌ API KEY REQUIRED", "text-red-500"); return; }
-            addLog(`>> BOOTING ANALYZER Rev 1.7.3...`, "text-blue-500 font-bold");
+        const fullText = fullLines.join(" ");
+        let machine = { def: HANABI_CONFIG, bG: 29, name: "新ハナビ" };
+        if (fullText.includes("バーサス")) machine = { def: VERSUS_CONFIG, bG: 28, name: "バーサス" };
+        else if (fullText.includes("スマスロ")) machine = { def: L_HANABI_CONFIG, bG: 20, name: "スマスロハナビ" };
+        document.getElementById('machine-type').innerText = machine.name;
+        addLog(`  DETECTED: ${machine.name}`);
 
-            try {
-                let rawImgs = []; let fullTxt = ""; const fileList = Array.from(files);
-                
-                // （１）画像情報
-                addLog(`\n（１）画像情報:`, "text-cyan-400 underline font-bold");
-                for(let i=0; i<fileList.length; i++){
-                    addLog(`  [OCR] ${fileList[i].name} 読込中...`, "text-gray-400");
-                    const base64 = await new Promise(res => { const r = new FileReader(); r.onload = e => res(e.target.result.split(',')[1]); r.readAsDataURL(fileList[i]); });
-                    const resp = await fetch(`https://vision.googleapis.com/v1/images:annotate?key=${key}`, { method: 'POST', body: JSON.stringify({ requests: [{ image: { content: base64 }, features: [{ type: 'DOCUMENT_TEXT_DETECTION' }] }] }) });
-                    const json = await resp.json(); const raw = json.responses[0]?.textAnnotations;
-                    if(!raw) continue;
-                    const lines = raw.slice(1).reduce((acc, w) => { let y = Math.round(w.boundingPoly.vertices[0].y / 12) * 12; let row = acc.find(r => r.y === y); if (row) row.words.push({x: w.boundingPoly.vertices[0].x, text: w.description}); else acc.push({ y, words: [{x: w.boundingPoly.vertices[0].x, text: w.description}] }); return acc; }, []).sort((a,b)=>a.y-b.y).map(r => ({ y: r.y, text: r.words.sort((a,b)=>a.x-b.x).map(w=>w.text).join(" ") }));
-                    rawImgs.push({ name: fileList[i].name, lines }); lines.forEach(l => fullTxt += l.text + " ");
+        // アンカー特定 (G数以前はゴミ)
+        let anchorIdx = -1, gCounts = [];
+        for(let i=0; i<fullLines.length; i++){
+            const lineTrim = fullLines[i].replace(/\s/g, '');
+            if(lineTrim.includes('G')){
+                const val = parseInt(lineTrim.replace(/[^0-9]/g, ''));
+                if(!isNaN(val) && val > 100){ 
+                    anchorIdx = i; gCounts.push(val);
+                    for(let j=1; j<5; j++){
+                        if(fullLines[i+j]?.includes('G')) gCounts.push(parseInt(fullLines[i+j].replace(/[^0-9]/g, '')));
+                    }
+                    break;
                 }
+            }
+        }
+        if(anchorIdx === -1) throw new Error("Anchor Error: 'G' not found.");
 
-                // （２）判定処理
-                addLog(`\n（２）画像の順番の判定処理、機種判定:`, "text-cyan-400 underline font-bold");
-                let config = L_HANABI_CONFIG; let mName = "スマスロハナビ"; let mCode = "SMASLO";
-                rawImgs.forEach(img => {
-                    let matchedIndices = [];
-                    img.lines.forEach(line => { config.forEach((c, idx) => { if (line.text.includes(c.name.substring(0, 2))) matchedIndices.push(idx); }); });
-                    img.score = matchedIndices.length > 0 ? Math.max(...matchedIndices) : 0;
-                    if (img.lines.some(l => l.text.includes("総") && (l.text.includes("プレイ") || l.text.includes("数")))) img.score = -1;
-                });
-                rawImgs.sort((a, b) => a.score - b.score);
-                rawImgs.forEach((img, idx) => addLog(`  [ORDER_${idx}] ${img.name} (MaxDepth:${img.score})`, "text-gray-300"));
-                addLog(`  - 判定機種: ${mName}`, "text-yellow-400 font-bold");
+        addLog(`\n（３）仮想配列作成部分のログ`, "text-blue-400 font-bold");
+        addLog(`  [ANCHOR] ${gCounts[0]}G 検出`);
 
-                // （３）生データ
-                addLog(`\n（３）画像別の生データ:`, "text-cyan-400 underline font-bold");
-                rawImgs.forEach((img, i) => { addLog(`  [IMG_${i}] RAW:`, "text-gray-500 text-[9px]"); img.lines.forEach(l => addLog(`    | ${l.text}`, "text-green-400 text-[8px]")); });
-
-                // （４）仮想配列
-                addLog(`\n（４）仮想配列作成部分のログ:`, "text-cyan-400 underline font-bold");
-                let results = []; let totalG = 0, hcG = 0, hgG = 0; let bbCount = 0; let slotIdx = 0; let gFoundCount = 0;
-
-                rawImgs.forEach((img, imgIdx) => {
-                    addLog(`  [PROCESS] IMG_${imgIdx} 同期開始`, "text-blue-400 font-bold");
-                    let isSyncing = (imgIdx > 0); 
-                    img.lines.forEach((line, i) => {
-                        if (line.text.includes("G")) {
-                            const gMatch = line.text.match(/([\d,]+)G/);
-                            if (gMatch) {
-                                const gVal = parseInt(gMatch[1].replace(/,/g, ''));
-                                gFoundCount++;
-                                if (gFoundCount === 1) { totalG = gVal; addLog(`    [HEADER] 総プレイ数: ${totalG}G`, "text-yellow-400 font-bold"); }
-                                else if (gFoundCount === 2) { hcG = gVal; addLog(`    [HEADER] HCプレイ数: ${hcG}G`, "text-orange-400 font-bold"); }
-                                else if (gFoundCount === 3) { hgG = gVal; addLog(`    [HEADER] HGプレイ数: ${hgG}G`, "text-orange-400 font-bold"); }
-                            }
-                        }
-                        if (line.text.includes("/") && line.text.includes(".")) {
-                            const pVal = getDenominator(line.text); if (pVal === null) return;
-                            let kVal = getIntOnly(img.lines[i - 2]?.text) || getIntOnly(img.lines[i - 3]?.text);
-                            
-                            if (isSyncing) {
-                                const found = results.some((res, idx) => res && idx < slotIdx && res.rawK === kVal && res.rawP === pVal);
-                                if (found) return; else isSyncing = false;
-                            }
-                            const item = config[slotIdx]; if (!item) return;
-                            if (item.id === "bb") bbCount = kVal;
-
-                            let kFinal, nBase = totalG;
-                            const isBigItem = item.id.startsWith("b_") || ["pf","nf","cbs","cbh"].includes(item.id);
-                            if (item.id === "vc") nBase = hcG;
-                            else if (item.id === "vg") nBase = hgG;
-                            else if (isBigItem) nBase = bbCount * 20;
-
-                            if (kVal !== null) {
-                                kFinal = kVal;
-                                addLog(`    [SYNC] ${item.name} -> ${kVal}回 (生データ優先適用)`, "text-green-500 font-bold");
-                            } else {
-                                kFinal = nBase / pVal;
-                                addLog(`    [SYNC] ${item.name} -> ${kFinal.toFixed(2)}回 (未取得のため確率から逆算補完)`, "text-yellow-500");
-                            }
-
-                            results[slotIdx] = { k: kFinal, n: nBase, name: item.name, active: item.active, weight: item.weight, probs: item.probs, rawK: kVal, rawP: pVal };
-                            slotIdx++;
-                        }
-                    });
-                });
-
-                // （５）定義表当て込み
-                addLog(`\n（５）定義表への当て込み、項目名　回数：確率:`, "text-cyan-400 underline font-bold");
-                results.forEach((res, idx) => { if (res) addLog(`  - SLOT[${idx}] ${res.name} ${res.k.toFixed(1)}回 : 1/${res.rawP} (N=${res.n})`); });
-
-                // （６）尤度計算
-                addLog(`\n（６）尤度計算　強度、ギャップ:`, "text-cyan-400 underline font-bold");
-                let lls = { 1: 0, 2: 0, 5: 0, 6: 0 };
-                results.forEach(res => { 
-                    if (res && res.active && res.k > 0) { 
-                        let itemLL = { 1: 0, 2: 0, 5: 0, 6: 0 };
-                        [1, 2, 5, 6].forEach(s => { 
-                            let tp = 1 / res.probs[s]; 
-                            let l = (res.k * Math.log(tp) + (res.n - res.k) * Math.log(1 - tp));
-                            itemLL[s] = l; lls[s] += l;
-                        }); 
-                        const diff = Math.max(...Object.values(itemLL)) - Math.min(...Object.values(itemLL));
-                        let stars = diff > 4 ? "★★★★★" : diff > 2 ? "★★★★☆" : diff > 1 ? "★★★☆☆" : diff > 0.5 ? "★★☆☆☆" : "★☆☆☆☆";
-                        addLog(`  - ${res.name} [${stars}]`, "text-white");
-                        addLog(`    LL Gap: 1:${itemLL[1].toFixed(2)} | 6:${itemLL[6].toFixed(2)}`, "text-[9px] text-gray-400 ml-4");
-                    } 
-                });
-
-                // （７）設定判別処理
-                addLog(`\n（７）設定判別処理:`, "text-cyan-400 underline font-bold");
-                const maxLL = Math.max(...Object.values(lls)), sumExp = Object.values(lls).reduce((a, l) => a + Math.exp(l - maxLL), 0);
-                [1, 2, 5, 6].forEach(s => { 
-                    let prob = (Math.exp(lls[s] - maxLL) / sumExp) * 100; 
-                    document.getElementById(`p${s}`).innerText = `${prob.toFixed(1)}%`; 
-                    document.getElementById(`b${s}`).style.width = `${prob}%`; 
-                    addLog(`  設定${s}: ${prob.toFixed(2)}% (累積LL: ${lls[s].toFixed(2)})`, `set-${s} font-bold`); 
-                });
-
-            } catch (err) { addLog(`❌ ERROR: ${err.message}`, "text-red-600"); }
+        const extractedPairs = [];
+        let ptr = anchorIdx + 1;
+        while(extractedPairs.length < machine.def.length && ptr < fullLines.length){
+            if(fullLines[ptr].includes('/')){
+                const prob = parseFloat(fullLines[ptr].replace(/,/g, '').split('/').pop());
+                let count = null;
+                for(let j=1; j<=4; j++){
+                    let checkStr = (fullLines[ptr-j] || "").trim();
+                    if(checkStr && /^\d+$/.test(checkStr.replace(/回/g, '').replace(/,/g, ''))){
+                        count = parseInt(checkStr.replace(/[^0-9]/g, ''));
+                        break;
+                    }
+                }
+                extractedPairs.push({ count, rawP: prob });
+                addLog(`  ARRAY[${extractedPairs.length-1}]: 1/${prob} → ${count ?? '⚠️データ欠損'}`);
+            }
+            ptr++;
         }
 
-        document.getElementById('save-key').onclick = () => { localStorage.setItem('v_key', document.getElementById('api-key').value.trim()); alert('SAVED'); };
-        document.getElementById('copy-log').onclick = () => { const range = document.createRange(); range.selectNode(logArea); window.getSelection().removeAllRanges(); window.getSelection().addRange(range); document.execCommand('copy'); alert('LOG COPIED'); };
-        document.getElementById('file-input').onchange = e => { if (e.target.files.length > 0) processMulti(e.target.files); };
-        window.onload = () => { document.getElementById('api-key').value = localStorage.getItem('v_key') || ''; };
-    </script>
+        addLog(`\n（４）定義表への当て込み、項目名　回数：確率`, "text-blue-400 font-bold");
+        const finalStorage = [];
+        let bbCount = 0;
+        machine.def.forEach((def, idx) => {
+            const data = extractedPairs[idx];
+            if (!data) return;
+            let n = gCounts[0];
+            if (def.type === "vc") n = gCounts[1] || Math.round(data.count * data.rawP);
+            if (def.type === "vg") n = gCounts[2] || Math.round(data.count * data.rawP);
+            if (def.type === "big") n = bbCount * machine.bG;
+            if (def.id === "bb") bbCount = data.count || 0;
+
+            let k = data.count;
+            if (data.rawP > 0) {
+                const mu = n / data.rawP;
+                if (k === null || Math.abs(k - mu) > Math.sqrt(mu)*4) {
+                    k = Math.round(mu);
+                    addLog(`  補正 [${def.name}]: ${data.count??'欠損'} → ${k}回`, "text-orange-500 font-bold");
+                }
+            }
+            finalStorage.push({ ...def, k, n });
+            addLog(`  ${def.name.padEnd(12, ' ')} ${String(k).padStart(4, ' ')}回 : 1/${data.rawP}`);
+        });
+
+        addLog(`\n（５）尤度計算　各項目・各設定別に強度ギャップ`, "text-blue-400 font-bold");
+        let lls = {1:0, 2:0, 5:0, 6:0};
+        finalStorage.forEach(res => {
+            if (res.active && res.k >= 0 && res.n > 0) {
+                let itemLLs = {};
+                [1,2,5,6].forEach(s => { 
+                    const tp = 1/res.probs[s];
+                    itemLLs[s] = (res.k * Math.log(tp) + (res.n - res.k) * Math.log(1 - tp));
+                    lls[s] += itemLLs[s];
+                });
+                const maxL = Math.max(...Object.values(itemLLs));
+                const stars = [1,2,5,6].map(s => {
+                    const g = maxL - itemLLs[s];
+                    const sStr = g < 0.2 ? "★★★★★" : g < 0.7 ? "★★★★☆" : g < 1.5 ? "★★★☆☆" : g < 3.0 ? "★★☆☆☆" : "★☆☆☆☆";
+                    return `設${s}:${sStr}`;
+                }).join(" ");
+                addLog(`  ${res.name.padEnd(12, ' ')} ${stars}`);
+            }
+        });
+
+        addLog(`\n（６）設定判別処理`, "text-blue-400 font-bold");
+        const max = Math.max(...Object.values(lls)), sum = Object.values(lls).reduce((a, l) => a + Math.exp(l - max), 0);
+        [1,2,5,6].forEach(s => {
+            let prob = (sum === 0) ? 0 : (Math.exp(lls[s] - max) / sum) * 100;
+            document.getElementById(`p${s}`).innerText = prob.toFixed(1) + "%";
+            document.getElementById(`b${s}`).style.width = prob + "%";
+            addLog(`  [RESULT] 設定${s}: ${prob.toFixed(2)}%`, `c-s${s} font-bold`);
+        });
+        addLog("\n>> ANALYSIS COMPLETE", "text-green-400 font-bold");
+    } catch (e) { addLog(`\n❌ ERROR LOG: ${e.message}`, "text-red-500 font-bold"); }
+}
+document.getElementById('sv-key').onclick = () => { localStorage.setItem('v_key', document.getElementById('api-key').value); alert("KEY SAVED"); };
+window.onload = () => { document.getElementById('api-key').value = localStorage.getItem('v_key') || ''; };
+document.getElementById('f-in').onchange = e => { if(e.target.files[0]) run(e.target.files[0]); };
+</script>
 </body>
 </html>
