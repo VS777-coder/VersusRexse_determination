@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>ANALYZER Rev 3.2.4</title>
+    <title>ANALYZER Rev 3.2.5</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Squada+One&family=Noto+Sans+JP:wght@700;900&display=swap');
@@ -21,11 +21,12 @@
         .copy-btn { position: absolute; top: 8px; right: 8px; background: #2563eb; color: #fff; font-size: 9px; padding: 4px 10px; border-radius: 4px; border: 1px solid #3b82f6; cursor: pointer; z-index: 20; font-weight: bold; }
         .log-body { padding: 4px; font-size: 9px; width: 100%; height: 100%; overflow-y: auto; white-space: pre-wrap; color: #94a3b8; font-family: 'Share Tech Mono', monospace; padding-top: 35px; line-height: 1.3; }
         
+        /* テーブルスタイル */
         .log-table { width: 100%; border-collapse: collapse; margin-top: 8px; font-size: 7px; table-layout: fixed; color: #e2e8f0; }
-        .log-table th, .log-table td { border: 1px solid #1e293b; padding: 6px 1px; text-align: center; word-break: break-all; }
+        .log-table th, .log-table td { border: 1px solid #1e293b; padding: 4px 1px; text-align: center; overflow: hidden; white-space: nowrap; }
         .log-table th { background-color: #1e293b; color: #60a5fa; font-weight: 900; }
         
-        /* オーラカラー（セル適用版） */
+        /* オーラカラー（（５）用） */
         .aura-red { background-color: rgba(220, 38, 38, 0.5) !important; color: white !important; }
         .aura-green { background-color: rgba(22, 163, 74, 0.5) !important; color: white !important; }
         .aura-yellow { background-color: rgba(202, 138, 4, 0.5) !important; color: white !important; }
@@ -41,7 +42,7 @@
 <body>
     <div class="app-header">
         <div class="main-title">HANABI ANALYZER</div>
-        <div class="rev-tag">Revision 3.2.4 - Focused Aura Engine</div>
+        <div class="rev-tag">Revision 3.2.5 - Data Insight Engine</div>
     </div>
     <div class="shrink-0 mb-3"><label for="f-in" class="main-btn"><span>💕よしこ💕</span></label><input type="file" id="f-in" class="hidden" accept="image/*"></div>
     <div class="result-card panel-frame">
@@ -57,7 +58,9 @@
     <div class="api-footer flex gap-2"><input type="password" id="api-key" class="api-input" placeholder="Vision API Key"><button id="sv-key" class="save-btn">SAVE KEY</button></div>
 
 <script>
-/* CONFIGURATIONS (DEFINITIONS) */
+/* ============================================================
+   CONFIGURATIONS (DEFINITIONS)
+   ============================================================ */
 const L_HANABI_CONFIG = [
     { id: "total", name: "ボーナス合算", active: false, type: "normal", probs: {1: 169.8, 2: 161.0, 5: 149.3, 6: 138.8} },
     { id: "bb", name: "ビックボーナス", active: true, type: "normal", probs: {1: 297.9, 2: 292.6, 5: 284.9, 6: 273.1} },
@@ -124,6 +127,9 @@ const VERSUS_CONFIG = [
     { id: "cbh", name: "チェリー＋ベルはずれ", active: true, type: "big", probs: {1: 256.0, 2: 128.0, 5: 256.0, 6: 128.0} }
 ];
 
+/* ============================================================
+   LOGIC ENGINE Rev 3.2.5
+   ============================================================ */
 const logDisplay = document.getElementById('log-display');
 const addLog = (m, c="text-slate-400") => { 
     const e=document.createElement('div'); e.className=c; e.innerHTML=m; logDisplay.appendChild(e); logDisplay.scrollTop=logDisplay.scrollHeight; 
@@ -188,9 +194,16 @@ async function run(file) {
             ptr++;
         }
 
-        addLog(`\n（４）判別対象データ`, "text-blue-400 font-bold");
+        // (4) 判別対象データセクション - テーブル改修
+        addLog(`\n（４）判別対象データ（実戦値 vs 各設定理論値）`, "text-blue-400 font-bold");
         const finalStorage = [];
         let bbCount = 0;
+
+        const table4 = document.createElement('table');
+        table4.className = 'log-table';
+        table4.innerHTML = `<thead><tr><th style="width:25%">項目</th><th style="width:12%">回数</th><th style="width:15%">結果</th><th>1</th><th>2</th><th>5</th><th>6</th></tr></thead><tbody></tbody>`;
+        const tbody4 = table4.querySelector('tbody');
+
         machine.def.forEach((def, idx) => {
             const data = extractedPairs[idx];
             if (!data) return;
@@ -202,12 +215,26 @@ async function run(file) {
             let k = data.count;
             if (data.rawP > 0) {
                 const mu = n / data.rawP;
-                if (k === null || Math.abs(k - mu) > Math.sqrt(mu)*4) k = Math.round(mu);
+                if (k === null || Math.abs(k - mu) > Math.sqrt(mu)*4) {
+                    k = Math.round(mu);
+                    addLog(`  補正 [${def.name}]: ${data.count??'欠損'}→${k}回`, "text-orange-500 font-[8px]");
+                }
             }
             finalStorage.push({ ...def, k, n });
-            addLog(`  ${def.name}: ${k}回 (1/${(n/k).toFixed(1)})`);
-        });
 
+            const row = document.createElement('tr');
+            const resProb = k > 0 ? (n/k).toFixed(1) : '-';
+            const s1 = def.probs[1].toFixed(1);
+            const s2 = def.probs[2].toFixed(1);
+            const s5 = def.probs[5].toFixed(1);
+            const s6 = def.probs[6].toFixed(1);
+
+            row.innerHTML = `<td style="text-align:left;">${def.name}</td><td>${k}</td><td style="color:#60a5fa; font-weight:bold;">1/${resProb}</td><td>1/${s1}</td><td>1/${s2}</td><td>1/${s5}</td><td>1/${s6}</td>`;
+            tbody4.appendChild(row);
+        });
+        logDisplay.appendChild(table4);
+
+        // (5) 尤度計算セクション
         addLog(`\n（５）尤度計算・判別強度ギャップ`, "text-blue-400 font-bold");
         const intensityData = finalStorage
             .filter(res => res.active && res.k >= 0 && res.n > 0)
@@ -223,10 +250,10 @@ async function run(file) {
 
         const top3Ids = [...intensityData].sort((a,b) => b.intensity - a.intensity).slice(0, 3).map(x => x.id);
 
-        const table = document.createElement('table');
-        table.className = 'log-table';
-        table.innerHTML = `<thead><tr><th style="width:30%">項目</th><th style="width:14%">ギャップ</th><th>設定1</th><th>設定2</th><th>設定5</th><th>設定6</th></tr></thead><tbody></tbody>`;
-        const tbody = table.querySelector('tbody');
+        const table5 = document.createElement('table');
+        table5.className = 'log-table';
+        table5.innerHTML = `<thead><tr><th style="width:30%">項目</th><th style="width:14%">ギャップ</th><th>設定1</th><th>設定2</th><th>設定5</th><th>設定6</th></tr></thead><tbody></tbody>`;
+        const tbody5 = table5.querySelector('tbody');
 
         let totalLLs = {1:0, 2:0, 5:0, 6:0};
         finalStorage.forEach(res => {
@@ -234,8 +261,6 @@ async function run(file) {
             if (!calc) return;
 
             const row = document.createElement('tr');
-            
-            // オーラクラスの決定 (セルに適用)
             let auraClass = "";
             const rank = top3Ids.indexOf(res.id);
             if(rank === 0) auraClass = "aura-red";
@@ -258,9 +283,9 @@ async function run(file) {
                 cells += `<td style="color:${starColor}">${starStr}</td>`;
             });
             row.innerHTML = cells;
-            tbody.appendChild(row);
+            tbody5.appendChild(row);
         });
-        logDisplay.appendChild(table);
+        logDisplay.appendChild(table5);
 
         addLog(`\n（６）設定判別処理`, "text-blue-400 font-bold");
         const max = Math.max(...Object.values(totalLLs)), sum = Object.values(totalLLs).reduce((a, l) => a + Math.exp(l - max), 0);
