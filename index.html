@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>ANALYZER Rev 3.2.20</title>
+    <title>ANALYZER Rev 3.2.21</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Squada+One&family=Noto+Sans+JP:wght@700;900&display=swap');
@@ -37,9 +37,9 @@
 <body>
     <div class="app-header">
         <div class="main-title">HANABI ANALYZER</div>
-        <div class="rev-tag">Revision 3.2.20 - Log Consistency Fix</div>
+        <div class="rev-tag">Revision 3.2.21 - Logic Consolidation</div>
     </div>
-    <div class="shrink-0 mb-3"><label for="f-in" class="main-btn"><span>💕よしこ💕</span></label><input type="file" id="f-in" class="hidden" accept="image/*"></div>
+    <div class="shrink-0 mb-3"><label for="f-in" class="main-btn"><span>💕💕よしこ💕💕</span></label><input type="file" id="f-in" class="hidden" accept="image/*"></div>
     <div class="result-card panel-frame">
         <div id="machine-type" class="absolute top-2 right-3 text-[10px] text-blue-400 font-bold">READY</div>
         <div class="mt-4">
@@ -162,8 +162,10 @@ async function run(file) {
         });
         mergedLines.push(currentLine.text);
         const fullLines = mergedLines;
+
         addLog(`\n（２）画像の生データ出力`, "text-blue-400 font-bold");
         fullLines.forEach(l => addLog(`| ${l}`, "text-[8px] text-zinc-600"));
+
         const fullText = fullLines.join(" ");
         let machine = { def: HANABI_CONFIG, bG: 29, name: "新ハナビ" };
         if (fullText.includes("バーサス")) machine = { def: VERSUS_CONFIG, bG: 28, name: "バーサス" };
@@ -180,6 +182,8 @@ async function run(file) {
         }
         if(anchorIdx === -1) throw new Error("Anchor Error");
 
+        // --- セクション（３）抽出データ・バリデーション ---
+        addLog(`\n（３）抽出データ・バリデーション`, "text-blue-400 font-bold");
         const extractedPairs = [];
         let ptr = anchorIdx + 1;
         while(extractedPairs.length < machine.def.length && ptr < fullLines.length){
@@ -189,8 +193,7 @@ async function run(file) {
                 const decMatch = line.match(/(\d+\.\d+)/);
                 if(decMatch) prob = parseFloat(decMatch[1]);
                 let count = null;
-                const targets = [2, 3]; 
-                for(let j of targets){
+                for(let j of [2, 3]){
                     const targetLine = fullLines[ptr-j] || "";
                     const intMatch = targetLine.match(/(\d+)/);
                     if(intMatch) {
@@ -199,19 +202,15 @@ async function run(file) {
                         break;
                     }
                 }
+                const logMsg = `[idx:${extractedPairs.length}] 1/${prob.toFixed(1)} (${count??'欠損'}回)${noKai ? ' ⚠️回なし' : ''}`;
+                addLog(logMsg, "text-zinc-500 text-[8px]");
                 extractedPairs.push({ count, rawP: prob, noKai });
             }
             ptr++;
         }
 
-        addLog(`\n（４）判別対象データ（実戦値 vs 各設定理論値）`, "text-blue-400 font-bold");
         const finalStorage = [];
         let bbCount = 0;
-        const table4 = document.createElement('table');
-        table4.className = 'log-table';
-        table4.innerHTML = `<thead><tr><th style="width:25%">項目</th><th style="width:12%">回数</th><th style="width:15%">結果</th><th>1</th><th>2</th><th>5</th><th>6</th></tr></thead><tbody></tbody>`;
-        const tbody4 = table4.querySelector('tbody');
-
         machine.def.forEach((def, idx) => {
             const data = extractedPairs[idx];
             if (!data) return;
@@ -224,17 +223,23 @@ async function run(file) {
             if (data.rawP > 0) {
                 const mu = Math.round(n / data.rawP);
                 if (k === null || (k === 0 && mu > 0) || (k > 0 && Math.abs(k - mu) > Math.sqrt(mu)*4)) {
-                    if (k !== mu) { // 【修正】完全に一致する場合はログを出さない
+                    if (k !== mu) {
                         addLog(`  補正 [${def.name}]: ${k??'欠損'}→${mu}回`, "text-orange-500 font-[8px]");
                         k = mu;
                     }
                 }
             }
             finalStorage.push({ ...def, k, n });
+        });
+
+        addLog(`\n（４）判別対象データ（実戦値 vs 各設定理論値）`, "text-blue-400 font-bold");
+        const table4 = document.createElement('table');
+        table4.className = 'log-table';
+        table4.innerHTML = `<thead><tr><th style="width:25%">項目</th><th style="width:12%">回数</th><th style="width:15%">結果</th><th>1</th><th>2</th><th>5</th><th>6</th></tr></thead><tbody></tbody>`;
+        const tbody4 = table4.querySelector('tbody');
+        finalStorage.forEach(res => {
             const row = document.createElement('tr');
-            // 【修正】項目名の横に警告を表示
-            const displayName = data.noKai ? `${def.name} <span class="text-orange-400">(⚠️回なし)</span>` : def.name;
-            row.innerHTML = `<td style="text-align:left;">${displayName}</td><td>${k}</td><td style="color:#60a5fa; font-weight:bold;">1/${(n/k).toFixed(1)}</td><td>1/${def.probs[1].toFixed(1)}</td><td>1/${def.probs[2].toFixed(1)}</td><td>1/${def.probs[5].toFixed(1)}</td><td>1/${def.probs[6].toFixed(1)}</td>`;
+            row.innerHTML = `<td style="text-align:left;">${res.name}</td><td>${res.k}</td><td style="color:#60a5fa; font-weight:bold;">1/${(res.n/res.k).toFixed(1)}</td><td>1/${res.probs[1].toFixed(1)}</td><td>1/${res.probs[2].toFixed(1)}</td><td>1/${res.probs[5].toFixed(1)}</td><td>1/${res.probs[6].toFixed(1)}</td>`;
             tbody4.appendChild(row);
         });
         logDisplay.appendChild(table4);
@@ -270,6 +275,7 @@ async function run(file) {
             row.innerHTML = cells; tbody5.appendChild(row);
         });
         logDisplay.appendChild(table5);
+
         addLog(`\n（６）設定判別処理`, "text-blue-400 font-bold");
         const max = Math.max(...Object.values(totalLLs)), sum = Object.values(totalLLs).reduce((a, l) => a + Math.exp(l - max), 0);
         [1,2,5,6].forEach(s => {
@@ -280,6 +286,7 @@ async function run(file) {
         });
     } catch (e) { addLog(`\n❌ ERROR: ${e.message}`, "text-red-500 font-bold"); }
 }
+
 document.getElementById('sv-key').onclick = () => { localStorage.setItem('v_key', document.getElementById('api-key').value); alert("SAVED"); };
 window.onload = () => { document.getElementById('api-key').value = localStorage.getItem('v_key') || ''; };
 document.getElementById('f-in').onchange = e => { if(e.target.files[0]) run(e.target.files[0]); };
