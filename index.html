@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>ANALYZER Rev 3.2.21</title>
+    <title>ANALYZER Rev 3.2.22</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Squada+One&family=Noto+Sans+JP:wght@700;900&display=swap');
@@ -37,9 +37,9 @@
 <body>
     <div class="app-header">
         <div class="main-title">HANABI ANALYZER</div>
-        <div class="rev-tag">Revision 3.2.21 - Logic Consolidation</div>
+        <div class="rev-tag">Revision 3.2.22 - Hyphen Count Fix</div>
     </div>
-    <div class="shrink-0 mb-3"><label for="f-in" class="main-btn"><span>💕💕よしこ💕💕</span></label><input type="file" id="f-in" class="hidden" accept="image/*"></div>
+    <div class="shrink-0 mb-3"><label for="f-in" class="main-btn"><span>解析実行</span></label><input type="file" id="f-in" class="hidden" accept="image/*"></div>
     <div class="result-card panel-frame">
         <div id="machine-type" class="absolute top-2 right-3 text-[10px] text-blue-400 font-bold">READY</div>
         <div class="mt-4">
@@ -53,6 +53,7 @@
     <div class="api-footer flex gap-2"><input type="password" id="api-key" class="api-input" placeholder="Vision API Key"><button id="sv-key" class="save-btn">SAVE KEY</button></div>
 
 <script>
+// 設定データ定義（省略せずRev 3.2.21を継承）
 const L_HANABI_CONFIG = [
     { id: "total", name: "ボーナス合算", active: false, type: "normal", probs: {1: 169.8, 2: 161.0, 5: 149.3, 6: 138.8} },
     { id: "bb", name: "ビックボーナス", active: true, type: "normal", probs: {1: 297.9, 2: 292.6, 5: 284.9, 6: 273.1} },
@@ -74,7 +75,6 @@ const L_HANABI_CONFIG = [
     { id: "b_ba", name: "BIG中風鈴Ａ", active: false, type: "big", probs: {1: 1.1, 2: 1.2, 5: 1.1, 6: 1.2} },
     { id: "b_bb", name: "BIG中風鈴Ｂ", active: true, type: "big", probs: {1: 10.0, 2: 7.0, 5: 10.0, 6: 7.0} }
 ];
-
 const HANABI_CONFIG = [
     { id: "total", name: "ボーナス合算", active: false, type: "normal", probs: {1: 156.0, 2: 148.3, 5: 139.4, 6: 131.6} },
     { id: "bb", name: "ビックボーナス", active: true, type: "normal", probs: {1: 277.7, 2: 268.6, 5: 256.0, 6: 248.2} },
@@ -96,7 +96,6 @@ const HANABI_CONFIG = [
     { id: "pf", name: "平行風鈴", active: false, type: "big", probs: {1: 1.1, 2: 1.13, 5: 1.1, 6: 1.13} },
     { id: "nf", name: "斜め風鈴", active: true, type: "big", probs: {1: 11.0, 2: 9.0, 5: 11.0, 6: 9.0} }
 ];
-
 const VERSUS_CONFIG = [
     { id: "total", name: "ボーナス合算", active: false, type: "normal", probs: {1: 164.3, 2: 155.3, 5: 147.9, 6: 138.8} },
     { id: "bb", name: "ビックボーナス合算", active: true, type: "normal", probs: {1: 292.6, 2: 284.9, 5: 275.4, 6: 264.3} },
@@ -182,24 +181,28 @@ async function run(file) {
         }
         if(anchorIdx === -1) throw new Error("Anchor Error");
 
-        // --- セクション（３）抽出データ・バリデーション ---
         addLog(`\n（３）抽出データ・バリデーション`, "text-blue-400 font-bold");
         const extractedPairs = [];
         let ptr = anchorIdx + 1;
         while(extractedPairs.length < machine.def.length && ptr < fullLines.length){
             const line = fullLines[ptr];
             if(line.includes('/')){
-                let prob = 0, noKai = false;
+                let prob = 0, noKai = false, count = null;
                 const decMatch = line.match(/(\d+\.\d+)/);
                 if(decMatch) prob = parseFloat(decMatch[1]);
-                let count = null;
-                for(let j of [2, 3]){
-                    const targetLine = fullLines[ptr-j] || "";
-                    const intMatch = targetLine.match(/(\d+)/);
-                    if(intMatch) {
-                        count = parseInt(intMatch[1]);
-                        if(!targetLine.includes("回")) noKai = true;
-                        break;
+
+                // --- 1/- の修正ロジック：ハイフン分母なら走査を即停止 ---
+                if(line.includes('-') && !line.includes('.')) {
+                    count = 0; 
+                } else {
+                    for(let j of [2, 3]){
+                        const targetLine = fullLines[ptr-j] || "";
+                        const intMatch = targetLine.match(/(\d+)/);
+                        if(intMatch) {
+                            count = parseInt(intMatch[1]);
+                            if(!targetLine.includes("回")) noKai = true;
+                            break;
+                        }
                     }
                 }
                 const logMsg = `[idx:${extractedPairs.length}] 1/${prob.toFixed(1)} (${count??'欠損'}回)${noKai ? ' ⚠️回なし' : ''}`;
