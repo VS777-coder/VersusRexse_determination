@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>ANALYZER Rev 3.2.5</title>
+    <title>ANALYZER Rev 3.2.20</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Squada+One&family=Noto+Sans+JP:wght@700;900&display=swap');
@@ -20,17 +20,12 @@
         .log-container { flex-grow: 1; min-height: 0; margin: 12px 0; border: 2px solid #1e293b; background-color: #000000; border-radius: 8px; display: flex; flex-direction: column; overflow: hidden; position: relative; }
         .copy-btn { position: absolute; top: 8px; right: 8px; background: #2563eb; color: #fff; font-size: 9px; padding: 4px 10px; border-radius: 4px; border: 1px solid #3b82f6; cursor: pointer; z-index: 20; font-weight: bold; }
         .log-body { padding: 4px; font-size: 9px; width: 100%; height: 100%; overflow-y: auto; white-space: pre-wrap; color: #94a3b8; font-family: 'Share Tech Mono', monospace; padding-top: 35px; line-height: 1.3; }
-        
-        /* テーブルスタイル */
         .log-table { width: 100%; border-collapse: collapse; margin-top: 8px; font-size: 7px; table-layout: fixed; color: #e2e8f0; }
         .log-table th, .log-table td { border: 1px solid #1e293b; padding: 4px 1px; text-align: center; overflow: hidden; white-space: nowrap; }
         .log-table th { background-color: #1e293b; color: #60a5fa; font-weight: 900; }
-        
-        /* オーラカラー（（５）用） */
         .aura-red { background-color: rgba(220, 38, 38, 0.5) !important; color: white !important; }
         .aura-green { background-color: rgba(22, 163, 74, 0.5) !important; color: white !important; }
         .aura-yellow { background-color: rgba(202, 138, 4, 0.5) !important; color: white !important; }
-
         .api-input { background: #0f172a; color: #f1f5f9; border: 1px solid #1e293b; padding: 10px; font-size: 10px; flex-grow: 1; border-radius: 8px; outline: none; }
         .save-btn { background: #1e40af; color: #ffffff; font-weight: bold; padding: 0 20px; border-radius: 8px; font-size: 11px; cursor: pointer; }
         .c-s1 { color: #3b82f6; } .bg-s1 { background-color: #3b82f6; }
@@ -42,7 +37,7 @@
 <body>
     <div class="app-header">
         <div class="main-title">HANABI ANALYZER</div>
-        <div class="rev-tag">Revision 3.2.5 - Data Insight Engine</div>
+        <div class="rev-tag">Revision 3.2.20 - Log Consistency Fix</div>
     </div>
     <div class="shrink-0 mb-3"><label for="f-in" class="main-btn"><span>💕よしこ💕</span></label><input type="file" id="f-in" class="hidden" accept="image/*"></div>
     <div class="result-card panel-frame">
@@ -58,9 +53,6 @@
     <div class="api-footer flex gap-2"><input type="password" id="api-key" class="api-input" placeholder="Vision API Key"><button id="sv-key" class="save-btn">SAVE KEY</button></div>
 
 <script>
-/* ============================================================
-   CONFIGURATIONS (DEFINITIONS)
-   ============================================================ */
 const L_HANABI_CONFIG = [
     { id: "total", name: "ボーナス合算", active: false, type: "normal", probs: {1: 169.8, 2: 161.0, 5: 149.3, 6: 138.8} },
     { id: "bb", name: "ビックボーナス", active: true, type: "normal", probs: {1: 297.9, 2: 292.6, 5: 284.9, 6: 273.1} },
@@ -127,20 +119,21 @@ const VERSUS_CONFIG = [
     { id: "cbh", name: "チェリー＋ベルはずれ", active: true, type: "big", probs: {1: 256.0, 2: 128.0, 5: 256.0, 6: 128.0} }
 ];
 
-/* ============================================================
-   LOGIC ENGINE Rev 3.2.5
-   ============================================================ */
 const logDisplay = document.getElementById('log-display');
 const addLog = (m, c="text-slate-400") => { 
     const e=document.createElement('div'); e.className=c; e.innerHTML=m; logDisplay.appendChild(e); logDisplay.scrollTop=logDisplay.scrollHeight; 
 };
 
-document.getElementById('copy-log').onclick = () => {
+document.getElementById('copy-log').onclick = async () => {
     const text = logDisplay.innerText;
+    if (navigator.clipboard && window.isSecureContext) {
+        try { await navigator.clipboard.writeText(text); alert("OK"); return; } catch (err) {}
+    }
     const area = document.createElement('textarea');
-    area.value = text; document.body.appendChild(area);
-    area.select(); document.execCommand('copy');
-    document.body.removeChild(area); alert("LOG COPIED!");
+    area.value = text; area.readOnly = true; area.style.position = 'fixed'; area.style.left = '-9999px';
+    document.body.appendChild(area); area.select(); area.setSelectionRange(0, 999999);
+    try { document.execCommand('copy'); alert("OK"); } catch (err) {}
+    document.body.removeChild(area);
 };
 
 async function run(file) {
@@ -158,11 +151,19 @@ async function run(file) {
             method: 'POST', body: JSON.stringify({ requests: [{ image: { content: base64 }, features: [{ type: 'DOCUMENT_TEXT_DETECTION' }] }] })
         });
         const json = await resp.json();
-        const fullLines = json.responses[0].textAnnotations[0].description.split('\n');
-
+        const annotations = json.responses[0].textAnnotations;
+        const THRESHOLD_Y = 8;
+        let mergedLines = [];
+        let currentLine = { y: -100, text: "" };
+        const sortedBlocks = annotations.slice(1).map(a => ({ text: a.description, y: a.boundingPoly.vertices[0].y })).sort((a,b) => a.y - b.y);
+        sortedBlocks.forEach(block => {
+            if (Math.abs(block.y - currentLine.y) < THRESHOLD_Y) { currentLine.text += " " + block.text; } 
+            else { if (currentLine.text) mergedLines.push(currentLine.text); currentLine = { y: block.y, text: block.text }; }
+        });
+        mergedLines.push(currentLine.text);
+        const fullLines = mergedLines;
         addLog(`\n（２）画像の生データ出力`, "text-blue-400 font-bold");
         fullLines.forEach(l => addLog(`| ${l}`, "text-[8px] text-zinc-600"));
-
         const fullText = fullLines.join(" ");
         let machine = { def: HANABI_CONFIG, bG: 29, name: "新ハナビ" };
         if (fullText.includes("バーサス")) machine = { def: VERSUS_CONFIG, bG: 28, name: "バーサス" };
@@ -182,23 +183,30 @@ async function run(file) {
         const extractedPairs = [];
         let ptr = anchorIdx + 1;
         while(extractedPairs.length < machine.def.length && ptr < fullLines.length){
-            if(fullLines[ptr].includes('/')){
-                const prob = parseFloat(fullLines[ptr].split('/').pop().replace(/,/g, ''));
+            const line = fullLines[ptr];
+            if(line.includes('/')){
+                let prob = 0, noKai = false;
+                const decMatch = line.match(/(\d+\.\d+)/);
+                if(decMatch) prob = parseFloat(decMatch[1]);
                 let count = null;
-                for(let j=1; j<=4; j++){
-                    let cStr = (fullLines[ptr-j] || "").replace(/[^0-9]/g, '');
-                    if(cStr){ count = parseInt(cStr); break; }
+                const targets = [2, 3]; 
+                for(let j of targets){
+                    const targetLine = fullLines[ptr-j] || "";
+                    const intMatch = targetLine.match(/(\d+)/);
+                    if(intMatch) {
+                        count = parseInt(intMatch[1]);
+                        if(!targetLine.includes("回")) noKai = true;
+                        break;
+                    }
                 }
-                extractedPairs.push({ count, rawP: prob });
+                extractedPairs.push({ count, rawP: prob, noKai });
             }
             ptr++;
         }
 
-        // (4) 判別対象データセクション - テーブル改修
         addLog(`\n（４）判別対象データ（実戦値 vs 各設定理論値）`, "text-blue-400 font-bold");
         const finalStorage = [];
         let bbCount = 0;
-
         const table4 = document.createElement('table');
         table4.className = 'log-table';
         table4.innerHTML = `<thead><tr><th style="width:25%">項目</th><th style="width:12%">回数</th><th style="width:15%">結果</th><th>1</th><th>2</th><th>5</th><th>6</th></tr></thead><tbody></tbody>`;
@@ -214,79 +222,54 @@ async function run(file) {
             if (def.id === "bb") bbCount = data.count || 0;
             let k = data.count;
             if (data.rawP > 0) {
-                const mu = n / data.rawP;
-                if (k === null || Math.abs(k - mu) > Math.sqrt(mu)*4) {
-                    k = Math.round(mu);
-                    addLog(`  補正 [${def.name}]: ${data.count??'欠損'}→${k}回`, "text-orange-500 font-[8px]");
+                const mu = Math.round(n / data.rawP);
+                if (k === null || (k === 0 && mu > 0) || (k > 0 && Math.abs(k - mu) > Math.sqrt(mu)*4)) {
+                    if (k !== mu) { // 【修正】完全に一致する場合はログを出さない
+                        addLog(`  補正 [${def.name}]: ${k??'欠損'}→${mu}回`, "text-orange-500 font-[8px]");
+                        k = mu;
+                    }
                 }
             }
             finalStorage.push({ ...def, k, n });
-
             const row = document.createElement('tr');
-            const resProb = k > 0 ? (n/k).toFixed(1) : '-';
-            const s1 = def.probs[1].toFixed(1);
-            const s2 = def.probs[2].toFixed(1);
-            const s5 = def.probs[5].toFixed(1);
-            const s6 = def.probs[6].toFixed(1);
-
-            row.innerHTML = `<td style="text-align:left;">${def.name}</td><td>${k}</td><td style="color:#60a5fa; font-weight:bold;">1/${resProb}</td><td>1/${s1}</td><td>1/${s2}</td><td>1/${s5}</td><td>1/${s6}</td>`;
+            // 【修正】項目名の横に警告を表示
+            const displayName = data.noKai ? `${def.name} <span class="text-orange-400">(⚠️回なし)</span>` : def.name;
+            row.innerHTML = `<td style="text-align:left;">${displayName}</td><td>${k}</td><td style="color:#60a5fa; font-weight:bold;">1/${(n/k).toFixed(1)}</td><td>1/${def.probs[1].toFixed(1)}</td><td>1/${def.probs[2].toFixed(1)}</td><td>1/${def.probs[5].toFixed(1)}</td><td>1/${def.probs[6].toFixed(1)}</td>`;
             tbody4.appendChild(row);
         });
         logDisplay.appendChild(table4);
 
-        // (5) 尤度計算セクション
         addLog(`\n（５）尤度計算・判別強度ギャップ`, "text-blue-400 font-bold");
-        const intensityData = finalStorage
-            .filter(res => res.active && res.k >= 0 && res.n > 0)
-            .map(res => {
-                let itemLLs = {};
-                [1,2,5,6].forEach(s => { 
-                    const tp = 1/res.probs[s];
-                    itemLLs[s] = (res.k * Math.log(tp) + (res.n - res.k) * Math.log(1 - tp));
-                });
-                const vals = Object.values(itemLLs);
-                return { id: res.id, itemLLs, maxL: Math.max(...vals), minL: Math.min(...vals), intensity: Math.max(...vals) - Math.min(...vals) };
-            });
-
+        const intensityData = finalStorage.filter(res => res.active && res.k >= 0 && res.n > 0).map(res => {
+            let itemLLs = {};
+            [1,2,5,6].forEach(s => { const tp = 1/res.probs[s]; itemLLs[s] = (res.k * Math.log(tp) + (res.n - res.k) * Math.log(1 - tp)); });
+            const vals = Object.values(itemLLs);
+            return { id: res.id, itemLLs, maxL: Math.max(...vals), intensity: Math.max(...vals) - Math.min(...vals) };
+        });
         const top3Ids = [...intensityData].sort((a,b) => b.intensity - a.intensity).slice(0, 3).map(x => x.id);
-
         const table5 = document.createElement('table');
         table5.className = 'log-table';
-        table5.innerHTML = `<thead><tr><th style="width:30%">項目</th><th style="width:14%">ギャップ</th><th>設定1</th><th>設定2</th><th>設定5</th><th>設定6</th></tr></thead><tbody></tbody>`;
+        table5.innerHTML = `<thead><tr><th style="width:30%">項目</th><th style="width:14%">ギャップ</th><th>1</th><th>2</th><th>5</th><th>6</th></tr></thead><tbody></tbody>`;
         const tbody5 = table5.querySelector('tbody');
-
         let totalLLs = {1:0, 2:0, 5:0, 6:0};
         finalStorage.forEach(res => {
             const calc = intensityData.find(x => x.id === res.id);
             if (!calc) return;
-
             const row = document.createElement('tr');
-            let auraClass = "";
+            let aura = "";
             const rank = top3Ids.indexOf(res.id);
-            if(rank === 0) auraClass = "aura-red";
-            else if(rank === 1) auraClass = "aura-green";
-            else if(rank === 2) auraClass = "aura-yellow";
-
+            if(rank === 0) aura = "aura-red"; else if(rank === 1) aura = "aura-green"; else if(rank === 2) aura = "aura-yellow";
             const gapBar = calc.intensity > 4.0 ? "■■■" : calc.intensity > 2.0 ? "■■" : calc.intensity > 0.5 ? "■" : "";
-            let cells = `<td class="${auraClass}" style="text-align:left; font-weight:bold; padding-left:4px;">${res.name}</td>
-                         <td class="${auraClass}" style="text-align:left; padding-left:4px;">${gapBar}</td>`;
-            
+            let cells = `<td class="${aura}" style="text-align:left; font-weight:bold; padding-left:4px;">${res.name}</td><td class="${aura}" style="text-align:left; padding-left:4px;">${gapBar}</td>`;
             [1,2,5,6].forEach(s => {
                 totalLLs[s] += calc.itemLLs[s];
                 const gMax = calc.maxL - calc.itemLLs[s];
-                const gMin = calc.itemLLs[s] - calc.minL;
-                const count = gMax < 0.2 ? 5 : gMax < 0.7 ? 4 : gMax < 1.5 ? 3 : gMax < 3.0 ? 2 : 1;
-                const starStr = "★".repeat(count);
-                let starColor = "#94a3b8";
-                if (gMax < 0.001) starColor = "#ef4444; font-weight:bold;";
-                else if (gMin < 0.001) starColor = "#eab308;";
-                cells += `<td style="color:${starColor}">${starStr}</td>`;
+                const star = gMax < 0.2 ? 5 : gMax < 0.7 ? 4 : gMax < 1.5 ? 3 : gMax < 3.0 ? 2 : 1;
+                cells += `<td style="color:${gMax < 0.001 ? '#ef4444' : '#94a3b8'}">${"★".repeat(star)}</td>`;
             });
-            row.innerHTML = cells;
-            tbody5.appendChild(row);
+            row.innerHTML = cells; tbody5.appendChild(row);
         });
         logDisplay.appendChild(table5);
-
         addLog(`\n（６）設定判別処理`, "text-blue-400 font-bold");
         const max = Math.max(...Object.values(totalLLs)), sum = Object.values(totalLLs).reduce((a, l) => a + Math.exp(l - max), 0);
         [1,2,5,6].forEach(s => {
